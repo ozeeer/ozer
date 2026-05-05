@@ -1,0 +1,5348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OZ Bioprinter · Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root, [data-theme="dark"] {
+  --bg: #0c0d10;
+  --panel: #14161a;
+  --panel-2: #1a1d22;
+  --border: #2a2e35;
+  --border-bright: #3a3f48;
+  --text: #e6e7e9;
+  --text-dim: #8a8f99;
+  --text-faint: #5a606b;
+  --accent: #c9f24a;
+  --accent-dim: #8aa530;
+  --warn: #ff7a45;
+  --danger: #ff4757;
+  --ok: #4ade80;
+  --info: #4aa3ff;
+  --console-bg: #07080a;
+  --canvas-bg: #0a0b0e;
+  --grid-fine: rgba(255,255,255,0.025);
+  --grid-coarse: rgba(255,255,255,0.06);
+  --highlight: rgba(201, 242, 74, 0.15);
+}
+[data-theme="light"] {
+  --bg: #f5f5f2;
+  --panel: #ffffff;
+  --panel-2: #ebebe6;
+  --border: #d4d4cd;
+  --border-bright: #b8b8b0;
+  --text: #1a1a1a;
+  --text-dim: #5a5a5a;
+  --text-faint: #8a8a85;
+  --accent: #4a7c0a;
+  --accent-dim: #6a9c2a;
+  --warn: #d35400;
+  --danger: #c0392b;
+  --ok: #27ae60;
+  --info: #2c5fa3;
+  --console-bg: #fafaf7;
+  --canvas-bg: #fafaf5;
+  --grid-fine: rgba(0,0,0,0.04);
+  --grid-coarse: rgba(0,0,0,0.10);
+  --highlight: rgba(74, 124, 10, 0.18);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+body {
+  display: grid;
+  grid-template-rows: 44px 1fr 24px;
+}
+
+/* ============ HEADER ============ */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.brand .sub {
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+}
+.header-controls select, .header-controls input {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  border-radius: 2px;
+  outline: none;
+}
+.header-controls select:focus, .header-controls input:focus {
+  border-color: var(--accent-dim);
+}
+.header-controls label {
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connection-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: all 0.3s;
+}
+.dot.connected { background: var(--ok); box-shadow: 0 0 8px rgba(74, 222, 128, 0.5); }
+.dot.busy {
+  background: var(--warn);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 28px;
+  height: 28px;
+  border-radius: 100px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+/* ============ BUTTONS ============ */
+.btn {
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--panel-2);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+.btn:hover:not(:disabled) {
+  background: var(--panel);
+  border-color: var(--accent-dim);
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+.btn.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: white;
+  font-weight: 700;
+}
+.btn.danger:hover:not(:disabled) { background: #e84050; }
+.btn.sm { padding: 5px 8px; font-size: 9px; }
+
+/* ============ MAIN GRID ============ */
+main {
+  display: grid;
+  /* Order swapped: was 280px 1fr 320px (left/center/right).
+     Now 320px 1fr 280px so the right-column content (Console + Print Job + Generators)
+     appears on the left, and the left-column content (Manual Control + Printhead + Macros)
+     appears on the right. */
+  grid-template-columns: 320px 1fr 280px;
+  gap: 1px;
+  background: var(--border);
+  overflow: hidden;
+}
+.col:nth-of-type(1) { order: 2; }  /* original "left" col -> right */
+.col:nth-of-type(3) { order: 0; }  /* original "right" col -> left */
+.col:nth-of-type(2) { order: 1; }  /* center stays middle */
+
+.col {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+}
+.col.center { overflow: hidden; } /* center column doesn't scroll */
+
+/* ============ COLUMN SECTIONS ============ */
+.section {
+  border-bottom: 1px solid var(--border);
+  padding: 12px;
+  flex-shrink: 0;
+}
+.section.flex { flex: 1 1 auto; min-height: 0; }
+.section.fixed { flex: 0 0 auto; }
+.section:last-child { border-bottom: none; }
+
+.section-title {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.section-title .actions {
+  display: flex;
+  gap: 4px;
+}
+
+.field {
+  margin-bottom: 8px;
+}
+.field label {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.field-row.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+input[type="text"], input[type="number"], select, textarea {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent-dim); }
+
+.btn-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.btn-grid.three { grid-template-columns: repeat(3, 1fr); }
+.btn-grid.four { grid-template-columns: repeat(4, 1fr); }
+
+/* ============ JOG PAD ============ */
+.jog-container {
+  display: grid;
+  grid-template-columns: 1fr 60px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.jog-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+.jog-btn {
+  aspect-ratio: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 2px;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.jog-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.jog-btn:active:not(:disabled) { transform: scale(0.95); }
+.jog-btn.home {
+  background: var(--panel);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  line-height: 1;
+}
+.jog-btn.home::before {
+  content: "⌂";
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+}
+.jog-btn.home.no-icon::before { content: ""; }
+.jog-btn.home:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.jog-btn.home:hover:not(:disabled)::before {
+  color: var(--bg);
+}
+.jog-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.z-pad { display: grid; grid-template-rows: repeat(4, 1fr); gap: 3px; }
+
+/* ============ POSITION DISPLAY ============ */
+.position-display {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.pos-cell {
+  background: var(--panel);
+  padding: 6px;
+  text-align: center;
+}
+.pos-cell .axis {
+  font-size: 8px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.pos-cell .val {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.step-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.step-btn {
+  padding: 6px 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.step-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+/* ============ BED CANVAS ============ */
+.bed-container {
+  flex: 1;
+  background: var(--canvas-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 12px;
+  min-height: 0;
+}
+.bed-canvas-wrap {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 2px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+canvas { display: block; max-width: 100%; max-height: 100%; }
+canvas.clickable { cursor: crosshair; }
+.bed-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 2px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+[data-theme="light"] .bed-overlay {
+  background: rgba(255, 255, 255, 0.7);
+}
+.bed-overlay .substrate { color: var(--accent); font-weight: 700; }
+
+.bed-mode-tabs {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.bed-mode-tab {
+  flex: 1;
+  padding: 8px;
+  background: var(--bg);
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+.bed-mode-tab:hover { color: var(--text); }
+.bed-mode-tab.active {
+  background: var(--canvas-bg);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.bed-views {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.bed-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+}
+.bed-view.active { display: flex; }
+
+/* Drawing toolbar */
+.draw-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 8px;
+}
+.z-control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-bright);
+  border-radius: 3px;
+}
+.z-control-group .z-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+.z-control-group .z-btn {
+  width: 26px;
+  padding: 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.z-control-group .z-value {
+  width: 70px;
+  font-size: 12px;
+  text-align: center;
+  padding: 4px 6px;
+}
+.tool-btn {
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.tool-btn:hover { color: var(--text); }
+.tool-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 2px;
+}
+.toolbar-info {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ============ CONSOLE ============ */
+.console {
+  background: var(--console-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.console-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.console-line.tx { color: var(--info); }
+.console-line.rx { color: var(--text); }
+.console-line.sys { color: var(--text-faint); font-style: italic; }
+.console-line.err { color: var(--danger); }
+.console-line.ok { color: var(--ok); }
+.console-line .ts { color: var(--text-faint); margin-right: 6px; }
+
+.send-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.send-row input { flex: 1; }
+
+/* ============ PRESSURE PANEL ============ */
+.head-type-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.pressure-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.pressure-cell {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 8px;
+  text-align: center;
+}
+.pressure-label {
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.pressure-state {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-top: 2px;
+  letter-spacing: 0.15em;
+  transition: color 0.2s;
+}
+.pressure-state.on {
+  color: var(--ok);
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+/* ============ MACROS ============ */
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.macro-btn {
+  position: relative;
+  padding: 6px 22px 6px 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.macro-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.macro-btn .del {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 2px;
+  opacity: 0;
+}
+.macro-btn:hover .del { opacity: 1; color: var(--bg); }
+.macro-empty {
+  font-size: 9px;
+  color: var(--text-faint);
+  font-style: italic;
+  padding: 4px 0;
+  grid-column: span 2;
+}
+
+/* ============ TOOLBAR ACTION BUTTONS ============ */
+.btn-undo-style {
+  color: var(--info);
+  border-color: var(--info);
+}
+.btn-undo-style:hover:not(:disabled) {
+  background: var(--info);
+  color: var(--bg);
+  border-color: var(--info);
+}
+
+.btn-clear-style {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.btn-clear-style:hover:not(:disabled) {
+  background: var(--warn);
+  color: var(--bg);
+  border-color: var(--warn);
+}
+
+.btn-optimize-style {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+.btn-optimize-style:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+/* ============ PRINT JOB ============ */
+.print-job-section {
+  background: linear-gradient(to right, var(--highlight) 0%, transparent 30%), var(--bg);
+  border-left: 3px solid var(--accent);
+  position: relative;
+}
+.print-job-section .section-title > span:first-child {
+  color: var(--accent);
+  font-weight: 700;
+}
+.print-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.stat-cell {
+  background: var(--panel);
+  padding: 6px;
+}
+.stat-label {
+  font-size: 8px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.stat-val {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-top: 2px;
+}
+.progress {
+  height: 3px;
+  background: var(--panel-2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.3s;
+}
+.gcode-input {
+  width: 100%;
+  height: 100px;
+  background: var(--console-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  border-radius: 2px;
+  resize: vertical;
+}
+.gcode-viewer {
+  width: 100%;
+  height: 100px;
+  background: var(--console-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 4px 0;
+  display: none;
+}
+.gcode-viewer.active { display: block; }
+.gcode-line {
+  padding: 0 8px 0 36px;
+  position: relative;
+  white-space: pre;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.gcode-line .ln {
+  position: absolute;
+  left: 0;
+  width: 30px;
+  text-align: right;
+  color: var(--text-faint);
+  padding-right: 4px;
+}
+.gcode-line.sent { color: var(--text-faint); opacity: 0.6; }
+.gcode-line.current {
+  background: var(--highlight);
+  color: var(--accent);
+  font-weight: 700;
+}
+.gcode-line.current .ln { color: var(--accent); }
+.gcode-line.comment { color: var(--text-faint); font-style: italic; }
+.viewer-toggle {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.viewer-toggle button {
+  flex: 1;
+  padding: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.viewer-toggle button.active {
+  background: var(--panel);
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* ============ RANGE ROWS ============ */
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.range-row label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  width: 50px;
+}
+.range-row input[type="range"] { flex: 1; }
+.range-row .v {
+  width: 40px;
+  text-align: right;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+/* ============ FOOTER ============ */
+footer {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  font-size: 9px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  gap: 16px;
+}
+footer .stat { display: flex; gap: 6px; }
+footer .stat .v { color: var(--text); }
+footer .spacer { flex: 1; }
+
+/* ============ MODAL ============ */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-bg.active { display: flex; }
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  padding: 20px;
+  width: 380px;
+  border-radius: 2px;
+}
+.modal h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+.modal p {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+/* ============ MISC ============ */
+.warn-banner {
+  background: rgba(255, 122, 69, 0.1);
+  border: 1px solid rgba(255, 122, 69, 0.3);
+  color: var(--warn);
+  padding: 6px 8px;
+  font-size: 10px;
+  border-radius: 2px;
+  margin-bottom: 8px;
+}
+.kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  background: var(--panel-2);
+  border: 1px solid var(--border-bright);
+  border-radius: 2px;
+  font-size: 9px;
+  color: var(--text-dim);
+}
+.kbd-hint {
+  font-size: 9px;
+  color: var(--text-faint);
+  line-height: 1.7;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  align-items: center;
+}
+.kbd-hint .kbd { justify-self: start; }
+
+.img-preview {
+  width: 100%;
+  height: 80px;
+  background: var(--canvas-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.img-preview canvas, .img-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.img-preview .placeholder {
+  color: var(--text-faint);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.preflight {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+/* ============ SCROLLBARS ============ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>OZ Bioprinter</h1>
+    <span class="sub">Console v0.2</span>
+  </div>
+
+  <div class="header-controls">
+    <select id="baud" title="Baud rate" style="width: 85px;">
+      <option value="9600">9600</option>
+      <option value="19200">19200</option>
+      <option value="38400">38400</option>
+      <option value="57600">57600</option>
+      <option value="115200" selected>115200</option>
+      <option value="250000">250000</option>
+    </select>
+    <button class="btn primary" id="btn-connect" title="Connect to printer">Connect</button>
+    <button class="btn" id="btn-disconnect" disabled title="Disconnect">⏏</button>
+    <div class="toolbar-sep" style="height: 22px;"></div>
+    <label>Substrate</label>
+    <select id="substrate" style="width: 150px;">
+      <option value="petri35">Petri · 35 mm</option>
+      <option value="petri60">Petri · 60 mm</option>
+      <option value="petri100">Petri · 100 mm</option>
+      <option value="slide">Slide · 75×25 mm</option>
+      <option value="custom">Custom</option>
+    </select>
+    <input type="number" id="custom-w" value="50" min="5" max="300" style="width: 55px; display: none;" title="Width mm"/>
+    <input type="number" id="custom-h" value="50" min="5" max="300" style="width: 55px; display: none;" title="Height mm"/>
+  </div>
+
+  <div class="header-right">
+    <div class="connection-pill">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">Disconnected</span>
+    </div>
+    <button class="theme-toggle" id="help-toggle" title="Keyboard shortcuts">?</button>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle theme">☾</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ LEFT COLUMN ============ -->
+  <div class="col">
+
+    <!-- Manual Control -->
+    <div class="section fixed">
+      <div class="section-title">Manual Control</div>
+
+      <div class="position-display">
+        <div class="pos-cell"><div class="axis">X</div><div class="val" id="pos-x">0.000</div></div>
+        <div class="pos-cell"><div class="axis">Y</div><div class="val" id="pos-y">0.000</div></div>
+        <div class="pos-cell"><div class="axis">Z</div><div class="val" id="pos-z">0.000</div></div>
+      </div>
+
+      <div class="step-selector" id="step-selector">
+        <button class="step-btn" data-step="0.1">0.1</button>
+        <button class="step-btn active" data-step="1">1</button>
+        <button class="step-btn" data-step="10">10</button>
+        <button class="step-btn" data-step="50">50</button>
+      </div>
+
+      <div class="jog-container">
+        <div class="jog-pad" id="jog-pad-xy">
+          <button class="jog-btn home" data-jog="home-xy" title="Home X and Y">XY</button>
+          <button class="jog-btn" data-jog="y+" title="Y+">↑</button>
+          <button class="jog-btn home" data-jog="home-all" title="Home All Axes">ALL</button>
+          <button class="jog-btn" data-jog="x-" title="X-">←</button>
+          <button class="jog-btn home no-icon" disabled style="opacity: 0.15; border-color: var(--border); color: var(--text-faint);">·</button>
+          <button class="jog-btn" data-jog="x+" title="X+">→</button>
+          <button class="jog-btn home" data-jog="home-x" title="Home X">X</button>
+          <button class="jog-btn" data-jog="y-" title="Y-">↓</button>
+          <button class="jog-btn home" data-jog="home-y" title="Home Y">Y</button>
+        </div>
+        <div class="z-pad">
+          <button class="jog-btn" data-jog="z+" title="Z+">↑</button>
+          <button class="jog-btn home" data-jog="home-z" title="Home Z">Z</button>
+          <button class="jog-btn" data-jog="z-" title="Z-">↓</button>
+          <button class="jog-btn home no-icon" data-jog="z-zero" title="Set Z=0 (G92 Z0)" style="color: var(--info); border-color: var(--info);">Z=0</button>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-bottom: 4px;">
+        <button class="btn" id="btn-set-origin" style="flex: 1;" title="G92 X0 Y0 Z0 — set current position as machine zero">⊕ Set Origin (G92)</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn danger" id="btn-stop" style="flex: 1;">⬛ STOP</button>
+        <button class="btn sm" id="btn-disable-motors" title="M84 disable steppers">M84</button>
+      </div>
+    </div>
+
+    <!-- Substrate Settings -->
+    <div class="section fixed">
+      <div class="section-title">Origin & Z</div>
+      <div class="field-row">
+        <div class="field" style="margin: 0;">
+          <label>Origin X</label>
+          <input type="number" id="origin-x" value="0" step="0.1"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Origin Y</label>
+          <input type="number" id="origin-y" value="0" step="0.1"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 6px;">
+        <div class="field" style="margin: 0;">
+          <label>Print Z</label>
+          <input type="number" id="print-z" value="0.5" step="0.1"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Travel Z</label>
+          <input type="number" id="travel-z" value="2" step="0.1"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedrates -->
+    <div class="section fixed">
+      <div class="section-title">Feedrate (mm/min)</div>
+      <div class="range-row">
+        <label>Print</label>
+        <input type="range" id="print-feed" min="60" max="3000" value="600" step="10"/>
+        <span class="v" id="print-feed-v">600</span>
+      </div>
+      <div class="range-row">
+        <label>Travel</label>
+        <input type="range" id="travel-feed" min="600" max="6000" value="3000" step="100"/>
+        <span class="v" id="travel-feed-v">3000</span>
+      </div>
+      <div class="range-row">
+        <label>Jog</label>
+        <input type="range" id="jog-feed" min="60" max="6000" value="1500" step="60"/>
+        <span class="v" id="jog-feed-v">1500</span>
+      </div>
+    </div>
+
+    <!-- Printhead Control -->
+    <div class="section fixed">
+      <div class="section-title">
+        <span>Printhead</span>
+        <div class="actions">
+          <button class="btn sm danger" id="btn-pressure-all-off" title="Turn off both printheads (M761 + M763)">All Off</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom: 8px;">
+        <label>Type</label>
+        <div class="btn-row">
+          <button class="btn sm head-type-btn active" data-type="pressure" style="flex: 1;">Pressure (M-codes)</button>
+          <button class="btn sm head-type-btn" data-type="extrusion" style="flex: 1;">Extrusion (E-axis)</button>
+        </div>
+      </div>
+
+      <!-- Pressure-mode UI: shown when type=pressure -->
+      <div id="head-pressure-ui">
+        <div class="pressure-grid">
+          <div class="pressure-cell">
+            <div class="pressure-label">Printhead 1</div>
+            <div class="pressure-state" id="ph1-state">OFF</div>
+            <div class="btn-row" style="margin-top: 6px;">
+              <button class="btn primary sm pressure-on" data-head="1" data-on="M760" style="flex: 1;">ON</button>
+              <button class="btn sm pressure-off" data-head="1" data-off="M761" style="flex: 1;">OFF</button>
+            </div>
+          </div>
+          <div class="pressure-cell">
+            <div class="pressure-label">Printhead 2</div>
+            <div class="pressure-state" id="ph2-state">OFF</div>
+            <div class="btn-row" style="margin-top: 6px;">
+              <button class="btn primary sm pressure-on" data-head="2" data-on="M762" style="flex: 1;">ON</button>
+              <button class="btn sm pressure-off" data-head="2" data-off="M763" style="flex: 1;">OFF</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 8px; font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em;">
+          Auto-wrap during print
+        </div>
+        <select id="auto-pressure" style="margin-top: 4px; font-size: 10px;">
+          <option value="none" selected>None (manual)</option>
+          <option value="1">Use Printhead 1 (M760/M761)</option>
+          <option value="2">Use Printhead 2 (M762/M763)</option>
+        </select>
+      </div>
+
+      <!-- Extrusion-mode UI: shown when type=extrusion -->
+      <div id="head-extrusion-ui" style="display: none;">
+        <div class="field-row">
+          <div class="field" style="margin: 0;">
+            <label>Multiplier</label>
+            <input type="number" id="ext-multiplier" value="0.05" step="0.01" min="0.001" title="E mm per mm of travel"/>
+          </div>
+          <div class="field" style="margin: 0;">
+            <label>Retract mm</label>
+            <input type="number" id="ext-retract" value="2" step="0.1" min="0" title="Retract on travel (0 to disable)"/>
+          </div>
+        </div>
+        <div style="margin-top: 6px; font-size: 9px; color: var(--text-faint); line-height: 1.5;">
+          E values appended to G1 print moves. Travels (G0) get retract/unretract if enabled.
+        </div>
+        <div style="margin-top: 8px; font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em;">
+          Auto-extrude during print
+        </div>
+        <select id="auto-extrusion" style="margin-top: 4px; font-size: 10px;">
+          <option value="none" selected>None (paths only, no E)</option>
+          <option value="enabled">Append E values to print moves</option>
+        </select>
+        <div class="btn-row" style="margin-top: 8px;">
+          <button class="btn sm" id="btn-reset-e" style="flex: 1;" title="G92 E0">Reset E (G92 E0)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Macros -->
+    <div class="section fixed">
+      <div class="section-title">
+        <span>Custom Macros</span>
+        <div class="actions">
+          <button class="btn sm" id="btn-show-macro-form">+ New</button>
+        </div>
+      </div>
+      <div id="macro-list" class="macro-grid"></div>
+      <div id="macro-form" style="display: none;">
+        <input type="text" id="macro-name" placeholder="Macro name" style="margin-bottom: 4px;"/>
+        <textarea id="macro-body" placeholder="G-code (one per line)" style="height: 60px; font-size: 10px; margin-bottom: 4px;"></textarea>
+        <div class="btn-row">
+          <button class="btn primary sm" id="btn-save-macro" style="flex: 1;">Save</button>
+          <button class="btn sm" id="btn-cancel-macro">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ CENTER COLUMN ============ -->
+  <div class="col center">
+
+    <!-- View mode tabs -->
+    <div class="bed-mode-tabs">
+      <button class="bed-mode-tab active" data-mode="bed">Bed</button>
+      <button class="bed-mode-tab" data-mode="draw">Draw</button>
+      <button class="bed-mode-tab" data-mode="preview">G-code Preview</button>
+      <button class="bed-mode-tab" data-mode="3d">3D View</button>
+    </div>
+
+    <div class="bed-views">
+      <!-- BED VIEW -->
+      <div class="bed-view active" data-mode="bed">
+        <div class="bed-container">
+          <div class="bed-overlay">
+            Bed · <span class="substrate" id="substrate-label-1">35 MM PETRI</span> · click to jog · shift+click for travel-Z
+          </div>
+          <div class="bed-canvas-wrap">
+            <canvas id="bed-canvas-control" class="clickable" width="600" height="600"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRAW VIEW -->
+      <div class="bed-view" data-mode="draw">
+        <div class="draw-toolbar">
+          <button class="tool-btn active" data-tool="pen">Pen</button>
+          <button class="tool-btn" data-tool="line">Line</button>
+          <button class="tool-btn" data-tool="rect">Rect</button>
+          <button class="tool-btn" data-tool="circle">Circle</button>
+          <button class="tool-btn" data-tool="path3d" title="3D Path: click points one at a time. Step Z between clicks to make branches go in any direction.">3D Path</button>
+          <button class="tool-btn" data-tool="erase">Erase</button>
+          <div class="toolbar-sep"></div>
+          <button class="btn sm btn-undo-style" id="btn-undo" title="Undo last action">↶ Undo</button>
+          <button class="btn sm btn-clear-style" id="btn-clear-draw" title="Clear all paths">✕ Clear</button>
+          <button class="btn sm btn-optimize-style" id="btn-optimize" title="Reorder paths to minimize travel">⇄ Optimize</button>
+          <div class="toolbar-sep"></div>
+          <button class="btn primary sm" id="btn-drawing-to-gcode">→ G-code</button>
+          <span class="toolbar-info" id="draw-info">0 paths</span>
+        </div>
+        <div class="draw-toolbar" style="border-top: none;">
+          <div class="z-control-group">
+            <span class="z-label">Z</span>
+            <button class="btn sm z-btn" id="btn-z-down" title="Z down by step">−</button>
+            <input type="number" id="draw-z" value="0" step="0.1" class="z-value" title="Current Z (mm). All new strokes use this Z. Change Z mid-path in 3D Path mode to make branches go in any direction."/>
+            <button class="btn sm z-btn" id="btn-z-up" title="Z up by step">+</button>
+            <span class="z-label" style="margin-left: 4px; opacity: 0.6;">Step</span>
+            <input type="number" id="draw-z-step" value="0.4" step="0.05" min="0.05" class="z-value" style="width: 50px;" title="Step size for Z +/− buttons"/>
+          </div>
+          <div class="toolbar-sep"></div>
+          <button class="tool-btn" id="btn-side-view" title="Toggle XZ side view">XZ Side</button>
+          <button class="btn sm" id="btn-finish-3d-path" title="Finish current 3D path" style="display: none;">✓ Finish Path</button>
+          <span class="toolbar-info" id="path3d-info" style="display: none; color: var(--accent);">3D Path: click points · Esc to cancel</span>
+        </div>
+        <div class="bed-container" id="draw-bed-container">
+          <div class="bed-overlay">
+            Sketch · <span class="substrate" id="substrate-label-2">35 MM PETRI</span>
+          </div>
+          <div class="bed-canvas-wrap" id="draw-canvas-wrap">
+            <canvas id="draw-canvas" width="700" height="600"></canvas>
+          </div>
+          <div class="bed-canvas-wrap" id="side-canvas-wrap" style="display: none; margin-left: 8px; flex: 1;">
+            <div style="position: absolute; top: 6px; left: 8px; font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; pointer-events: none; z-index: 2;">XZ Side View · Y collapsed</div>
+            <canvas id="side-canvas" width="500" height="600"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIEW VIEW -->
+      <div class="bed-view" data-mode="preview">
+        <div class="draw-toolbar">
+          <span style="font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em;">Layers</span>
+          <input type="range" id="layer-slider" min="0" max="0" value="0" step="1" style="flex: 1; max-width: 280px;" disabled/>
+          <span class="toolbar-info" id="layer-info" style="margin-left: 0;">All layers</span>
+          <div class="toolbar-sep"></div>
+          <button class="tool-btn active" id="layer-mode-all">All</button>
+          <button class="tool-btn" id="layer-mode-cumulative">Up to</button>
+          <button class="tool-btn" id="layer-mode-single">Single</button>
+        </div>
+        <div class="bed-container">
+          <div class="bed-overlay">
+            G-code Preview · <span class="substrate" id="substrate-label-3">35 MM PETRI</span>
+          </div>
+          <div class="bed-canvas-wrap">
+            <canvas id="preview-canvas" width="700" height="600"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3D VIEW -->
+      <div class="bed-view" data-mode="3d">
+        <div class="draw-toolbar">
+          <button class="tool-btn active" id="src3d-paths">Paths</button>
+          <button class="tool-btn" id="src3d-gcode">G-code</button>
+          <button class="tool-btn" id="src3d-stl">STL Mesh</button>
+          <div class="toolbar-sep"></div>
+          <button class="btn sm" id="reset3d-view" title="Reset camera">Reset View</button>
+          <span class="toolbar-info" id="info3d">Drag to rotate · scroll to zoom · right-drag to pan</span>
+        </div>
+        <div class="bed-container" id="container-3d">
+          <div class="bed-overlay">
+            3D View · <span class="substrate" id="substrate-label-4">35 MM PETRI</span>
+          </div>
+          <div class="bed-canvas-wrap" id="three-wrap" style="background: var(--canvas-bg);"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ RIGHT COLUMN ============ -->
+  <div class="col">
+
+    <!-- Console -->
+    <div class="section fixed" style="display: flex; flex-direction: column; padding-bottom: 12px;">
+      <div class="section-title">
+        <span>Console</span>
+        <div class="actions">
+          <button class="btn sm quick-cmd" data-cmd="M114">Pos</button>
+          <button class="btn sm quick-cmd" data-cmd="M105">Temp</button>
+          <button class="btn sm quick-cmd" data-cmd="M119">EndS</button>
+          <button class="btn sm" id="btn-clear-console">Clear</button>
+        </div>
+      </div>
+      <div class="console" id="console" style="height: 120px; flex: none;"></div>
+      <div class="send-row">
+        <input type="text" id="cmd-input" placeholder="G1 X10 Y10 F600" autocomplete="off"/>
+        <button class="btn primary sm" id="btn-send">Send</button>
+      </div>
+    </div>
+
+    <!-- Print Job -->
+    <div class="section fixed print-job-section">
+      <div class="section-title">
+        <span>Print Job</span>
+        <div class="actions">
+          <input type="file" id="gcode-file" accept=".gcode,.nc,.txt" style="display: none;"/>
+          <button class="btn sm" id="btn-load-file">Load File</button>
+        </div>
+      </div>
+
+      <div class="viewer-toggle">
+        <button class="active" id="viewer-edit">Edit</button>
+        <button id="viewer-live">Live</button>
+      </div>
+      <textarea id="gcode-text" class="gcode-input" placeholder="Paste G-code, generate from Draw tab, or load file..."></textarea>
+      <div id="gcode-viewer" class="gcode-viewer"></div>
+
+      <div class="print-stats" style="margin-top: 8px;">
+        <div class="stat-cell">
+          <div class="stat-label">Lines</div>
+          <div class="stat-val" id="stat-lines">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Sent</div>
+          <div class="stat-val" id="stat-sent">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">X mm</div>
+          <div class="stat-val" id="stat-x" style="font-size: 10px;">--</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Y mm</div>
+          <div class="stat-val" id="stat-y" style="font-size: 10px;">--</div>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+
+      <div class="btn-row">
+        <button class="btn primary" id="btn-start" style="flex: 1;">▶ Start</button>
+        <button class="btn" id="btn-pause" disabled>⏸</button>
+        <button class="btn danger" id="btn-stop-print" disabled>⬛</button>
+      </div>
+      <div id="preflight" class="preflight" style="margin-top: 6px;">Load G-code to validate.</div>
+    </div>
+
+    <!-- Generators -->
+    <div class="section fixed">
+      <div class="section-title">Scaffold Generator</div>
+      <div class="field-row">
+        <div class="field" style="margin: 0;">
+          <label>Pattern</label>
+          <select id="scaffold-pattern" style="font-size: 10px;">
+            <option value="grid">Grid</option>
+            <option value="lattice">Lattice (0/90)</option>
+            <option value="hex">Hexagonal</option>
+            <option value="concentric">Concentric</option>
+          </select>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Spacing mm</label>
+          <input type="number" id="scaffold-spacing" value="2" step="0.1" min="0.1"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>W mm</label>
+          <input type="number" id="scaffold-w" value="20" min="2" max="200"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>H mm</label>
+          <input type="number" id="scaffold-h" value="20" min="2" max="200"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px; margin-bottom: 6px;">
+        <div class="field" style="margin: 0;">
+          <label>Layers</label>
+          <input type="number" id="scaffold-layers" value="1" min="1" max="50"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Layer H</label>
+          <input type="number" id="scaffold-layerH" value="0.4" step="0.05" min="0.05"/>
+        </div>
+      </div>
+      <button class="btn primary sm" id="btn-gen-scaffold" style="width: 100%;">Generate Scaffold</button>
+    </div>
+
+    <!-- Vascular Tree Generator -->
+    <div class="section fixed">
+      <div class="section-title">Vascular Tree</div>
+
+      <div class="field" style="margin-bottom: 8px;">
+        <label>Preset</label>
+        <select id="vasc-preset" style="font-size: 10px;">
+          <option value="">— custom —</option>
+          <option value="coronary">Coronary (cardiac, dense low)</option>
+          <option value="pulmonary">Pulmonary (tall, broad fan)</option>
+          <option value="hepatic">Hepatic portal (3-way trunk)</option>
+          <option value="kidney">Kidney glomerulus (radial)</option>
+          <option value="liver-lobule">Liver lobule (concentric)</option>
+          <option value="bonsai">Bonsai (sparse, picturesque)</option>
+          <option value="dense">Dense capillary network</option>
+          <option value="flat">Flat 2D fan (no Z)</option>
+        </select>
+      </div>
+
+      <div class="field-row">
+        <div class="field" style="margin: 0;">
+          <label>Trunk H mm</label>
+          <input type="number" id="vasc-height" value="10" step="0.5" min="2"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Trunk Ø mm</label>
+          <input type="number" id="vasc-trunk-d" value="2" step="0.1" min="0.2" title="Visual reference; affects branch start positions"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Levels</label>
+          <input type="number" id="vasc-levels" value="3" min="1" max="6" title="Bifurcation depth (more = exponentially more branches)"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Density</label>
+          <input type="number" id="vasc-branches" value="2" min="2" max="8" title="Branches per node. 2=bifurcation, 3=trichotomy, 4-8=denser/whorl-like"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Branch ang°</label>
+          <input type="number" id="vasc-angle" value="35" min="5" max="80" title="Spread angle from parent direction"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Length ratio</label>
+          <input type="number" id="vasc-length-ratio" value="0.7" step="0.05" min="0.3" max="0.95" title="Each generation is this fraction of parent (Murray's law ~0.7)"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Z spread°</label>
+          <input type="number" id="vasc-z-spread" value="40" min="0" max="80" title="Branch tilt out of XY plane (0 = flat, 80 = highly 3D)"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Randomness</label>
+          <input type="number" id="vasc-jitter" value="0.15" step="0.05" min="0" max="0.5" title="0 = perfectly symmetric, 0.5 = biological asymmetry"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Pattern</label>
+          <select id="vasc-pattern" style="font-size: 10px;">
+            <option value="bifurcation" selected>Bifurcation (2-way)</option>
+            <option value="trichotomy">Trichotomy (3-way)</option>
+            <option value="alternating">Alternating (rotated 90°)</option>
+            <option value="whorl">Whorl (radial, uses Density)</option>
+          </select>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Seed</label>
+          <input type="number" id="vasc-seed" value="42" min="0" title="Same seed = same shape (for reproducibility)"/>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top: 6px;">
+        <button class="btn primary sm" id="btn-gen-vasc" style="flex: 1;">Generate Tree</button>
+        <button class="btn sm" id="btn-vasc-randomize" title="New random seed and regenerate">⟳</button>
+      </div>
+    </div>
+
+    <!-- Text to G-code -->
+    <div class="section fixed">
+      <div class="section-title">Text → G-code</div>
+      <input type="text" id="text-input" placeholder="Sample 1" style="margin-bottom: 4px;"/>
+      <div class="field-row">
+        <div class="field" style="margin: 0;">
+          <label>Font</label>
+          <select id="text-font" style="font-size: 10px;">
+            <option value="sans-serif" selected>Sans-serif</option>
+            <option value="serif">Serif</option>
+            <option value="monospace">Mono</option>
+            <option value="cursive">Cursive</option>
+          </select>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Weight</label>
+          <select id="text-weight" style="font-size: 10px;">
+            <option value="400" selected>Regular</option>
+            <option value="700">Bold</option>
+            <option value="100">Thin</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Height mm</label>
+          <input type="number" id="text-size" value="8" min="1" max="200" step="0.5"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Style</label>
+          <select id="text-style" style="font-size: 10px;">
+            <option value="outline" selected>Outline (thin)</option>
+            <option value="centerline">Centerline (single stroke)</option>
+            <option value="filled">Filled (raster)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary sm" id="btn-text-trace" style="width: 100%;">Generate Text</button>
+    </div>
+
+    <!-- Image / SVG to G-code -->
+    <div class="section fixed">
+      <div class="section-title">
+        <span>Image / SVG → G-code</span>
+        <div class="actions">
+          <input type="file" id="img-file" accept="image/*,.svg,image/svg+xml" style="display: none;"/>
+          <button class="btn sm" id="btn-load-img">Load File</button>
+        </div>
+      </div>
+      <div class="img-preview" id="img-preview">
+        <div class="placeholder">No file loaded</div>
+      </div>
+      <div class="field-row">
+        <div class="field" style="margin: 0;">
+          <label>Mode</label>
+          <select id="img-mode" style="font-size: 10px;">
+            <option value="centerline" selected>Centerline (path)</option>
+            <option value="contour">Contour (outline)</option>
+            <option value="raster">Raster (fill)</option>
+          </select>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Size mm</label>
+          <input type="number" id="img-size" value="20" min="5" max="200"/>
+        </div>
+      </div>
+      <div class="range-row" style="margin-top: 4px;" id="row-threshold">
+        <label>Thresh</label>
+        <input type="range" id="img-threshold" min="20" max="240" value="128" step="1"/>
+        <span class="v" id="img-threshold-v">128</span>
+      </div>
+      <div class="range-row" id="row-detail">
+        <label>Detail</label>
+        <input type="range" id="img-detail" min="20" max="200" value="80" step="5"/>
+        <span class="v" id="img-detail-v">80</span>
+      </div>
+      <div class="range-row" id="row-svg-flat" style="display: none;">
+        <label>Smooth</label>
+        <input type="range" id="svg-flat" min="0.05" max="2" value="0.3" step="0.05"/>
+        <span class="v" id="svg-flat-v">0.3</span>
+      </div>
+      <button class="btn primary sm" id="btn-img-trace" style="width: 100%;" disabled>Trace</button>
+    </div>
+
+    <!-- STL Slicer -->
+    <div class="section fixed">
+      <div class="section-title">
+        <span>STL → Layers</span>
+        <div class="actions">
+          <input type="file" id="stl-file" accept=".stl" style="display: none;"/>
+          <button class="btn sm" id="btn-load-stl">Load STL</button>
+        </div>
+      </div>
+      <div id="stl-info" style="font-size: 10px; color: var(--text-faint); margin-bottom: 6px; line-height: 1.5;">
+        No STL loaded. Slicing will produce printable layer paths.
+      </div>
+      <div class="field-row">
+        <div class="field" style="margin: 0;">
+          <label>Layer H mm</label>
+          <input type="number" id="stl-layer-h" value="0.4" step="0.05" min="0.05"/>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Fit mm</label>
+          <input type="number" id="stl-fit" value="20" min="2" max="200"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Mode</label>
+          <select id="stl-mode" style="font-size: 10px;">
+            <option value="outline" selected>Outline only</option>
+            <option value="infill">Outline + infill</option>
+          </select>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Infill spc</label>
+          <input type="number" id="stl-infill-spacing" value="2" step="0.1" min="0.2"/>
+        </div>
+      </div>
+      <div class="field-row" style="margin-top: 4px;">
+        <div class="field" style="margin: 0;">
+          <label>Z origin</label>
+          <select id="stl-z-origin" style="font-size: 10px;">
+            <option value="bottom" selected>Bottom (Z=0)</option>
+            <option value="center">Center</option>
+          </select>
+        </div>
+        <div class="field" style="margin: 0;">
+          <label>Infill type</label>
+          <select id="stl-infill-pattern" style="font-size: 10px;">
+            <option value="lattice" selected>Lattice (0/90)</option>
+            <option value="grid">Grid (both)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary sm" id="btn-slice-stl" style="width: 100%; margin-top: 6px;" disabled>Slice STL → Paths</button>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <div class="stat"><span>Substrate</span><span class="v" id="footer-substrate">35 mm petri</span></div>
+  <div class="stat"><span>Bounds</span><span class="v" id="footer-bounds">35 × 35 mm</span></div>
+  <div class="stat"><span>Mode</span><span class="v" id="footer-mode">Idle</span></div>
+  <div class="spacer"></div>
+  <div class="stat"><span>Queue</span><span class="v" id="footer-queue">0</span></div>
+  <div class="stat"><span id="footer-clock">--:--:--</span></div>
+  <div class="stat" style="color: var(--accent-dim);">Ozbolat Lab · 2026 · Made by Ozer</div>
+</footer>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Confirm</h3>
+    <p id="modal-body">Are you sure?</p>
+    <div class="btn-row" style="justify-content: flex-end;">
+      <button class="btn" id="modal-cancel">Cancel</button>
+      <button class="btn primary" id="modal-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="help-modal">
+  <div class="modal" style="width: 460px;">
+    <h3>Keyboard Shortcuts</h3>
+    <div class="kbd-hint" style="font-size: 11px; line-height: 1.9; gap: 6px 14px;">
+      <span class="kbd">← →</span><span>Jog X axis (left / right)</span>
+      <span class="kbd">↑ ↓</span><span>Jog Y axis (up / down)</span>
+      <span class="kbd">PgUp PgDn</span><span>Jog Z axis (raise / lower)</span>
+      <span class="kbd">1 2 3 4</span><span>Step size: 0.1 / 1 / 10 / 50 mm</span>
+      <span class="kbd">H</span><span>Home all axes (G28)</span>
+      <span class="kbd">Space</span><span>Emergency stop (M112) · with confirm</span>
+      <span class="kbd">Esc</span><span>Pause / resume current print</span>
+      <span class="kbd">Ctrl + L</span><span>Clear console</span>
+    </div>
+    <p style="font-size: 10px; color: var(--text-faint); margin-top: 14px; line-height: 1.6;">
+      Shortcuts are disabled while you're typing in any input or textarea, so you can use the console send box and G-code editor freely.
+    </p>
+    <div class="btn-row" style="justify-content: flex-end;">
+      <button class="btn primary" id="help-close">Got it</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const state = {
+  port: null, reader: null, writer: null,
+  connected: false, busy: false,
+  position: { x: 0, y: 0, z: 0 },
+  step: 1,
+  feedrates: { print: 600, travel: 3000, jog: 1500 },
+  substrate: 'petri35',
+  origin: { x: 0, y: 0 },
+  printZ: 0.5, travelZ: 2,
+  drawTool: 'pen',
+  drawPaths: [],
+  currentPath: null,
+  shapeStart: null,
+  drawHistory: [],
+  printQueue: [],
+  printIndex: 0,
+  printing: false,
+  paused: false,
+  parsedGcode: null,
+  rxBuffer: '',
+  awaitingOk: false,
+};
+
+const SUBSTRATES = {
+  petri35:  { name: '35 mm petri', shape: 'circle', d: 35,  w: 35,  h: 35  },
+  petri60:  { name: '60 mm petri', shape: 'circle', d: 60,  w: 60,  h: 60  },
+  petri100: { name: '100 mm petri', shape: 'circle', d: 100, w: 100, h: 100 },
+  slide:    { name: '75 × 25 mm slide', shape: 'rect', w: 75, h: 25 },
+  custom:   { name: 'Custom', shape: 'rect', w: 50, h: 50 },
+};
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+function ts() { return new Date().toTimeString().slice(0, 8); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+function logLine(text, kind = 'sys') {
+  const c = $('#console');
+  const div = document.createElement('div');
+  div.className = 'console-line ' + kind;
+  div.innerHTML = `<span class="ts">${ts()}</span>${escapeHtml(text)}`;
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+  while (c.children.length > 500) c.removeChild(c.firstChild);
+}
+function setStatus(text, cls) {
+  $('#status-text').textContent = text;
+  const dot = $('#status-dot');
+  dot.classList.remove('connected', 'busy');
+  if (cls) dot.classList.add(cls);
+}
+function setMode(m) { $('#footer-mode').textContent = m; }
+
+// ============ THEME ============
+const themeBtn = $('#theme-toggle');
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  themeBtn.textContent = theme === 'dark' ? '☾' : '☀';
+  try { localStorage.setItem('bp-theme', theme); } catch (e) {}
+  requestAnimationFrame(() => {
+    resizeCanvases();
+    drawBedCanvas(); drawSketchCanvas(); drawPreviewCanvas();
+  });
+}
+themeBtn.addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+try {
+  const saved = localStorage.getItem('bp-theme');
+  if (saved) applyTheme(saved);
+} catch (e) {}
+
+// ============ BED VIEW MODES ============
+$$('.bed-mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mode = tab.dataset.mode;
+    $$('.bed-mode-tab').forEach(t => t.classList.remove('active'));
+    $$('.bed-view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector(`.bed-view[data-mode="${mode}"]`).classList.add('active');
+    requestAnimationFrame(() => {
+      resizeCanvases();
+      drawBedCanvas(); drawSketchCanvas(); drawPreviewCanvas();
+      if (mode === '3d') {
+        init3DScene();   // lazy init on first activation
+        update3DScene();
+        start3DLoop();
+      } else {
+        stop3DLoop();
+      }
+    });
+  });
+});
+
+// ============ SERIAL ============
+async function connect() {
+  if (!('serial' in navigator)) {
+    logLine('Web Serial API unavailable. Use Chrome/Edge served via http(s).', 'err');
+    return;
+  }
+  try {
+    state.port = await navigator.serial.requestPort();
+    const baudRate = parseInt($('#baud').value, 10);
+    await state.port.open({ baudRate, dataBits: 8, parity: 'none', stopBits: 1 });
+    state.connected = true;
+    setStatus('Connected', 'connected');
+    logLine(`Opened port @ ${baudRate} baud`, 'ok');
+    state.writer = state.port.writable.getWriter();
+    readLoop();
+    $('#btn-connect').disabled = true;
+    $('#btn-disconnect').disabled = false;
+    setMode('Connected');
+  } catch (err) {
+    logLine('Connect failed: ' + err.message, 'err');
+  }
+}
+
+async function disconnect() {
+  try {
+    if (state.reader) { await state.reader.cancel().catch(() => {}); state.reader = null; }
+    if (state.writer) { try { state.writer.releaseLock(); } catch (e) {} state.writer = null; }
+    if (state.port) { await state.port.close().catch(() => {}); state.port = null; }
+  } catch (err) { logLine('Disconnect error: ' + err.message, 'err'); }
+  state.connected = false;
+  setStatus('Disconnected', null);
+  setMode('Idle');
+  $('#btn-connect').disabled = false;
+  $('#btn-disconnect').disabled = true;
+  logLine('Disconnected.', 'sys');
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  try {
+    while (state.port && state.port.readable) {
+      state.reader = state.port.readable.getReader();
+      try {
+        while (true) {
+          const { value, done } = await state.reader.read();
+          if (done) break;
+          if (value) {
+            state.rxBuffer += decoder.decode(value, { stream: true });
+            let nl;
+            while ((nl = state.rxBuffer.indexOf('\n')) >= 0) {
+              const line = state.rxBuffer.slice(0, nl).replace(/\r$/, '');
+              state.rxBuffer = state.rxBuffer.slice(nl + 1);
+              if (line.length) handleRxLine(line);
+            }
+          }
+        }
+      } catch (err) { logLine('Read error: ' + err.message, 'err'); }
+      finally { try { state.reader.releaseLock(); } catch (e) {} state.reader = null; }
+    }
+  } catch (err) { logLine('Loop error: ' + err.message, 'err'); }
+}
+
+function handleRxLine(line) {
+  logLine('< ' + line, 'rx');
+  const m = line.match(/X:(-?[\d.]+)\s+Y:(-?[\d.]+)\s+Z:(-?[\d.]+)/);
+  if (m) {
+    state.position.x = parseFloat(m[1]);
+    state.position.y = parseFloat(m[2]);
+    state.position.z = parseFloat(m[3]);
+    updatePositionDisplay();
+    drawBedCanvas();
+  }
+  if (/^ok\b/i.test(line)) {
+    state.awaitingOk = false;
+    if (state.printing && !state.paused) sendNextPrintLine();
+  }
+}
+
+async function sendCommand(cmd) {
+  if (!state.connected || !state.writer) {
+    logLine('Not connected.', 'err');
+    return;
+  }
+  const line = cmd.trim();
+  if (!line) return;
+  // Sync pressure UI if this command toggles a printhead
+  const upper = line.toUpperCase();
+  if (upper.startsWith('M760')) setPressureState(1, true);
+  else if (upper.startsWith('M761')) setPressureState(1, false);
+  else if (upper.startsWith('M762')) setPressureState(2, true);
+  else if (upper.startsWith('M763')) setPressureState(2, false);
+  const data = new TextEncoder().encode(line + '\n');
+  try {
+    await state.writer.write(data);
+    logLine('> ' + line, 'tx');
+  } catch (err) { logLine('Write error: ' + err.message, 'err'); }
+}
+
+$('#btn-connect').addEventListener('click', connect);
+$('#btn-disconnect').addEventListener('click', disconnect);
+$('#btn-clear-console').addEventListener('click', () => { $('#console').innerHTML = ''; });
+$('#btn-send').addEventListener('click', () => {
+  const v = $('#cmd-input').value;
+  if (v.trim()) { sendCommand(v); $('#cmd-input').value = ''; }
+});
+$('#cmd-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('#btn-send').click();
+});
+$$('.quick-cmd').forEach(b => {
+  b.addEventListener('click', () => sendCommand(b.dataset.cmd));
+});
+
+// ============ POSITION & JOG ============
+function updatePositionDisplay() {
+  $('#pos-x').textContent = state.position.x.toFixed(3);
+  $('#pos-y').textContent = state.position.y.toFixed(3);
+  $('#pos-z').textContent = state.position.z.toFixed(3);
+}
+
+$$('#step-selector .step-btn').forEach(b => {
+  b.addEventListener('click', () => setStep(parseFloat(b.dataset.step)));
+});
+
+function setStep(v) {
+  state.step = v;
+  $$('#step-selector .step-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.dataset.step) === v);
+  });
+}
+
+function jog(axis, dir) {
+  const f = state.feedrates.jog;
+  const d = state.step * dir;
+  sendCommand('G91');
+  sendCommand(`G1 ${axis}${d} F${f}`);
+  sendCommand('G90');
+  setTimeout(() => sendCommand('M114'), 100);
+}
+
+$$('.jog-btn[data-jog]').forEach(b => {
+  b.addEventListener('click', () => {
+    const j = b.dataset.jog;
+    switch (j) {
+      case 'x+': jog('X',  1); break;
+      case 'x-': jog('X', -1); break;
+      case 'y+': jog('Y',  1); break;
+      case 'y-': jog('Y', -1); break;
+      case 'z+': jog('Z',  1); break;
+      case 'z-': jog('Z', -1); break;
+      case 'home-x':   sendCommand('G28 X'); break;
+      case 'home-y':   sendCommand('G28 Y'); break;
+      case 'home-z':   sendCommand('G28 Z'); break;
+      case 'home-xy':  sendCommand('G28 X Y'); break;
+      case 'home-all': sendCommand('G28'); break;
+      case 'z-zero':   sendCommand('G92 Z0'); break;
+    }
+  });
+});
+
+$('#btn-stop').addEventListener('click', () => {
+  confirmAction('Emergency Stop', 'Send M112? Halts the printer immediately. Both pressures will be turned off.', () => {
+    // Pressures off FIRST so the printer doesn't keep extruding after halt
+    sendCommand('M761');
+    sendCommand('M763');
+    sendCommand('M112');
+    state.printing = false; state.paused = false;
+    setMode('Halted');
+  });
+});
+$('#btn-disable-motors').addEventListener('click', () => sendCommand('M84'));
+
+$('#btn-set-origin').addEventListener('click', () => {
+  if (!state.connected) { logLine('Connect first.', 'err'); return; }
+  confirmAction(
+    'Set Machine Zero',
+    `Send G92 X0 Y0 Z0? The printer's current position (X=${state.position.x.toFixed(2)}, Y=${state.position.y.toFixed(2)}, Z=${state.position.z.toFixed(2)}) will become the new machine zero. Homing reference is lost until you home again.`,
+    () => {
+      sendCommand('G92 X0 Y0 Z0');
+      // Update local position immediately so the bed marker snaps to (0,0)
+      state.position.x = 0;
+      state.position.y = 0;
+      state.position.z = 0;
+      updatePositionDisplay();
+      drawBedCanvas();
+      logLine('Machine zero set at previous position.', 'ok');
+    }
+  );
+});
+
+['print-feed','travel-feed','jog-feed'].forEach(id => {
+  const el = $('#' + id);
+  const v = $('#' + id + '-v');
+  el.addEventListener('input', () => {
+    v.textContent = el.value;
+    state.feedrates[id.replace('-feed','')] = parseInt(el.value, 10);
+  });
+});
+
+// ============ SUBSTRATE ============
+function getSubstrate() {
+  const s = SUBSTRATES[state.substrate];
+  if (state.substrate === 'custom') {
+    const w = parseFloat($('#custom-w').value) || 50;
+    const h = parseFloat($('#custom-h').value) || 50;
+    return { ...s, w, h };
+  }
+  return s;
+}
+function updateSubstrate() {
+  state.substrate = $('#substrate').value;
+  const showCustom = state.substrate === 'custom';
+  $('#custom-w').style.display = showCustom ? '' : 'none';
+  $('#custom-h').style.display = showCustom ? '' : 'none';
+  const s = getSubstrate();
+  const label = s.name.toUpperCase();
+  $('#substrate-label-1').textContent = label;
+  $('#substrate-label-2').textContent = label;
+  $('#substrate-label-3').textContent = label;
+  $('#substrate-label-4').textContent = label;
+  $('#footer-substrate').textContent = s.name;
+  $('#footer-bounds').textContent = s.shape === 'circle' ? `Ø ${s.d} mm` : `${s.w} × ${s.h} mm`;
+  drawBedCanvas(); drawSketchCanvas(); drawPreviewCanvas();
+}
+$('#substrate').addEventListener('change', updateSubstrate);
+['custom-w','custom-h'].forEach(id => $('#' + id).addEventListener('input', updateSubstrate));
+$('#origin-x').addEventListener('input', () => { state.origin.x = parseFloat($('#origin-x').value) || 0; drawBedCanvas(); drawPreviewCanvas(); });
+$('#origin-y').addEventListener('input', () => { state.origin.y = parseFloat($('#origin-y').value) || 0; drawBedCanvas(); drawPreviewCanvas(); });
+$('#print-z').addEventListener('input', () => state.printZ = parseFloat($('#print-z').value) || 0);
+$('#travel-z').addEventListener('input', () => state.travelZ = parseFloat($('#travel-z').value) || 0);
+
+function isInside(x, y) {
+  const s = getSubstrate();
+  if (s.shape === 'circle') {
+    const r = s.d / 2;
+    return (x*x + y*y) <= r*r + 1e-6;
+  }
+  return Math.abs(x) <= s.w/2 + 1e-6 && Math.abs(y) <= s.h/2 + 1e-6;
+}
+
+// ============ CANVAS RESIZING ============
+function resizeCanvases() {
+  ['bed-canvas-control','draw-canvas','preview-canvas','side-canvas'].forEach(id => {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const wrap = c.parentElement;
+    const rect = wrap.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      const size = Math.min(rect.width, rect.height);
+      c.width = size;
+      c.height = size;
+    }
+  });
+}
+
+// ============ BED CANVAS ============
+function drawBedCanvas() {
+  const canvas = $('#bed-canvas-control');
+  const ctx = canvas.getContext('2d');
+  const s = getSubstrate();
+  const W = canvas.width, H = canvas.height;
+  if (W < 10 || H < 10) return;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = cssVar('--canvas-bg');
+  ctx.fillRect(0, 0, W, H);
+
+  const pad = 30;
+  const dim = s.shape === 'circle' ? s.d : Math.max(s.w, s.h);
+  const scale = (Math.min(W, H) - pad * 2) / dim;
+  const cx = W / 2, cy = H / 2;
+  const mmToPx = (mx, my) => ({ x: cx + mx * scale, y: cy - my * scale });
+
+  // 1mm grid
+  ctx.strokeStyle = cssVar('--grid-fine');
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let mm = -dim/2; mm <= dim/2; mm += 1) {
+    const a = mmToPx(mm, -dim/2), b = mmToPx(mm,  dim/2);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    const c = mmToPx(-dim/2, mm), d = mmToPx( dim/2, mm);
+    ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  }
+  ctx.stroke();
+
+  // 10mm grid
+  ctx.strokeStyle = cssVar('--grid-coarse');
+  ctx.beginPath();
+  for (let mm = -dim/2; mm <= dim/2; mm += 10) {
+    const a = mmToPx(mm, -dim/2), b = mmToPx(mm,  dim/2);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    const c = mmToPx(-dim/2, mm), d = mmToPx( dim/2, mm);
+    ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  }
+  ctx.stroke();
+
+  const accent = cssVar('--accent');
+  const warn = cssVar('--warn');
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (s.shape === 'circle') {
+    ctx.arc(cx, cy, (s.d/2) * scale, 0, Math.PI * 2);
+  } else {
+    ctx.rect(cx - (s.w/2)*scale, cy - (s.h/2)*scale, s.w*scale, s.h*scale);
+  }
+  ctx.stroke();
+  ctx.fillStyle = cssVar('--highlight');
+  ctx.globalAlpha = 0.3;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = 0.4;
+  ctx.beginPath();
+  ctx.moveTo(cx - 12, cy); ctx.lineTo(cx + 12, cy);
+  ctx.moveTo(cx, cy - 12); ctx.lineTo(cx, cy + 12);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Head marker
+  const hx = state.position.x - state.origin.x;
+  const hy = state.position.y - state.origin.y;
+  const hp = mmToPx(hx, hy);
+  ctx.strokeStyle = warn;
+  ctx.fillStyle = warn;
+  ctx.globalAlpha = 0.2;
+  ctx.beginPath();
+  ctx.arc(hp.x, hp.y, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(hp.x, hp.y, 8, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(hp.x, hp.y, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = cssVar('--text-faint');
+  ctx.font = '10px JetBrains Mono';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('X+', W - 24, cy);
+  ctx.fillText('Y+', cx + 4, 16);
+  ctx.fillText('-X', 8, cy);
+  ctx.fillText('-Y', cx + 4, H - 12);
+}
+
+// Click-to-jog
+$('#bed-canvas-control').addEventListener('click', e => {
+  if (!state.connected) {
+    logLine('Connect first to jog.', 'err');
+    return;
+  }
+  const canvas = e.currentTarget;
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const s = getSubstrate();
+  const W = canvas.width, H = canvas.height;
+  const pad = 30;
+  const dim = s.shape === 'circle' ? s.d : Math.max(s.w, s.h);
+  const scale = (Math.min(W, H) - pad * 2) / dim;
+  const cx = W / 2, cy = H / 2;
+  const mmX = (px - cx) / scale;
+  const mmY = -(py - cy) / scale;
+  if (!isInside(mmX, mmY)) {
+    logLine(`Target (${mmX.toFixed(2)}, ${mmY.toFixed(2)}) is outside substrate.`, 'err');
+    return;
+  }
+  const targetX = mmX + state.origin.x;
+  const targetY = mmY + state.origin.y;
+  const f = state.feedrates.travel;
+  confirmAction(
+    'Jog to Position',
+    `Move to X=${targetX.toFixed(2)} Y=${targetY.toFixed(2)} mm?` + (e.shiftKey ? ` Lift to Z=${state.travelZ} first.` : ''),
+    () => {
+      sendCommand('G90');
+      if (e.shiftKey) sendCommand(`G1 Z${state.travelZ.toFixed(3)} F${f}`);
+      sendCommand(`G1 X${targetX.toFixed(3)} Y${targetY.toFixed(3)} F${f}`);
+      setTimeout(() => sendCommand('M114'), 200);
+    }
+  );
+});
+
+// ============ SKETCH CANVAS ============
+const drawCanvas = $('#draw-canvas');
+const drawCtx = drawCanvas.getContext('2d');
+
+function drawCoordTransforms() {
+  const s = getSubstrate();
+  const W = drawCanvas.width, H = drawCanvas.height;
+  const pad = 30;
+  const dim = s.shape === 'circle' ? s.d : Math.max(s.w, s.h);
+  const scale = (Math.min(W, H) - pad * 2) / dim;
+  const cx = W / 2, cy = H / 2;
+  return {
+    scale, cx, cy, W, H,
+    mmToPx: (x, y) => ({ x: cx + x * scale, y: cy - y * scale }),
+    pxToMm: (px, py) => ({ x: (px - cx) / scale, y: -(py - cy) / scale }),
+  };
+}
+
+function drawSketchCanvas() {
+  const s = getSubstrate();
+  const t = drawCoordTransforms();
+  const ctx = drawCtx;
+  const { W, H, cx, cy, scale } = t;
+  if (W < 10 || H < 10) return;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = cssVar('--canvas-bg');
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = cssVar('--grid-fine');
+  ctx.lineWidth = 1;
+  const dim = s.shape === 'circle' ? s.d : Math.max(s.w, s.h);
+  ctx.beginPath();
+  for (let mm = -dim/2; mm <= dim/2; mm += 1) {
+    const a = t.mmToPx(mm, -dim/2), b = t.mmToPx(mm, dim/2);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    const c = t.mmToPx(-dim/2, mm), d = t.mmToPx(dim/2, mm);
+    ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = cssVar('--grid-coarse');
+  ctx.beginPath();
+  for (let mm = -dim/2; mm <= dim/2; mm += 10) {
+    const a = t.mmToPx(mm, -dim/2), b = t.mmToPx(mm, dim/2);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    const c = t.mmToPx(-dim/2, mm), d = t.mmToPx(dim/2, mm);
+    ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = cssVar('--accent');
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (s.shape === 'circle') {
+    ctx.arc(cx, cy, (s.d/2) * scale, 0, Math.PI * 2);
+  } else {
+    ctx.rect(cx - (s.w/2)*scale, cy - (s.h/2)*scale, s.w*scale, s.h*scale);
+  }
+  ctx.stroke();
+  ctx.fillStyle = cssVar('--highlight');
+  ctx.globalAlpha = 0.2;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // Color by layer Z so multi-layer scaffolds are visually distinguishable in 2D.
+  // Paths NOT at the current draw-Z appear dimmed so the user knows which layer they're editing.
+  const layerPalette = ['#4aa3ff', '#c9f24a', '#ff7a45', '#4ade80', '#ff4757', '#c9a3ff', '#ffd54a'];
+  const currentDrawZ = parseFloat($('#draw-z').value) || 0;
+  for (const path of state.drawPaths) {
+    if (path.length < 1) continue;
+    const z0 = path[0].z != null ? path[0].z : 0;
+    const onCurrentLayer = Math.abs(z0 - currentDrawZ) < 0.01;
+    if (path[0].z != null && z0 > 0) {
+      const layerIdx = Math.round(z0 / 0.4);
+      ctx.strokeStyle = layerPalette[((layerIdx % layerPalette.length) + layerPalette.length) % layerPalette.length];
+    } else {
+      ctx.strokeStyle = cssVar('--info');
+    }
+    ctx.globalAlpha = onCurrentLayer ? 1.0 : 0.25;
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i++) {
+      const p = t.mmToPx(path[i].x, path[i].y);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  if (state.currentPath && state.currentPath.length) {
+    ctx.strokeStyle = cssVar('--accent');
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < state.currentPath.length; i++) {
+      const p = t.mmToPx(state.currentPath[i].x, state.currentPath[i].y);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    // For 3D path mode, draw a small marker at each click point with its Z value
+    if (path3dActive) {
+      ctx.fillStyle = cssVar('--accent');
+      ctx.font = '10px JetBrains Mono';
+      ctx.textBaseline = 'bottom';
+      for (let i = 0; i < state.currentPath.length; i++) {
+        const pt = state.currentPath[i];
+        const p = t.mmToPx(pt.x, pt.y);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Z label next to point
+        const z = pt.z != null ? pt.z : 0;
+        ctx.fillText(`Z${z.toFixed(1)}`, p.x + 6, p.y - 4);
+      }
+    }
+  }
+
+  // Side-view companion (XZ): each path's points drawn with X→horizontal, Z→vertical.
+  if (sideViewActive && typeof drawSideView === 'function') drawSideView();
+
+  $('#draw-info').textContent = `${state.drawPaths.length} paths · Z=${currentDrawZ.toFixed(2)}mm`;
+  if (typeof refresh3DIfActive === 'function') refresh3DIfActive();
+}
+
+let drawing = false;
+// 3D Path mode state: builds a path one click at a time. Each click adds a
+// point with the CURRENT draw-Z. User can change Z between clicks to make
+// the path go up/down in 3D. Finish with the toolbar button or double-click.
+let path3dActive = false;
+
+drawCanvas.addEventListener('mousedown', e => {
+  const rect = drawCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (drawCanvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (drawCanvas.height / rect.height);
+  const t = drawCoordTransforms();
+  const mm = t.pxToMm(px, py);
+
+  if (state.drawTool === 'path3d') {
+    // Single click adds a point at current Z. Don't start a drag.
+    const z = parseFloat($('#draw-z').value) || 0;
+    const point = { x: mm.x, y: mm.y, z };
+    if (!path3dActive) {
+      // Start a new path
+      path3dActive = true;
+      state.currentPath = [point];
+      $('#btn-finish-3d-path').style.display = '';
+      $('#path3d-info').style.display = '';
+    } else {
+      // Append to active path
+      state.currentPath.push(point);
+    }
+    drawSketchCanvas();
+    return;
+  }
+
+  if (state.drawTool === 'pen') {
+    drawing = true;
+    state.currentPath = [mm];
+  } else if (['line','rect','circle'].includes(state.drawTool)) {
+    drawing = true;
+    state.shapeStart = mm;
+    state.currentPath = [mm, mm];
+  } else if (state.drawTool === 'erase') {
+    eraseAt(mm);
+  }
+});
+
+// Double-click to finish 3D path
+drawCanvas.addEventListener('dblclick', () => {
+  if (path3dActive) finish3DPath();
+});
+
+function finish3DPath() {
+  if (!path3dActive || !state.currentPath || state.currentPath.length < 2) {
+    // Cancel if not enough points
+    path3dActive = false;
+    state.currentPath = null;
+    $('#btn-finish-3d-path').style.display = 'none';
+    $('#path3d-info').style.display = 'none';
+    drawSketchCanvas();
+    return;
+  }
+  // Commit. The currentPath already has z values per point.
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths.push(state.currentPath);
+  state.currentPath = null;
+  path3dActive = false;
+  $('#btn-finish-3d-path').style.display = 'none';
+  $('#path3d-info').style.display = 'none';
+  drawSketchCanvas();
+}
+
+function cancel3DPath() {
+  path3dActive = false;
+  state.currentPath = null;
+  $('#btn-finish-3d-path').style.display = 'none';
+  $('#path3d-info').style.display = 'none';
+  drawSketchCanvas();
+}
+
+$('#btn-finish-3d-path').addEventListener('click', finish3DPath);
+
+// ============ SIDE VIEW (XZ) ============
+// A second canvas showing XZ plane (X horizontal, Z vertical, Y collapsed).
+// Useful for sketching branches that go up/over because you can see Z directly.
+// Drawing in side view creates paths at Y = current "Y plane" (defaults to 0).
+let sideViewActive = false;
+const sideCanvas = $('#side-canvas');
+const sideCtx = sideCanvas.getContext('2d');
+
+$('#btn-side-view').addEventListener('click', () => {
+  sideViewActive = !sideViewActive;
+  $('#btn-side-view').classList.toggle('active', sideViewActive);
+  $('#side-canvas-wrap').style.display = sideViewActive ? '' : 'none';
+  // When showing, the existing wrap gets less width — shrink the top canvas to share
+  const drawWrap = $('#draw-canvas-wrap');
+  drawWrap.style.flex = sideViewActive ? '1' : '';
+  requestAnimationFrame(() => {
+    resizeCanvases();
+    drawSketchCanvas();
+  });
+});
+
+// Coordinate transforms for the side canvas. X axis = X mm, vertical axis = Z mm (positive up).
+function sideCoordTransforms() {
+  const W = sideCanvas.width, H = sideCanvas.height;
+  const pad = 30;
+  const s = getSubstrate();
+  const xRange = s.shape === 'circle' ? s.d : s.w;  // mm of X visible
+  // Z range: auto-fit based on existing paths up to a reasonable max
+  let maxZ = 20;
+  for (const path of state.drawPaths) {
+    for (const pt of path) {
+      if (pt.z != null && pt.z > maxZ) maxZ = pt.z;
+    }
+  }
+  if (state.currentPath) {
+    for (const pt of state.currentPath) {
+      if (pt.z != null && pt.z > maxZ) maxZ = pt.z;
+    }
+  }
+  maxZ = Math.ceil(maxZ * 1.2 / 5) * 5;  // round up to nearest 5mm
+  const xScale = (W - pad * 2) / xRange;
+  const zScale = (H - pad * 2) / maxZ;
+  // We use the smaller of the two so aspect ratio is preserved
+  const scale = Math.min(xScale, zScale);
+  const cx = W / 2;
+  const baseY = H - pad;  // Z=0 line near bottom
+  return {
+    W, H, pad, scale, cx, baseY, maxZ, xRange,
+    mmToPx: (x, z) => ({ x: cx + x * scale, y: baseY - z * scale }),
+    pxToMm: (px, py) => ({ x: (px - cx) / scale, z: (baseY - py) / scale }),
+  };
+}
+
+function drawSideView() {
+  const t = sideCoordTransforms();
+  const ctx = sideCtx;
+  const { W, H, pad, scale, cx, baseY, maxZ, xRange } = t;
+  if (W < 10 || H < 10) return;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = cssVar('--canvas-bg');
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid: 1mm fine, 10mm coarse
+  ctx.strokeStyle = cssVar('--grid-fine');
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let mm = -xRange/2; mm <= xRange/2; mm += 1) {
+    const a = t.mmToPx(mm, 0), b = t.mmToPx(mm, maxZ);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  for (let mm = 0; mm <= maxZ; mm += 1) {
+    const a = t.mmToPx(-xRange/2, mm), b = t.mmToPx(xRange/2, mm);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = cssVar('--grid-coarse');
+  ctx.beginPath();
+  for (let mm = -xRange/2; mm <= xRange/2; mm += 10) {
+    const a = t.mmToPx(mm, 0), b = t.mmToPx(mm, maxZ);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  for (let mm = 0; mm <= maxZ; mm += 10) {
+    const a = t.mmToPx(-xRange/2, mm), b = t.mmToPx(xRange/2, mm);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  ctx.stroke();
+
+  // Bed line (Z=0)
+  ctx.strokeStyle = cssVar('--accent');
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const bedL = t.mmToPx(-xRange/2, 0), bedR = t.mmToPx(xRange/2, 0);
+  ctx.moveTo(bedL.x, bedL.y);
+  ctx.lineTo(bedR.x, bedR.y);
+  ctx.stroke();
+
+  // Current Z indicator: horizontal dashed line at draw Z
+  const drawZ = parseFloat($('#draw-z').value) || 0;
+  ctx.strokeStyle = cssVar('--warn');
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  const zL = t.mmToPx(-xRange/2, drawZ), zR = t.mmToPx(xRange/2, drawZ);
+  ctx.moveTo(zL.x, zL.y); ctx.lineTo(zR.x, zR.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = cssVar('--warn');
+  ctx.font = '10px JetBrains Mono';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(`Z=${drawZ.toFixed(2)}`, 6, t.mmToPx(0, drawZ).y - 2);
+
+  // Axis labels
+  ctx.fillStyle = cssVar('--text-faint');
+  ctx.font = '10px JetBrains Mono';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('X+', W - 22, baseY);
+  ctx.textBaseline = 'top';
+  ctx.fillText('Z+', cx + 4, 6);
+
+  // Render all paths as side projection: X stays X, Y is collapsed (ignored), Z → vertical
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const layerPalette = ['#4aa3ff', '#c9f24a', '#ff7a45', '#4ade80', '#ff4757', '#c9a3ff', '#ffd54a'];
+  for (const path of state.drawPaths) {
+    if (path.length < 2) continue;
+    const z0 = path[0].z != null ? path[0].z : 0;
+    if (path[0].z != null && z0 > 0) {
+      const li = Math.round(z0 / 0.4);
+      ctx.strokeStyle = layerPalette[((li % layerPalette.length) + layerPalette.length) % layerPalette.length];
+    } else {
+      ctx.strokeStyle = cssVar('--info');
+    }
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i++) {
+      const pt = path[i];
+      const p = t.mmToPx(pt.x, pt.z != null ? pt.z : 0);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+
+  // In-progress path (3D path mode)
+  if (state.currentPath && state.currentPath.length) {
+    ctx.strokeStyle = cssVar('--accent');
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < state.currentPath.length; i++) {
+      const pt = state.currentPath[i];
+      const p = t.mmToPx(pt.x, pt.z != null ? pt.z : 0);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    if (path3dActive) {
+      ctx.fillStyle = cssVar('--accent');
+      for (let i = 0; i < state.currentPath.length; i++) {
+        const pt = state.currentPath[i];
+        const p = t.mmToPx(pt.x, pt.z != null ? pt.z : 0);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// Side view click handlers: works for 3D Path tool. Click adds a point at
+// (X-from-side, Y=0, Z-from-side). For other tools, the side view is read-only.
+sideCanvas.addEventListener('click', e => {
+  if (state.drawTool !== 'path3d') return;
+  const rect = sideCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (sideCanvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (sideCanvas.height / rect.height);
+  const t = sideCoordTransforms();
+  const { x, z } = t.pxToMm(px, py);
+  const point = { x, y: 0, z };
+  if (!path3dActive) {
+    path3dActive = true;
+    state.currentPath = [point];
+    $('#btn-finish-3d-path').style.display = '';
+    $('#path3d-info').style.display = '';
+  } else {
+    state.currentPath.push(point);
+  }
+  // Also auto-update the draw-z field so subsequent clicks in top view inherit this Z
+  $('#draw-z').value = z.toFixed(3);
+  drawSketchCanvas();
+});
+
+sideCanvas.addEventListener('dblclick', () => {
+  if (path3dActive) finish3DPath();
+});
+
+
+
+drawCanvas.addEventListener('mousemove', e => {
+  if (!drawing) return;
+  const rect = drawCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (drawCanvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (drawCanvas.height / rect.height);
+  const t = drawCoordTransforms();
+  const mm = t.pxToMm(px, py);
+
+  if (state.drawTool === 'pen') {
+    state.currentPath.push(mm);
+  } else if (state.drawTool === 'line') {
+    state.currentPath = [state.shapeStart, mm];
+  } else if (state.drawTool === 'rect') {
+    const a = state.shapeStart, b = mm;
+    state.currentPath = [
+      { x: a.x, y: a.y }, { x: b.x, y: a.y },
+      { x: b.x, y: b.y }, { x: a.x, y: b.y },
+      { x: a.x, y: a.y },
+    ];
+  } else if (state.drawTool === 'circle') {
+    const a = state.shapeStart, b = mm;
+    const r = Math.hypot(b.x - a.x, b.y - a.y);
+    const pts = [];
+    const n = 64;
+    for (let i = 0; i <= n; i++) {
+      const ang = (i / n) * Math.PI * 2;
+      pts.push({ x: a.x + r * Math.cos(ang), y: a.y + r * Math.sin(ang) });
+    }
+    state.currentPath = pts;
+  }
+  drawSketchCanvas();
+});
+
+drawCanvas.addEventListener('mouseup', () => {
+  if (!drawing) return;
+  drawing = false;
+  if (state.currentPath && state.currentPath.length > 1) {
+    // Tag every point with the current draw-Z so the path lives at that height.
+    // This is what makes 3D sketches work — each stroke can be on a different layer.
+    const z = parseFloat($('#draw-z').value) || 0;
+    const tagged = state.currentPath.map(pt => ({ x: pt.x, y: pt.y, z }));
+    state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+    state.drawPaths.push(tagged);
+  }
+  state.currentPath = null;
+  state.shapeStart = null;
+  drawSketchCanvas();
+});
+
+drawCanvas.addEventListener('mouseleave', () => {
+  if (drawing) drawCanvas.dispatchEvent(new Event('mouseup'));
+});
+
+function eraseAt(mm) {
+  const threshold = 1.5;
+  let bestIdx = -1, bestDist = Infinity;
+  for (let i = 0; i < state.drawPaths.length; i++) {
+    for (const p of state.drawPaths[i]) {
+      const d = Math.hypot(p.x - mm.x, p.y - mm.y);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+  }
+  if (bestIdx >= 0 && bestDist < threshold) {
+    state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+    state.drawPaths.splice(bestIdx, 1);
+    drawSketchCanvas();
+  }
+}
+
+$$('.tool-btn[data-tool]').forEach(b => {
+  b.addEventListener('click', () => {
+    $$('.tool-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.drawTool = b.dataset.tool;
+  });
+});
+
+$('#btn-undo').addEventListener('click', () => {
+  if (state.drawHistory.length) {
+    state.drawPaths = state.drawHistory.pop();
+    drawSketchCanvas();
+  }
+});
+
+// Z layer stepper: clicking +/- bumps the draw Z by the step size.
+// Changing the Z value redraws so non-current layers get dimmed.
+function bumpDrawZ(direction) {
+  const step = parseFloat($('#draw-z-step').value) || 0.4;
+  const z = (parseFloat($('#draw-z').value) || 0) + direction * step;
+  $('#draw-z').value = z.toFixed(3);
+  drawSketchCanvas();
+}
+$('#btn-z-down').addEventListener('click', () => bumpDrawZ(-1));
+$('#btn-z-up').addEventListener('click', () => bumpDrawZ(1));
+$('#draw-z').addEventListener('input', () => drawSketchCanvas());
+
+$('#btn-clear-draw').addEventListener('click', () => {
+  if (state.drawPaths.length) {
+    state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  }
+  state.drawPaths = [];
+  drawSketchCanvas();
+});
+
+// ============ PATH OPTIMIZER ============
+// Greedy nearest-neighbor reordering: pick a starting path, then repeatedly
+// jump to the nearest unvisited path endpoint. Each path can also be reversed
+// if its tail is closer than its head. This typically reduces total travel
+// distance by 30-70% on scaffolds with many short strands.
+function optimizePaths(paths) {
+  if (paths.length < 2) return paths.slice();
+  const n = paths.length;
+  const used = new Uint8Array(n);
+  const result = [];
+
+  // Score original travel for comparison
+  const travelOf = (arr) => {
+    let total = 0;
+    for (let i = 0; i < arr.length - 1; i++) {
+      const a = arr[i][arr[i].length - 1];
+      const b = arr[i + 1][0];
+      total += Math.hypot(b.x - a.x, b.y - a.y);
+    }
+    return total;
+  };
+  const originalTravel = travelOf(paths);
+
+  // Start with the path closest to origin (0,0)
+  let bestStart = 0, bestStartDist = Infinity;
+  for (let i = 0; i < n; i++) {
+    const head = paths[i][0];
+    const d = Math.hypot(head.x, head.y);
+    if (d < bestStartDist) { bestStartDist = d; bestStart = i; }
+  }
+  result.push(paths[bestStart]);
+  used[bestStart] = 1;
+  let curEnd = paths[bestStart][paths[bestStart].length - 1];
+
+  while (result.length < n) {
+    let bestIdx = -1, bestDist = Infinity, bestReverse = false;
+    for (let i = 0; i < n; i++) {
+      if (used[i]) continue;
+      const head = paths[i][0];
+      const tail = paths[i][paths[i].length - 1];
+      const dHead = Math.hypot(head.x - curEnd.x, head.y - curEnd.y);
+      const dTail = Math.hypot(tail.x - curEnd.x, tail.y - curEnd.y);
+      if (dHead < bestDist) { bestDist = dHead; bestIdx = i; bestReverse = false; }
+      if (dTail < bestDist) { bestDist = dTail; bestIdx = i; bestReverse = true; }
+    }
+    if (bestIdx < 0) break;
+    used[bestIdx] = 1;
+    let next = paths[bestIdx];
+    if (bestReverse) next = next.slice().reverse();
+    result.push(next);
+    curEnd = next[next.length - 1];
+  }
+
+  const newTravel = travelOf(result);
+  return { paths: result, oldTravel: originalTravel, newTravel };
+}
+
+$('#btn-optimize').addEventListener('click', () => {
+  if (state.drawPaths.length < 2) {
+    logLine('Need at least 2 paths to optimize.', 'err');
+    return;
+  }
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  const r = optimizePaths(state.drawPaths);
+  state.drawPaths = r.paths;
+  drawSketchCanvas();
+  const saved = r.oldTravel - r.newTravel;
+  const pct = (saved / r.oldTravel * 100);
+  logLine(`Optimized: travel ${r.oldTravel.toFixed(1)} → ${r.newTravel.toFixed(1)} mm (saved ${saved.toFixed(1)} mm, ${pct.toFixed(0)}%)`, 'ok');
+});
+
+// ============ SCAFFOLD ============
+function generateScaffold() {
+  const pattern = $('#scaffold-pattern').value;
+  const w = parseFloat($('#scaffold-w').value);
+  const h = parseFloat($('#scaffold-h').value);
+  const sp = parseFloat($('#scaffold-spacing').value);
+  const layers = parseInt($('#scaffold-layers').value, 10);
+  const layerH = parseFloat($('#scaffold-layerH').value) || 0.4;
+  const paths = [];
+
+  // Helper to wrap a 2D path into a Z-tagged path at the right height for its layer.
+  // Z is the print Z plus (layerIdx * layerH), so layer 0 prints at the print Z surface
+  // and each subsequent layer stacks above it.
+  const tagLayer = (p2d, layerIdx) => p2d.map(pt => ({
+    x: pt.x, y: pt.y, z: layerIdx * layerH
+  }));
+
+  if (pattern === 'grid' || pattern === 'lattice') {
+    for (let layer = 0; layer < layers; layer++) {
+      const horizontal = pattern === 'grid' || layer % 2 === 0;
+      const vertical   = pattern === 'grid' || layer % 2 === 1;
+      if (horizontal) {
+        let dir = 1;
+        for (let y = -h/2; y <= h/2 + 1e-6; y += sp) {
+          const seg = dir > 0 ? [{ x: -w/2, y }, { x: w/2, y }] : [{ x: w/2, y }, { x: -w/2, y }];
+          paths.push(tagLayer(seg, layer));
+          dir *= -1;
+        }
+      }
+      if (vertical) {
+        let dir = 1;
+        for (let x = -w/2; x <= w/2 + 1e-6; x += sp) {
+          const seg = dir > 0 ? [{ x, y: -h/2 }, { x, y: h/2 }] : [{ x, y: h/2 }, { x, y: -h/2 }];
+          paths.push(tagLayer(seg, layer));
+          dir *= -1;
+        }
+      }
+    }
+  } else if (pattern === 'hex') {
+    // For hex/concentric, replicate the same pattern at each layer Z.
+    for (let layer = 0; layer < layers; layer++) {
+      const angles = [0, Math.PI/3, 2*Math.PI/3];
+      for (const ang of angles) {
+        const cosA = Math.cos(ang), sinA = Math.sin(ang);
+        const diag = Math.hypot(w, h);
+        for (let off = -diag/2; off <= diag/2 + 1e-6; off += sp) {
+          const a = { x: cosA * off - sinA * (-diag/2), y: sinA * off + cosA * (-diag/2) };
+          const b = { x: cosA * off - sinA * ( diag/2), y: sinA * off + cosA * ( diag/2) };
+          const clipped = clipLineToRect(a, b, -w/2, w/2, -h/2, h/2);
+          if (clipped) paths.push(tagLayer(clipped, layer));
+        }
+      }
+    }
+  } else if (pattern === 'concentric') {
+    for (let layer = 0; layer < layers; layer++) {
+      let r = Math.min(w, h) / 2;
+      while (r > sp/2) {
+        const pts = [];
+        const n = Math.max(24, Math.round(2 * Math.PI * r / 0.5));
+        for (let i = 0; i <= n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          pts.push({ x: r * Math.cos(a), y: r * Math.sin(a) });
+        }
+        paths.push(tagLayer(pts, layer));
+        r -= sp;
+      }
+    }
+  }
+
+  const filtered = paths.filter(p => p.length >= 2);
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths = state.drawPaths.concat(filtered);
+  drawSketchCanvas();
+  if (typeof update3DScene === 'function') update3DScene();
+  logLine(`Generated ${filtered.length} scaffold strands across ${layers} layer${layers===1?'':'s'} (layer H = ${layerH} mm).`, 'ok');
+  document.querySelector('.bed-mode-tab[data-mode="draw"]').click();
+}
+
+function clipLineToRect(a, b, xmin, xmax, ymin, ymax) {
+  let t0 = 0, t1 = 1;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const p = [-dx, dx, -dy, dy];
+  const q = [a.x - xmin, xmax - a.x, a.y - ymin, ymax - a.y];
+  for (let i = 0; i < 4; i++) {
+    if (p[i] === 0) {
+      if (q[i] < 0) return null;
+    } else {
+      const r = q[i] / p[i];
+      if (p[i] < 0) { if (r > t1) return null; if (r > t0) t0 = r; }
+      else          { if (r < t0) return null; if (r < t1) t1 = r; }
+    }
+  }
+  return [
+    { x: a.x + t0*dx, y: a.y + t0*dy },
+    { x: a.x + t1*dx, y: a.y + t1*dy },
+  ];
+}
+
+$('#btn-gen-scaffold').addEventListener('click', generateScaffold);
+
+// ============ VASCULAR TREE GENERATOR ============
+// Builds a 3D tree of paths using recursive bifurcation. Each branch is one path
+// of N segments. Branches can tilt out of the XY plane (z-spread parameter), so the
+// resulting tree fans into 3D space rather than collapsing to a flat 2D fork.
+// Algorithm:
+//   1. Start with trunk: straight up the Z axis from origin to (0,0,H)
+//   2. At the trunk top, spawn N branches at +/- branchAngle from vertical, each
+//      rotated around Z by an evenly-spaced azimuth angle.
+//   3. For each new branch endpoint, recurse: spawn child branches with reduced
+//      length, same angle parameters, plus a small random jitter for biological
+//      asymmetry.
+//   4. Each branch is sampled into multiple points along its length so 3D paths
+//      are smooth lines rather than two-point segments.
+
+// Seedable PRNG (mulberry32). Reproducible randomness so the same seed produces
+// the same tree, which is what you want when iterating on parameters.
+function makeRng(seed) {
+  let a = (seed >>> 0) || 1;
+  return function() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateVascularTree() {
+  const trunkH = parseFloat($('#vasc-height').value) || 10;
+  const trunkD = parseFloat($('#vasc-trunk-d').value) || 2;
+  const levels = Math.max(1, Math.min(6, parseInt($('#vasc-levels').value, 10)));
+  const branchesPerLvl = Math.max(2, Math.min(8, parseInt($('#vasc-branches').value, 10)));
+  const angleDeg = parseFloat($('#vasc-angle').value) || 35;
+  const lenRatio = parseFloat($('#vasc-length-ratio').value) || 0.7;
+  const zSpreadDeg = parseFloat($('#vasc-z-spread').value) || 40;
+  const jitter = parseFloat($('#vasc-jitter').value) || 0;
+  const pattern = $('#vasc-pattern').value;
+  const seed = parseInt($('#vasc-seed').value, 10) || 42;
+  const rng = makeRng(seed);
+
+  // Each branch is sampled this many times along its length for smooth 3D rendering
+  const samplesPerBranch = 8;
+
+  const paths = [];
+
+  // Add the trunk first: a vertical line from (0,0,0) to (0,0,trunkH)
+  const trunk = [];
+  for (let i = 0; i <= samplesPerBranch; i++) {
+    trunk.push({ x: 0, y: 0, z: (i / samplesPerBranch) * trunkH });
+  }
+  paths.push(trunk);
+
+  // Helper: rotate vector around an arbitrary axis (Rodrigues' rotation formula).
+  // We use this to tilt branches in 3D.
+  function rotate(v, axis, angle) {
+    const c = Math.cos(angle), s = Math.sin(angle);
+    const k = axis;
+    // Rodrigues: v_rot = v*c + (k × v)*s + k*(k·v)*(1-c)
+    const dot = k.x*v.x + k.y*v.y + k.z*v.z;
+    const cross = {
+      x: k.y*v.z - k.z*v.y,
+      y: k.z*v.x - k.x*v.z,
+      z: k.x*v.y - k.y*v.x,
+    };
+    return {
+      x: v.x * c + cross.x * s + k.x * dot * (1 - c),
+      y: v.y * c + cross.y * s + k.y * dot * (1 - c),
+      z: v.z * c + cross.z * s + k.z * dot * (1 - c),
+    };
+  }
+  function norm(v) {
+    const m = Math.hypot(v.x, v.y, v.z) || 1;
+    return { x: v.x/m, y: v.y/m, z: v.z/m };
+  }
+  function jitterAmt(amount) {
+    // Returns a value in [-amount, +amount]
+    return (rng() * 2 - 1) * amount;
+  }
+
+  // Recursive branch spawn. Direction is unit vector pointing along parent branch.
+  function spawnBranches(origin, parentDir, parentLen, level) {
+    if (level >= levels) return;
+    const childLen = parentLen * lenRatio * (1 + jitterAmt(jitter * 0.5));
+    if (childLen < 0.5) return;  // too short to be useful
+
+    // Determine how many branches and their azimuth distribution
+    let numBranches;
+    if (pattern === 'bifurcation') numBranches = 2;
+    else if (pattern === 'trichotomy') numBranches = 3;
+    else if (pattern === 'whorl') numBranches = branchesPerLvl;
+    else if (pattern === 'alternating') {
+      // Alternating: 2 branches but rotate 90° each level so they don't pile up
+      numBranches = 2;
+    } else {
+      numBranches = branchesPerLvl;
+    }
+
+    // Find a perpendicular axis to parentDir. We need this to construct branch
+    // directions: tilt parentDir by branchAngle around an axis in the perpendicular plane.
+    // Pick axis = cross(parentDir, world-up) and renormalize. If parentDir is
+    // already vertical, use cross with world-X instead.
+    let axis;
+    if (Math.abs(parentDir.z) > 0.999) {
+      axis = norm({ x: 1, y: 0, z: 0 });
+    } else {
+      axis = norm({
+        x: parentDir.y * 1 - parentDir.z * 0,
+        y: parentDir.z * 0 - parentDir.x * 1,
+        z: parentDir.x * 0 - parentDir.y * 0,
+      });
+    }
+
+    // For alternating, rotate the spawn azimuth based on level
+    const azimuthOffset = (pattern === 'alternating') ? (level * Math.PI / 2) : 0;
+
+    const tiltAngle = angleDeg * Math.PI / 180 * (1 + jitterAmt(jitter * 0.3));
+    const zTiltMax = zSpreadDeg * Math.PI / 180;
+
+    for (let i = 0; i < numBranches; i++) {
+      // Azimuth: distribute branches around parentDir
+      const azimuth = azimuthOffset + (i / numBranches) * Math.PI * 2 + jitterAmt(jitter * 0.5);
+      // Rotate axis around parentDir by azimuth to get this branch's tilt axis
+      const tiltAxis = rotate(axis, parentDir, azimuth);
+      // Tilt parentDir away by branchAngle around tiltAxis to get child direction
+      let childDir = rotate(parentDir, tiltAxis, tiltAngle);
+      // Add Z spread: tilt slightly more or less in Z
+      const zTilt = jitterAmt(zTiltMax);
+      // Tilt around an axis perpendicular to both childDir and Z
+      const zTiltAxis = norm({
+        x: childDir.y, y: -childDir.x, z: 0
+      });
+      if (Math.hypot(zTiltAxis.x, zTiltAxis.y) > 0.01) {
+        childDir = rotate(childDir, zTiltAxis, zTilt);
+      }
+      childDir = norm(childDir);
+
+      const endpoint = {
+        x: origin.x + childDir.x * childLen,
+        y: origin.y + childDir.y * childLen,
+        z: origin.z + childDir.z * childLen,
+      };
+
+      // Sample the branch as a path with intermediate points for smooth 3D rendering
+      const branch = [];
+      for (let s = 0; s <= samplesPerBranch; s++) {
+        const t = s / samplesPerBranch;
+        branch.push({
+          x: origin.x + (endpoint.x - origin.x) * t,
+          y: origin.y + (endpoint.y - origin.y) * t,
+          z: origin.z + (endpoint.z - origin.z) * t,
+        });
+      }
+      paths.push(branch);
+
+      // Recurse from this endpoint
+      spawnBranches(endpoint, childDir, childLen, level + 1);
+    }
+  }
+
+  // Spawn from the top of the trunk
+  spawnBranches({ x: 0, y: 0, z: trunkH }, { x: 0, y: 0, z: 1 }, trunkH, 0);
+
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths = state.drawPaths.concat(paths);
+  drawSketchCanvas();
+  if (typeof update3DScene === 'function') update3DScene();
+  // Compute total branches and total height for the log line
+  const maxZ = Math.max(...paths.flat().map(p => p.z));
+  logLine(`Vascular tree: ${paths.length} branches, ${levels} levels, height ${maxZ.toFixed(1)}mm`, 'ok');
+  // Switch to 3D view since the tree only makes sense in 3D
+  document.querySelector('.bed-mode-tab[data-mode="3d"]').click();
+}
+
+$('#btn-gen-vasc').addEventListener('click', generateVascularTree);
+$('#btn-vasc-randomize').addEventListener('click', () => {
+  $('#vasc-seed').value = Math.floor(Math.random() * 100000);
+  generateVascularTree();
+});
+
+// ============ VASCULAR TREE PRESETS ============
+// Each preset is a complete parameter set tuned for a specific biological reference
+// or aesthetic. Picking one fills the form and immediately generates so the user
+// can see the result, then they can tweak from there.
+const VASC_PRESETS = {
+  coronary: {
+    height: 6, trunkD: 2.5, levels: 4, branches: 2,
+    angle: 45, lengthRatio: 0.65, zSpread: 25, jitter: 0.2,
+    pattern: 'bifurcation', seed: 12,
+    note: 'Coronary: dense bifurcation low to substrate, ~6mm tall'
+  },
+  pulmonary: {
+    height: 14, trunkD: 3, levels: 4, branches: 2,
+    angle: 30, lengthRatio: 0.72, zSpread: 50, jitter: 0.2,
+    pattern: 'alternating', seed: 7,
+    note: 'Pulmonary: tall trunk with alternating branches forming broad fan'
+  },
+  hepatic: {
+    height: 8, trunkD: 3, levels: 3, branches: 3,
+    angle: 40, lengthRatio: 0.7, zSpread: 35, jitter: 0.15,
+    pattern: 'trichotomy', seed: 100,
+    note: 'Hepatic portal: trichotomy first branch (left/middle/right hepatic)'
+  },
+  kidney: {
+    height: 5, trunkD: 2, levels: 3, branches: 6,
+    angle: 50, lengthRatio: 0.6, zSpread: 60, jitter: 0.3,
+    pattern: 'whorl', seed: 33,
+    note: 'Kidney glomerulus: short trunk, radial whorl explosion'
+  },
+  'liver-lobule': {
+    height: 4, trunkD: 1.5, levels: 3, branches: 6,
+    angle: 65, lengthRatio: 0.55, zSpread: 15, jitter: 0.1,
+    pattern: 'whorl', seed: 44,
+    note: 'Liver lobule: short trunk, near-flat radial structure'
+  },
+  bonsai: {
+    height: 12, trunkD: 2.5, levels: 4, branches: 2,
+    angle: 50, lengthRatio: 0.78, zSpread: 30, jitter: 0.4,
+    pattern: 'bifurcation', seed: 88,
+    note: 'Bonsai: gnarled, asymmetric, picturesque (high randomness)'
+  },
+  dense: {
+    height: 8, trunkD: 2, levels: 5, branches: 3,
+    angle: 35, lengthRatio: 0.75, zSpread: 45, jitter: 0.25,
+    pattern: 'trichotomy', seed: 9,
+    note: 'Dense capillary: 5 levels of trichotomy, lots of fine branches'
+  },
+  flat: {
+    height: 8, trunkD: 2, levels: 4, branches: 2,
+    angle: 40, lengthRatio: 0.7, zSpread: 0, jitter: 0.15,
+    pattern: 'bifurcation', seed: 1,
+    note: 'Flat fan: zero Z spread, all branches in XY plane (single-layer print)'
+  },
+};
+
+function applyVascPreset(name) {
+  const p = VASC_PRESETS[name];
+  if (!p) return;
+  $('#vasc-height').value = p.height;
+  $('#vasc-trunk-d').value = p.trunkD;
+  $('#vasc-levels').value = p.levels;
+  $('#vasc-branches').value = p.branches;
+  $('#vasc-angle').value = p.angle;
+  $('#vasc-length-ratio').value = p.lengthRatio;
+  $('#vasc-z-spread').value = p.zSpread;
+  $('#vasc-jitter').value = p.jitter;
+  $('#vasc-pattern').value = p.pattern;
+  $('#vasc-seed').value = p.seed;
+  logLine(`Preset: ${name} — ${p.note}`, 'sys');
+  // Auto-generate so user sees it right away
+  generateVascularTree();
+}
+
+$('#vasc-preset').addEventListener('change', e => {
+  const v = e.target.value;
+  if (v) applyVascPreset(v);
+});
+
+// ============ DRAW → GCODE ============
+function pathsToGcode(paths) {
+  const lines = [];
+  const fp = state.feedrates.print;
+  const ft = state.feedrates.travel;
+
+  // Branch on printhead type. Pressure mode wraps each path with M-codes.
+  // Extrusion mode appends E values to G1 print moves.
+  const isPressure = headType === 'pressure';
+  const isExtrusion = headType === 'extrusion';
+
+  // ----- Pressure mode setup -----
+  const auto = $('#auto-pressure').value;
+  let pOn = null, pOff = null, headLabel = '';
+  if (isPressure) {
+    if (auto === '1') { pOn = 'M760'; pOff = 'M761'; headLabel = 'Printhead 1'; }
+    else if (auto === '2') { pOn = 'M762'; pOff = 'M763'; headLabel = 'Printhead 2'; }
+  }
+
+  // ----- Extrusion mode setup -----
+  const autoE = $('#auto-extrusion').value;
+  const useE = isExtrusion && autoE === 'enabled';
+  const extMul = parseFloat($('#ext-multiplier').value) || 0.05;
+  const retract = parseFloat($('#ext-retract').value) || 0;
+  let cumulativeE = 0;  // tracks total E (mm of filament/syringe) extruded so far
+
+  lines.push('; --- Generated by OZ Bioprinter Console ---');
+  lines.push(`; Substrate: ${getSubstrate().name}`);
+  lines.push(`; Paths: ${paths.length}`);
+  lines.push(`; Printhead type: ${headType}`);
+  if (pOn)  lines.push(`; Pressure auto-wrap: ${headLabel} (${pOn} on, ${pOff} off)`);
+  if (useE) lines.push(`; Extrusion auto: E multiplier=${extMul}, retract=${retract}mm`);
+  lines.push('G21 ; mm');
+  lines.push('G90 ; absolute');
+  if (useE) {
+    lines.push('M83 ; relative E (each G1 E value is incremental)');
+    // Note: M83 = relative E, M82 = absolute E. Relative is simpler for our additive model.
+  }
+  lines.push(`G1 Z${state.travelZ.toFixed(3)} F${ft} ; lift`);
+
+  // Safety: ensure pressure starts OFF before the first path
+  if (pOff) lines.push(`${pOff} ; ensure pressure off before start`);
+
+  const ox = state.origin.x, oy = state.origin.y;
+
+  // Helper: distance between two points in mm (XY-only; Z handled separately)
+  const dist2D = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+
+  for (const path of paths) {
+    if (path.length < 1) continue;
+    const p0 = path[0];
+    const pathZ = (p0.z != null) ? (state.printZ + p0.z) : state.printZ;
+    const travelZ = Math.max(state.travelZ, pathZ + (state.travelZ - state.printZ));
+
+    // Travel to start
+    lines.push(`G0 Z${travelZ.toFixed(3)} F${ft}`);
+    lines.push(`G0 X${(p0.x + ox).toFixed(3)} Y${(p0.y + oy).toFixed(3)} F${ft}`);
+
+    // Lower to print height for this layer
+    lines.push(`G1 Z${pathZ.toFixed(3)} F${ft} ; layer Z`);
+
+    // Pressure ON (if applicable)
+    if (pOn) lines.push(`${pOn} ; pressure on`);
+
+    // Unretract before printing if extrusion mode with retract enabled
+    if (useE && retract > 0) {
+      lines.push(`G1 E${retract.toFixed(4)} F${(fp * 2).toFixed(0)} ; unretract`);
+    }
+
+    // Print path moves
+    let lastPt = p0;
+    for (let i = 1; i < path.length; i++) {
+      const p = path[i];
+      const ptZ = (p.z != null) ? (state.printZ + p.z) : pathZ;
+      const moveLen = dist2D(lastPt, p);
+      let line = `G1 X${(p.x + ox).toFixed(3)} Y${(p.y + oy).toFixed(3)}`;
+      if (Math.abs(ptZ - pathZ) > 1e-6) {
+        line += ` Z${ptZ.toFixed(3)}`;
+      }
+      if (useE && moveLen > 0) {
+        // Relative E: just push the increment for this segment
+        const eInc = moveLen * extMul;
+        line += ` E${eInc.toFixed(4)}`;
+        cumulativeE += eInc;
+      }
+      line += ` F${fp}`;
+      lines.push(line);
+      lastPt = p;
+    }
+
+    // Retract before lift if extrusion mode
+    if (useE && retract > 0) {
+      lines.push(`G1 E-${retract.toFixed(4)} F${(fp * 2).toFixed(0)} ; retract`);
+    }
+
+    if (pOff) lines.push(`${pOff} ; pressure off`);
+    lines.push(`G1 Z${travelZ.toFixed(3)} F${ft} ; lift`);
+  }
+  // Final safety: pressure off at end
+  if (pOff) lines.push(`${pOff} ; pressure off (end)`);
+  if (useE) lines.push(`; Total extruded: ${cumulativeE.toFixed(2)} mm`);
+  lines.push('; --- end ---');
+  return lines.join('\n');
+}
+
+$('#btn-drawing-to-gcode').addEventListener('click', () => {
+  if (!state.drawPaths.length) {
+    logLine('No paths to convert.', 'err');
+    return;
+  }
+  const gc = pathsToGcode(state.drawPaths);
+  $('#gcode-text').value = gc;
+  parsePrintGcode();
+  logLine('Drawing converted to G-code.', 'ok');
+  // Switch to preview view
+  document.querySelector('.bed-mode-tab[data-mode="preview"]').click();
+});
+
+// ============ PRINT JOB ============
+$('#btn-load-file').addEventListener('click', () => $('#gcode-file').click());
+$('#gcode-file').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const text = await f.text();
+  $('#gcode-text').value = text;
+  parsePrintGcode();
+});
+
+$('#gcode-text').addEventListener('input', parsePrintGcode);
+
+function parsePrintGcode() {
+  const text = $('#gcode-text').value;
+  const rawLines = text.split('\n');
+  const lines = rawLines.map(l => l.replace(/;.*$/, '').trim()).filter(l => l.length);
+  let x = 0, y = 0, z = 0;
+  let absolute = true;
+  const segments = [];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  let outside = 0;
+  for (const line of lines) {
+    const upper = line.toUpperCase();
+    if (upper.startsWith('G90')) absolute = true;
+    else if (upper.startsWith('G91')) absolute = false;
+    else if (/^G[01]\b/.test(upper)) {
+      const xm = upper.match(/X(-?[\d.]+)/);
+      const ym = upper.match(/Y(-?[\d.]+)/);
+      const zm = upper.match(/Z(-?[\d.]+)/);
+      const isTravel = /^G0\b/.test(upper);
+      const nx = xm ? (absolute ? parseFloat(xm[1]) : x + parseFloat(xm[1])) : x;
+      const ny = ym ? (absolute ? parseFloat(ym[1]) : y + parseFloat(ym[1])) : y;
+      const nz = zm ? (absolute ? parseFloat(zm[1]) : z + parseFloat(zm[1])) : z;
+      if (xm || ym) {
+        // Tag segment with the destination Z so we can group by layer later
+        segments.push({ x0: x, y0: y, x1: nx, y1: ny, z: nz, travel: isTravel });
+        minX = Math.min(minX, nx); maxX = Math.max(maxX, nx);
+        minY = Math.min(minY, ny); maxY = Math.max(maxY, ny);
+        if (!isInside(nx - state.origin.x, ny - state.origin.y)) outside++;
+      }
+      x = nx; y = ny; z = nz;
+    } else if (/^G92\b/.test(upper)) {
+      const xm = upper.match(/X(-?[\d.]+)/);
+      const ym = upper.match(/Y(-?[\d.]+)/);
+      const zm = upper.match(/Z(-?[\d.]+)/);
+      if (xm) x = parseFloat(xm[1]);
+      if (ym) y = parseFloat(ym[1]);
+      if (zm) z = parseFloat(zm[1]);
+    }
+  }
+
+  // Identify unique Z layers from non-travel segments. Cluster Z values
+  // that are within 0.01mm to handle floating-point noise.
+  const zSet = [];
+  for (const seg of segments) {
+    if (seg.travel) continue;
+    let found = false;
+    for (const existing of zSet) {
+      if (Math.abs(existing - seg.z) < 0.01) { found = true; break; }
+    }
+    if (!found) zSet.push(seg.z);
+  }
+  zSet.sort((a, b) => a - b);
+
+  state.parsedGcode = { lines, segments, minX, maxX, minY, maxY, outside, layers: zSet };
+  updateLayerSlider();
+
+  $('#stat-lines').textContent = lines.length;
+  $('#stat-x').textContent = isFinite(minX) ? `${minX.toFixed(0)}…${maxX.toFixed(0)}` : '--';
+  $('#stat-y').textContent = isFinite(minY) ? `${minY.toFixed(0)}…${maxY.toFixed(0)}` : '--';
+
+  const pf = $('#preflight');
+  if (!lines.length) {
+    pf.innerHTML = 'Load G-code to validate.';
+  } else {
+    const items = [];
+    items.push(`<div>✓ ${lines.length} lines · ${zSet.length} layer${zSet.length === 1 ? '' : 's'}</div>`);
+    if (!state.connected) items.push(`<div style="color: var(--warn);">⚠ Not connected</div>`);
+    else items.push(`<div style="color: var(--ok);">✓ Connected</div>`);
+    pf.innerHTML = items.join('');
+  }
+  drawPreviewCanvas();
+  if ($('#gcode-viewer').classList.contains('active')) renderLiveViewer();
+  if (typeof refresh3DIfActive === 'function') refresh3DIfActive();
+}
+
+// Layer slider state: which layer index (or 'all') to show, in which mode.
+const layerView = { mode: 'all', index: 0 }; // mode: all | cumulative | single
+
+function updateLayerSlider() {
+  const slider = $('#layer-slider');
+  const info = $('#layer-info');
+  const layers = state.parsedGcode ? state.parsedGcode.layers : [];
+  if (!layers.length) {
+    slider.disabled = true;
+    slider.max = 0;
+    slider.value = 0;
+    info.textContent = 'No layers';
+    return;
+  }
+  slider.disabled = layerView.mode === 'all';
+  slider.min = 0;
+  slider.max = layers.length - 1;
+  if (layerView.index > layers.length - 1) layerView.index = layers.length - 1;
+  slider.value = layerView.index;
+  if (layerView.mode === 'all') {
+    info.textContent = `All ${layers.length} layer${layers.length === 1 ? '' : 's'}`;
+  } else if (layerView.mode === 'cumulative') {
+    info.textContent = `Up to layer ${layerView.index + 1}/${layers.length} · Z=${layers[layerView.index].toFixed(2)}mm`;
+  } else {
+    info.textContent = `Layer ${layerView.index + 1}/${layers.length} · Z=${layers[layerView.index].toFixed(2)}mm`;
+  }
+}
+
+$('#layer-slider').addEventListener('input', e => {
+  layerView.index = parseInt(e.target.value, 10);
+  updateLayerSlider();
+  drawPreviewCanvas();
+});
+
+function setLayerMode(mode) {
+  layerView.mode = mode;
+  ['all','cumulative','single'].forEach(m => {
+    $('#layer-mode-' + m).classList.toggle('active', m === mode);
+  });
+  updateLayerSlider();
+  drawPreviewCanvas();
+}
+$('#layer-mode-all').addEventListener('click', () => setLayerMode('all'));
+$('#layer-mode-cumulative').addEventListener('click', () => setLayerMode('cumulative'));
+$('#layer-mode-single').addEventListener('click', () => setLayerMode('single'));
+
+function drawPreviewCanvas() {
+  const canvas = $('#preview-canvas');
+  const ctx = canvas.getContext('2d');
+  const s = getSubstrate();
+  const W = canvas.width, H = canvas.height;
+  if (W < 10 || H < 10) return;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = cssVar('--canvas-bg');
+  ctx.fillRect(0, 0, W, H);
+
+  const pad = 30;
+  const dim = s.shape === 'circle' ? s.d : Math.max(s.w, s.h);
+  const scale = (Math.min(W, H) - pad * 2) / dim;
+  const cx = W / 2, cy = H / 2;
+  const mmToPx = (mx, my) => ({ x: cx + mx * scale, y: cy - my * scale });
+
+  ctx.strokeStyle = cssVar('--grid-coarse');
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let mm = -dim/2; mm <= dim/2; mm += 10) {
+    const a = mmToPx(mm, -dim/2), b = mmToPx(mm, dim/2);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    const c = mmToPx(-dim/2, mm), d = mmToPx(dim/2, mm);
+    ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = cssVar('--accent');
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (s.shape === 'circle') {
+    ctx.arc(cx, cy, (s.d/2) * scale, 0, Math.PI * 2);
+  } else {
+    ctx.rect(cx - (s.w/2)*scale, cy - (s.h/2)*scale, s.w*scale, s.h*scale);
+  }
+  ctx.stroke();
+
+  if (!state.parsedGcode || !state.parsedGcode.segments.length) {
+    ctx.fillStyle = cssVar('--text-faint');
+    ctx.font = '11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText('No G-code loaded', cx, cy);
+    ctx.textAlign = 'start';
+    return;
+  }
+
+  const printColor = cssVar('--info');
+  const dangerColor = cssVar('--danger');
+  const travelColor = cssVar('--grid-coarse');
+  const ghostColor = cssVar('--text-faint');
+  const ox = state.origin.x, oy = state.origin.y;
+  ctx.lineWidth = 1.2;
+
+  // Layer filtering: decide whether each segment is "current" (full color)
+  // or filtered out (skipped) based on layer view mode.
+  const layers = state.parsedGcode.layers || [];
+  const targetZ = layers.length ? layers[Math.min(layerView.index, layers.length - 1)] : null;
+
+  function shouldShow(seg) {
+    if (layerView.mode === 'all') return { show: true, ghost: false };
+    if (layers.length === 0) return { show: true, ghost: false };
+    // Match Z to target layer with tolerance
+    const segLayerIdx = layers.findIndex(z => Math.abs(z - seg.z) < 0.01);
+    if (layerView.mode === 'cumulative') {
+      if (segLayerIdx <= layerView.index) {
+        // Below current: ghost; at current: full color
+        return { show: true, ghost: segLayerIdx < layerView.index };
+      }
+      return { show: false, ghost: false };
+    }
+    // single
+    if (segLayerIdx === layerView.index) return { show: true, ghost: false };
+    return { show: false, ghost: false };
+  }
+
+  for (const seg of state.parsedGcode.segments) {
+    const decision = shouldShow(seg);
+    if (!decision.show) continue;
+    const a = mmToPx(seg.x0 - ox, seg.y0 - oy);
+    const b = mmToPx(seg.x1 - ox, seg.y1 - oy);
+    if (decision.ghost) {
+      // Show prior layers in dim color so user has spatial context
+      ctx.strokeStyle = ghostColor;
+      ctx.globalAlpha = 0.3;
+      ctx.setLineDash([]);
+    } else if (seg.travel) {
+      ctx.strokeStyle = travelColor;
+      ctx.setLineDash([3, 3]);
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.strokeStyle = printColor;
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+}
+
+// ============ PRINT EXECUTION ============
+$('#btn-start').addEventListener('click', () => {
+  if (!state.connected) { logLine('Connect to printer first.', 'err'); return; }
+  if (!state.parsedGcode || !state.parsedGcode.lines.length) { logLine('No G-code loaded.', 'err'); return; }
+  if (state.printing) { logLine('Already printing.', 'err'); return; }
+  // Out-of-bounds moves are allowed without prompt — user manages substrate placement.
+  state.printQueue = state.parsedGcode.lines.slice();
+  state.printIndex = 0;
+  state.printing = true;
+  state.paused = false;
+  state.awaitingOk = false;
+  $('#btn-start').disabled = true;
+  $('#btn-pause').disabled = false;
+  $('#btn-stop-print').disabled = false;
+  setMode('Printing');
+  setStatus('Printing', 'busy');
+  logLine(`Print started · ${state.printQueue.length} lines`, 'ok');
+  sendNextPrintLine();
+});
+
+async function sendNextPrintLine() {
+  if (!state.printing || state.paused) return;
+  if (state.awaitingOk) return;  // wait for previous line's ok before sending next
+  if (state.printIndex >= state.printQueue.length) {
+    finishPrint();
+    return;
+  }
+  const line = state.printQueue[state.printIndex++];
+  state.awaitingOk = true;
+  await sendCommand(line);
+  $('#stat-sent').textContent = state.printIndex;
+  $('#footer-queue').textContent = state.printQueue.length - state.printIndex;
+  const pct = (state.printIndex / state.printQueue.length) * 100;
+  $('#progress-bar').style.width = pct.toFixed(1) + '%';
+  updateLiveViewer();
+}
+
+function finishPrint() {
+  state.printing = false;
+  state.paused = false;
+  state.awaitingOk = false;
+  state.printQueue = [];
+  state.printIndex = 0;
+  $('#btn-start').disabled = false;
+  $('#btn-pause').disabled = true;
+  $('#btn-stop-print').disabled = true;
+  $('#btn-pause').textContent = '⏸';
+  $('#footer-queue').textContent = '0';
+  setMode('Idle');
+  setStatus('Connected', 'connected');
+  logLine('Print complete.', 'ok');
+}
+
+$('#btn-pause').addEventListener('click', () => {
+  state.paused = !state.paused;
+  $('#btn-pause').textContent = state.paused ? '▶' : '⏸';
+  setMode(state.paused ? 'Paused' : 'Printing');
+  if (!state.paused && !state.awaitingOk) sendNextPrintLine();
+});
+
+$('#btn-stop-print').addEventListener('click', () => {
+  confirmAction('Stop Print', 'Stop the current print job? Both pressures will be turned off.', () => {
+    // Turn off pressures immediately so nothing keeps extruding
+    sendCommand('M761');
+    sendCommand('M763');
+    state.printing = false;
+    state.paused = false;
+    state.awaitingOk = false;
+    state.printQueue = [];
+    state.printIndex = 0;
+    $('#btn-start').disabled = false;
+    $('#btn-pause').disabled = true;
+    $('#btn-stop-print').disabled = true;
+    $('#btn-pause').textContent = '⏸';
+    $('#footer-queue').textContent = '0';
+    setMode('Idle');
+    setStatus('Connected', 'connected');
+    logLine('Print stopped. Pressures off.', 'sys');
+  });
+});
+
+// ============ LIVE VIEWER ============
+function renderLiveViewer() {
+  const viewer = $('#gcode-viewer');
+  if (!state.parsedGcode) {
+    viewer.innerHTML = '<div class="gcode-line"><span class="ln">--</span>(no G-code)</div>';
+    return;
+  }
+  const lines = state.parsedGcode.lines;
+  const cap = Math.min(lines.length, 2000);
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < cap; i++) {
+    const l = lines[i];
+    const div = document.createElement('div');
+    div.className = 'gcode-line';
+    div.dataset.idx = i;
+    if (l.startsWith(';')) div.classList.add('comment');
+    div.innerHTML = `<span class="ln">${i + 1}</span>${escapeHtml(l)}`;
+    frag.appendChild(div);
+  }
+  if (lines.length > 2000) {
+    const div = document.createElement('div');
+    div.className = 'gcode-line comment';
+    div.innerHTML = `<span class="ln">--</span>(${lines.length - 2000} more lines hidden)`;
+    frag.appendChild(div);
+  }
+  viewer.innerHTML = '';
+  viewer.appendChild(frag);
+}
+function updateLiveViewer() {
+  const viewer = $('#gcode-viewer');
+  if (!viewer.classList.contains('active')) return;
+  if (!state.parsedGcode) return;
+  const cur = state.printIndex - 1;
+  const lines = viewer.querySelectorAll('.gcode-line[data-idx]');
+  lines.forEach(line => {
+    const idx = parseInt(line.dataset.idx, 10);
+    line.classList.remove('sent', 'current');
+    if (idx < cur) line.classList.add('sent');
+    else if (idx === cur) line.classList.add('current');
+  });
+  if (cur >= 0 && cur < lines.length) {
+    const target = viewer.querySelector(`[data-idx="${cur}"]`);
+    if (target) {
+      const tRect = target.getBoundingClientRect();
+      const vRect = viewer.getBoundingClientRect();
+      if (tRect.top < vRect.top || tRect.bottom > vRect.bottom) {
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+  }
+}
+
+$('#viewer-edit').addEventListener('click', () => {
+  $('#viewer-edit').classList.add('active');
+  $('#viewer-live').classList.remove('active');
+  $('#gcode-text').style.display = '';
+  $('#gcode-viewer').classList.remove('active');
+});
+$('#viewer-live').addEventListener('click', () => {
+  $('#viewer-live').classList.add('active');
+  $('#viewer-edit').classList.remove('active');
+  $('#gcode-text').style.display = 'none';
+  $('#gcode-viewer').classList.add('active');
+  renderLiveViewer();
+  updateLiveViewer();
+});
+
+// ============ PRESSURE CONTROL ============
+// Tracks UI state for both printheads. Sending the M-codes is fire-and-forget;
+// we update the visual state immediately on click and assume the printer
+// honored it. If the user wants to verify, they can watch the console.
+const pressureState = { 1: false, 2: false };
+
+// Head type: 'pressure' uses M760-M763, 'extrusion' uses E-axis on G1 moves.
+// Persisted to localStorage so it survives reloads.
+let headType = 'pressure';
+try {
+  const saved = localStorage.getItem('bp-head-type');
+  if (saved === 'extrusion' || saved === 'pressure') headType = saved;
+} catch (e) {}
+
+function applyHeadType(type) {
+  headType = type;
+  try { localStorage.setItem('bp-head-type', type); } catch (e) {}
+  $$('.head-type-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+  });
+  $('#head-pressure-ui').style.display = type === 'pressure' ? '' : 'none';
+  $('#head-extrusion-ui').style.display = type === 'extrusion' ? '' : 'none';
+}
+
+$$('.head-type-btn').forEach(b => {
+  b.addEventListener('click', () => applyHeadType(b.dataset.type));
+});
+
+$('#btn-reset-e').addEventListener('click', () => {
+  if (!state.connected) { logLine('Connect first.', 'err'); return; }
+  sendCommand('G92 E0');
+  logLine('Extruder position reset to 0.', 'ok');
+});
+
+function setPressureState(head, on) {
+  pressureState[head] = on;
+  const stateEl = $(`#ph${head}-state`);
+  stateEl.textContent = on ? 'ON' : 'OFF';
+  stateEl.classList.toggle('on', on);
+}
+
+$$('.pressure-on').forEach(b => {
+  b.addEventListener('click', () => {
+    const head = parseInt(b.dataset.head, 10);
+    const code = b.dataset.on;
+    if (!state.connected) { logLine('Connect printer first.', 'err'); return; }
+    sendCommand(code);
+    setPressureState(head, true);
+    logLine(`Printhead ${head} pressure ON (${code})`, 'ok');
+  });
+});
+
+$$('.pressure-off').forEach(b => {
+  b.addEventListener('click', () => {
+    const head = parseInt(b.dataset.head, 10);
+    const code = b.dataset.off;
+    if (!state.connected) { logLine('Connect printer first.', 'err'); return; }
+    sendCommand(code);
+    setPressureState(head, false);
+    logLine(`Printhead ${head} pressure OFF (${code})`, 'ok');
+  });
+});
+
+$('#btn-pressure-all-off').addEventListener('click', () => {
+  if (!state.connected) { logLine('Connect printer first.', 'err'); return; }
+  sendCommand('M761');  // PH1 off
+  sendCommand('M763');  // PH2 off
+  setPressureState(1, false);
+  setPressureState(2, false);
+  logLine('All printheads OFF (M761, M763)', 'ok');
+});
+
+
+function loadMacros() {
+  try { return JSON.parse(localStorage.getItem('bp-macros') || '[]'); }
+  catch (e) { return []; }
+}
+function saveMacros(m) { try { localStorage.setItem('bp-macros', JSON.stringify(m)); } catch (e) {} }
+
+function renderMacros() {
+  const c = $('#macro-list');
+  const arr = loadMacros();
+  c.innerHTML = '';
+  if (!arr.length) {
+    c.innerHTML = '<div class="macro-empty">No macros yet. Click + New.</div>';
+    return;
+  }
+  arr.forEach((m, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'macro-btn';
+    btn.title = m.body;
+    btn.innerHTML = `${escapeHtml(m.name)}<span class="del" data-i="${i}">×</span>`;
+    btn.addEventListener('click', e => {
+      if (e.target.classList.contains('del')) return;
+      runMacro(m);
+    });
+    c.appendChild(btn);
+  });
+  c.querySelectorAll('.del').forEach(d => {
+    d.addEventListener('click', e => {
+      e.stopPropagation();
+      const i = parseInt(d.dataset.i, 10);
+      const arr2 = loadMacros();
+      const removed = arr2.splice(i, 1)[0];
+      saveMacros(arr2);
+      renderMacros();
+      logLine(`Deleted macro: ${removed.name}`, 'sys');
+    });
+  });
+}
+function runMacro(macro) {
+  if (!state.connected) { logLine('Connect first.', 'err'); return; }
+  const lines = macro.body.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith(';'));
+  logLine(`▶ Macro: ${macro.name} (${lines.length} cmds)`, 'ok');
+  lines.forEach(l => sendCommand(l));
+}
+
+$('#btn-show-macro-form').addEventListener('click', () => {
+  $('#macro-form').style.display = '';
+  $('#macro-name').focus();
+});
+$('#btn-cancel-macro').addEventListener('click', () => {
+  $('#macro-form').style.display = 'none';
+  $('#macro-name').value = '';
+  $('#macro-body').value = '';
+});
+$('#btn-save-macro').addEventListener('click', () => {
+  const name = $('#macro-name').value.trim();
+  const body = $('#macro-body').value.trim();
+  if (!name || !body) { logLine('Macro needs name and body.', 'err'); return; }
+  const arr = loadMacros();
+  arr.push({ name, body });
+  saveMacros(arr);
+  $('#macro-name').value = '';
+  $('#macro-body').value = '';
+  $('#macro-form').style.display = 'none';
+  renderMacros();
+  logLine(`Saved macro: ${name}`, 'ok');
+});
+
+// ============ IMAGE / SVG → GCODE ============
+let imgState = { img: null, svgPaths: null, kind: null }; // kind: 'image' | 'svg'
+
+$('#btn-load-img').addEventListener('click', () => $('#img-file').click());
+$('#img-file').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const isSvg = /\.svg$/i.test(f.name) || f.type === 'image/svg+xml';
+  if (isSvg) {
+    const text = await f.text();
+    try {
+      const result = parseSvg(text);
+      imgState.svgPaths = result.paths;
+      imgState.svgViewBox = result.viewBox;
+      imgState.img = null;
+      imgState.kind = 'svg';
+      updateImgUiForKind();
+      renderSvgPreview();
+      $('#btn-img-trace').disabled = false;
+      logLine(`SVG loaded: ${result.paths.length} paths, viewBox ${result.viewBox.w.toFixed(1)}×${result.viewBox.h.toFixed(1)}`, 'ok');
+    } catch (err) {
+      logLine('SVG parse error: ' + err.message, 'err');
+    }
+    return;
+  }
+  // Raster image path (existing logic)
+  const url = URL.createObjectURL(f);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    imgState.img = img;
+    imgState.svgPaths = null;
+    imgState.kind = 'image';
+    updateImgUiForKind();
+    renderImagePreview();
+    $('#btn-img-trace').disabled = false;
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    logLine('Failed to load image.', 'err');
+  };
+  img.src = url;
+});
+
+function updateImgUiForKind() {
+  const isSvg = imgState.kind === 'svg';
+  // SVG: no threshold/detail/mode, just smoothing
+  $('#row-threshold').style.display = isSvg ? 'none' : '';
+  $('#row-detail').style.display = isSvg ? 'none' : '';
+  $('#row-svg-flat').style.display = isSvg ? '' : 'none';
+  // Mode select hidden for SVG (always uses native paths)
+  const modeField = $('#img-mode').parentElement;
+  modeField.style.display = isSvg ? 'none' : '';
+}
+
+['img-threshold','img-detail','svg-flat'].forEach(id => {
+  const el = $('#' + id);
+  if (!el) return;
+  const v = $('#' + id + '-v');
+  el.addEventListener('input', () => {
+    v.textContent = el.value;
+    if (imgState.kind === 'svg') renderSvgPreview();
+    else if (imgState.kind === 'image') renderImagePreview();
+  });
+});
+$('#img-mode').addEventListener('change', () => {
+  if (imgState.kind === 'image') renderImagePreview();
+});
+
+function renderImagePreview() {
+  if (!imgState.img) return;
+  const preview = $('#img-preview');
+  preview.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  const maxDim = 200;
+  const scale = Math.min(maxDim / imgState.img.width, maxDim / imgState.img.height, 1);
+  canvas.width = Math.max(1, Math.round(imgState.img.width * scale));
+  canvas.height = Math.max(1, Math.round(imgState.img.height * scale));
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(imgState.img, 0, 0, canvas.width, canvas.height);
+  const threshold = parseInt($('#img-threshold').value, 10);
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < data.data.length; i += 4) {
+    const r = data.data[i], g = data.data[i+1], b = data.data[i+2];
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    const v = lum < threshold ? 0 : 255;
+    data.data[i] = data.data[i+1] = data.data[i+2] = v;
+  }
+  ctx.putImageData(data, 0, 0);
+  preview.appendChild(canvas);
+}
+
+function renderSvgPreview() {
+  if (!imgState.svgPaths) return;
+  const preview = $('#img-preview');
+  preview.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  const maxDim = 200;
+  const vb = imgState.svgViewBox;
+  const scale = Math.min(maxDim / vb.w, maxDim / vb.h, 1);
+  canvas.width = Math.max(1, Math.round(vb.w * scale));
+  canvas.height = Math.max(1, Math.round(vb.h * scale));
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = cssVar('--canvas-bg');
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = cssVar('--info');
+  ctx.lineWidth = 1;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const flat = parseFloat($('#svg-flat').value) || 0.3;
+  for (const p of imgState.svgPaths) {
+    const flat2d = flattenSvgPath(p, flat);
+    ctx.beginPath();
+    for (let i = 0; i < flat2d.length; i++) {
+      const x = (flat2d[i].x - vb.x) * scale;
+      const y = (flat2d[i].y - vb.y) * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  preview.appendChild(canvas);
+}
+
+$('#btn-img-trace').addEventListener('click', () => {
+  if (imgState.kind === 'svg') {
+    traceSvg();
+  } else if (imgState.kind === 'image') {
+    traceImage();
+  }
+});
+
+function traceSvg() {
+  if (!imgState.svgPaths || !imgState.svgPaths.length) return;
+  const sizeMm = parseFloat($('#img-size').value) || 20;
+  const flat = parseFloat($('#svg-flat').value) || 0.3;
+  const vb = imgState.svgViewBox;
+  // Map SVG coords to mm, fitting longer dim to sizeMm, centered on origin.
+  // SVG y is downward, mm y is upward, so we flip.
+  const longer = Math.max(vb.w, vb.h);
+  const mmPerUnit = sizeMm / longer;
+  const xOff = -(vb.w * mmPerUnit) / 2;
+  const yOff = -(vb.h * mmPerUnit) / 2;
+  const cx2mm = u => xOff + (u - vb.x) * mmPerUnit;
+  const cy2mm = u => -(yOff + (u - vb.y) * mmPerUnit);
+
+  let paths = [];
+  for (const p of imgState.svgPaths) {
+    const flat2d = flattenSvgPath(p, flat);
+    if (flat2d.length < 2) continue;
+    const mm = flat2d.map(pt => ({ x: cx2mm(pt.x), y: cy2mm(pt.y) }));
+    paths.push(mm);
+  }
+
+  // Simplify with small epsilon (already flattened to tolerance)
+  paths = paths.map(p => douglasPeucker(p, mmPerUnit * 0.3));
+  paths = paths.filter(p => p.length >= 2);
+  if (!paths.length) {
+    logLine('SVG produced no printable paths in substrate bounds. Try increasing size or shifting origin.', 'err');
+    return;
+  }
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths = state.drawPaths.concat(paths);
+  drawSketchCanvas();
+  const totalPts = paths.reduce((s, p) => s + p.length, 0);
+  logLine(`SVG → ${paths.length} paths, ${totalPts} points.`, 'ok');
+  document.querySelector('.bed-mode-tab[data-mode="draw"]').click();
+}
+
+function traceImage() {
+  if (!imgState.img) return;
+  const detail = parseInt($('#img-detail').value, 10);
+  const sizeMm = parseFloat($('#img-size').value) || 20;
+  const threshold = parseInt($('#img-threshold').value, 10);
+  const mode = $('#img-mode').value;
+  const ar = imgState.img.width / imgState.img.height;
+  const tw = ar >= 1 ? detail : Math.round(detail * ar);
+  const th = ar >= 1 ? Math.round(detail / ar) : detail;
+  const c = document.createElement('canvas');
+  c.width = tw; c.height = th;
+  const cx = c.getContext('2d');
+  cx.drawImage(imgState.img, 0, 0, tw, th);
+  const data = cx.getImageData(0, 0, tw, th).data;
+
+  let mask = new Uint8Array(tw * th);
+  for (let i = 0; i < tw * th; i++) {
+    const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    mask[i] = lum < threshold ? 1 : 0;
+  }
+
+  const longer = Math.max(tw, th);
+  const mmPerPx = sizeMm / longer;
+  const xOff = -(tw * mmPerPx) / 2;
+  const yOff = -(th * mmPerPx) / 2;
+  const px2mm = (px, py) => ({
+    x: xOff + px * mmPerPx,
+    y: -(yOff + py * mmPerPx),
+  });
+
+  let paths = [];
+
+  if (mode === 'centerline') {
+    const skeleton = zhangSuenThin(mask, tw, th);
+    paths = traceSkeleton(skeleton, tw, th, px2mm);
+    paths = paths.map(p => douglasPeucker(p, mmPerPx * 0.5));
+  } else if (mode === 'raster') {
+    let dir = 1;
+    for (let py = 0; py < th; py++) {
+      const runs = [];
+      let start = -1;
+      for (let px = 0; px < tw; px++) {
+        if (mask[py * tw + px]) { if (start < 0) start = px; }
+        else if (start >= 0) { runs.push([start, px - 1]); start = -1; }
+      }
+      if (start >= 0) runs.push([start, tw - 1]);
+      const ordered = dir > 0 ? runs : runs.slice().reverse();
+      for (const [s, e] of ordered) {
+        const a = px2mm(dir > 0 ? s : e, py);
+        const b = px2mm(dir > 0 ? e : s, py);
+        paths.push([a, b]);
+      }
+      dir *= -1;
+    }
+  } else {
+    const edge = new Uint8Array(tw * th);
+    for (let py = 1; py < th - 1; py++) {
+      for (let px = 1; px < tw - 1; px++) {
+        if (!mask[py * tw + px]) continue;
+        if (!mask[(py-1)*tw + px] || !mask[(py+1)*tw + px] ||
+            !mask[py*tw + (px-1)] || !mask[py*tw + (px+1)]) {
+          edge[py * tw + px] = 1;
+        }
+      }
+    }
+    paths = traceSkeleton(edge, tw, th, px2mm);
+    paths = paths.map(p => douglasPeucker(p, mmPerPx * 0.5));
+  }
+
+  paths = paths.filter(p => p.length >= 2);
+  if (!paths.length) {
+    logLine('Image trace produced no printable paths. Try lowering threshold or increasing detail.', 'err');
+    return;
+  }
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths = state.drawPaths.concat(paths);
+  drawSketchCanvas();
+  const totalPts = paths.reduce((s, p) => s + p.length, 0);
+  logLine(`Image traced (${mode}) → ${paths.length} paths, ${totalPts} points.`, 'ok');
+  document.querySelector('.bed-mode-tab[data-mode="draw"]').click();
+}
+
+// ============ TEXT → GCODE ============
+// Renders text as an SVG <text> element, then flattens the resulting glyph
+// geometry to paths. Three styles:
+//   - outline: thin font, traced as outlines (default)
+//   - centerline: thin font, single-stroke approximation via Zhang-Suen
+//   - filled: bold font, raster fill
+$('#btn-text-trace').addEventListener('click', () => {
+  const text = $('#text-input').value;
+  if (!text || !text.trim()) {
+    logLine('Enter text first.', 'err');
+    return;
+  }
+  const font = $('#text-font').value;
+  const weight = $('#text-weight').value;
+  const sizeMm = parseFloat($('#text-size').value) || 8;
+  const style = $('#text-style').value;
+
+  // Render text into an offscreen SVG so we can measure it and trace its glyphs.
+  // We use a large pixel size for high-quality measurement, then scale to mm.
+  const ns = 'http://www.w3.org/2000/svg';
+  const renderPx = 200;  // glyph height in SVG units
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute; left:-99999px; top:-99999px; visibility:hidden;';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('xmlns', ns);
+  const t = document.createElementNS(ns, 'text');
+  t.setAttribute('x', 0);
+  t.setAttribute('y', renderPx);
+  t.setAttribute('font-family', font);
+  t.setAttribute('font-size', renderPx);
+  t.setAttribute('font-weight', weight);
+  t.textContent = text;
+  svg.appendChild(t);
+  host.appendChild(svg);
+  document.body.appendChild(host);
+
+  let bbox;
+  try {
+    bbox = t.getBBox();
+  } catch (err) {
+    document.body.removeChild(host);
+    logLine('Text rendering failed: ' + err.message, 'err');
+    return;
+  }
+  if (!bbox.width || !bbox.height) {
+    document.body.removeChild(host);
+    logLine('Empty text bounding box.', 'err');
+    return;
+  }
+
+  // For outline mode we trace the text element directly.
+  // For centerline/filled, we rasterize through canvas first.
+  let paths = [];
+  const mmPerSvgUnit = sizeMm / bbox.height;
+  const xOff = -(bbox.width * mmPerSvgUnit) / 2;
+  const yOff = -(bbox.height * mmPerSvgUnit) / 2;
+  const svg2mm = (sx, sy) => ({
+    x: xOff + (sx - bbox.x) * mmPerSvgUnit,
+    y: -(yOff + (sy - bbox.y) * mmPerSvgUnit),  // flip Y
+  });
+
+  if (style === 'outline') {
+    // Use getPointAtLength on the text element directly.
+    // Modern browsers support this on <text> elements.
+    try {
+      const totalLen = t.getComputedTextLength
+        ? t.getComputedTextLength()
+        : 0;
+      // SVG text doesn't expose path data, so rasterize and trace the contour
+      paths = textToContourPaths(text, font, weight, sizeMm, false);
+    } catch (err) {
+      paths = textToContourPaths(text, font, weight, sizeMm, false);
+    }
+  } else if (style === 'centerline') {
+    paths = textToContourPaths(text, font, weight, sizeMm, true);
+  } else {
+    // filled = raster
+    paths = textToRasterPaths(text, font, weight, sizeMm);
+  }
+
+  document.body.removeChild(host);
+
+  paths = paths.filter(p => p.length >= 2);
+  if (!paths.length) {
+    logLine('Text produced no printable paths in substrate bounds. Reduce size or shift origin.', 'err');
+    return;
+  }
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths = state.drawPaths.concat(paths);
+  drawSketchCanvas();
+  logLine(`Text "${text}" → ${paths.length} paths.`, 'ok');
+  document.querySelector('.bed-mode-tab[data-mode="draw"]').click();
+});
+
+// Rasterize text to a binary mask, then either trace its outline (centerline=false)
+// or skeletonize (centerline=true). This is more reliable than SVG path extraction.
+function textToContourPaths(text, font, weight, sizeMm, centerline) {
+  // Render at moderate resolution; ~400 px tall is enough for clean tracing.
+  const renderPx = 400;
+  const padding = 20;
+  const tmpCanvas = document.createElement('canvas');
+  // Measure first
+  const measureCtx = tmpCanvas.getContext('2d');
+  measureCtx.font = `${weight} ${renderPx}px ${font}`;
+  const m = measureCtx.measureText(text);
+  const w = Math.ceil(m.width) + padding * 2;
+  // Approximate text height: use ascent + descent if available
+  const ascent = m.actualBoundingBoxAscent || renderPx * 0.8;
+  const descent = m.actualBoundingBoxDescent || renderPx * 0.2;
+  const h = Math.ceil(ascent + descent) + padding * 2;
+  tmpCanvas.width = w;
+  tmpCanvas.height = h;
+  const ctx = tmpCanvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.font = `${weight} ${renderPx}px ${font}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, padding, padding + ascent);
+
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    // Anti-aliased pixels: anything with alpha > 128 counts as ink
+    mask[i] = data[i*4 + 3] > 128 ? 1 : 0;
+  }
+
+  // Map pixels to mm: fit text height to sizeMm, centered on origin
+  const mmPerPx = sizeMm / (ascent + descent);
+  const xOff = -(w * mmPerPx) / 2;
+  const yOff = -(h * mmPerPx) / 2;
+  const px2mm = (px, py) => ({
+    x: xOff + px * mmPerPx,
+    y: -(yOff + py * mmPerPx),
+  });
+
+  let paths;
+  if (centerline) {
+    const skel = zhangSuenThin(mask, w, h);
+    paths = traceSkeleton(skel, w, h, px2mm);
+  } else {
+    // Contour: trace outline of letterforms
+    const edge = new Uint8Array(w * h);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        if (!mask[y*w + x]) continue;
+        if (!mask[(y-1)*w + x] || !mask[(y+1)*w + x] ||
+            !mask[y*w + (x-1)] || !mask[y*w + (x+1)]) {
+          edge[y*w + x] = 1;
+        }
+      }
+    }
+    paths = traceSkeleton(edge, w, h, px2mm);
+  }
+  return paths.map(p => douglasPeucker(p, mmPerPx * 0.5));
+}
+
+function textToRasterPaths(text, font, weight, sizeMm) {
+  const renderPx = 400;
+  const padding = 20;
+  const tmpCanvas = document.createElement('canvas');
+  const measureCtx = tmpCanvas.getContext('2d');
+  measureCtx.font = `${weight} ${renderPx}px ${font}`;
+  const m = measureCtx.measureText(text);
+  const w = Math.ceil(m.width) + padding * 2;
+  const ascent = m.actualBoundingBoxAscent || renderPx * 0.8;
+  const descent = m.actualBoundingBoxDescent || renderPx * 0.2;
+  const h = Math.ceil(ascent + descent) + padding * 2;
+  tmpCanvas.width = w;
+  tmpCanvas.height = h;
+  const ctx = tmpCanvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.font = `${weight} ${renderPx}px ${font}`;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, padding, padding + ascent);
+
+  const data = ctx.getImageData(0, 0, w, h).data;
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) mask[i] = data[i*4 + 3] > 128 ? 1 : 0;
+
+  const mmPerPx = sizeMm / (ascent + descent);
+  const xOff = -(w * mmPerPx) / 2;
+  const yOff = -(h * mmPerPx) / 2;
+
+  // Subsample rows to avoid printing every single pixel row.
+  // ~0.3 mm strand spacing is reasonable for most bioinks.
+  const rowStepPx = Math.max(1, Math.round(0.3 / mmPerPx));
+  const paths = [];
+  let dir = 1;
+  for (let py = 0; py < h; py += rowStepPx) {
+    const runs = [];
+    let start = -1;
+    for (let px = 0; px < w; px++) {
+      if (mask[py*w + px]) { if (start < 0) start = px; }
+      else if (start >= 0) { runs.push([start, px - 1]); start = -1; }
+    }
+    if (start >= 0) runs.push([start, w - 1]);
+    const ordered = dir > 0 ? runs : runs.slice().reverse();
+    for (const [s, e] of ordered) {
+      if (e - s < 2) continue;
+      const ax = dir > 0 ? s : e;
+      const bx = dir > 0 ? e : s;
+      paths.push([
+        { x: xOff + ax * mmPerPx, y: -(yOff + py * mmPerPx) },
+        { x: xOff + bx * mmPerPx, y: -(yOff + py * mmPerPx) },
+      ]);
+    }
+    dir *= -1;
+  }
+  return paths;
+}
+
+
+// Parse SVG text and return a list of path command sequences plus the viewBox.
+// Each path is an array of {cmd, args} preserving original SVG semantics.
+// We use the browser's DOMParser to read the SVG, getCTM to bake in transforms,
+// and getPointAtLength to flatten arbitrary path elements (including <line>,
+// <polyline>, <polygon>, <rect>, <circle>, <ellipse>, <path>) without us
+// having to implement an arc/bezier evaluator from scratch.
+function parseSvg(svgText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgText, 'image/svg+xml');
+  const errNode = doc.querySelector('parsererror');
+  if (errNode) throw new Error('Invalid SVG');
+  const svg = doc.documentElement;
+  if (svg.tagName.toLowerCase() !== 'svg') throw new Error('Root is not <svg>');
+
+  // Determine viewBox
+  let vb = svg.getAttribute('viewBox');
+  let viewBox;
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/).map(parseFloat);
+    viewBox = { x: parts[0], y: parts[1], w: parts[2], h: parts[3] };
+  } else {
+    const w = parseFloat(svg.getAttribute('width')) || 100;
+    const h = parseFloat(svg.getAttribute('height')) || 100;
+    viewBox = { x: 0, y: 0, w, h };
+  }
+
+  // Mount the SVG offscreen so getPointAtLength/getTotalLength work.
+  // The browser needs an in-document SVG to measure paths.
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute; left:-99999px; top:-99999px; width:100px; height:100px; visibility:hidden;';
+  const svgClone = svg.cloneNode(true);
+  host.appendChild(svgClone);
+  document.body.appendChild(host);
+
+  const paths = [];
+  try {
+    // Convert simple shapes to <path> data so we can walk one element type
+    const elements = svgClone.querySelectorAll(
+      'path, line, polyline, polygon, rect, circle, ellipse'
+    );
+    for (const el of elements) {
+      const pathEl = shapeToPathElement(el, svgClone);
+      if (!pathEl) continue;
+      paths.push(pathEl);
+    }
+  } finally {
+    // Don't remove host yet; trace step needs it for measurement. Remove at end.
+  }
+
+  // Stash the host on state so flattenSvgPath can use it
+  imgState._svgHost = host;
+  imgState._svgClone = svgClone;
+
+  return { paths, viewBox };
+}
+
+// Convert any supported SVG shape element into a <path> element (in the same
+// document) so it can be measured uniformly.
+function shapeToPathElement(el, container) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const tag = el.tagName.toLowerCase();
+  let d = '';
+
+  if (tag === 'path') {
+    d = el.getAttribute('d') || '';
+  } else if (tag === 'line') {
+    const x1 = +el.getAttribute('x1') || 0;
+    const y1 = +el.getAttribute('y1') || 0;
+    const x2 = +el.getAttribute('x2') || 0;
+    const y2 = +el.getAttribute('y2') || 0;
+    d = `M${x1} ${y1} L${x2} ${y2}`;
+  } else if (tag === 'polyline' || tag === 'polygon') {
+    const pts = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(parseFloat);
+    if (pts.length < 4) return null;
+    d = `M${pts[0]} ${pts[1]}`;
+    for (let i = 2; i < pts.length; i += 2) d += ` L${pts[i]} ${pts[i+1]}`;
+    if (tag === 'polygon') d += ' Z';
+  } else if (tag === 'rect') {
+    const x = +el.getAttribute('x') || 0;
+    const y = +el.getAttribute('y') || 0;
+    const w = +el.getAttribute('width') || 0;
+    const h = +el.getAttribute('height') || 0;
+    if (w <= 0 || h <= 0) return null;
+    d = `M${x} ${y} L${x+w} ${y} L${x+w} ${y+h} L${x} ${y+h} Z`;
+  } else if (tag === 'circle') {
+    const cx = +el.getAttribute('cx') || 0;
+    const cy = +el.getAttribute('cy') || 0;
+    const r = +el.getAttribute('r') || 0;
+    if (r <= 0) return null;
+    // Two arcs to make a full circle (SVG arc syntax)
+    d = `M${cx-r} ${cy} A${r} ${r} 0 1 0 ${cx+r} ${cy} A${r} ${r} 0 1 0 ${cx-r} ${cy} Z`;
+  } else if (tag === 'ellipse') {
+    const cx = +el.getAttribute('cx') || 0;
+    const cy = +el.getAttribute('cy') || 0;
+    const rx = +el.getAttribute('rx') || 0;
+    const ry = +el.getAttribute('ry') || 0;
+    if (rx <= 0 || ry <= 0) return null;
+    d = `M${cx-rx} ${cy} A${rx} ${ry} 0 1 0 ${cx+rx} ${cy} A${rx} ${ry} 0 1 0 ${cx-rx} ${cy} Z`;
+  }
+
+  if (!d) return null;
+  // Create a path element in the same SVG so it inherits transforms via getCTM
+  const newPath = document.createElementNS(ns, 'path');
+  newPath.setAttribute('d', d);
+  // Preserve inheritance of transforms by inserting beside the original element
+  el.parentNode.insertBefore(newPath, el);
+  // Detach the original element so it doesn't double-render (keeps things clean)
+  el.parentNode.removeChild(el);
+  return newPath;
+}
+
+// Walk a path element by length, sampling points and applying its CTM.
+// `tolerance` is approx max chord error in user units. Smaller = smoother.
+function flattenSvgPath(pathEl, tolerance) {
+  const totalLen = pathEl.getTotalLength();
+  if (!isFinite(totalLen) || totalLen <= 0) return [];
+  const ctm = pathEl.getCTM();  // accumulated transform matrix
+  const apply = ctm
+    ? (p) => ({ x: ctm.a * p.x + ctm.c * p.y + ctm.e,
+                y: ctm.b * p.x + ctm.d * p.y + ctm.f })
+    : (p) => ({ x: p.x, y: p.y });
+
+  // Adaptive sampling: start with a coarse step, refine where chord error exceeds tol.
+  const minStep = Math.max(0.1, tolerance);
+  const initialStep = Math.max(minStep, totalLen / 200);
+  let pts = [];
+  for (let s = 0; s <= totalLen; s += initialStep) {
+    pts.push({ s, ...apply(pathEl.getPointAtLength(s)) });
+  }
+  if (pts[pts.length - 1].s < totalLen) {
+    pts.push({ s: totalLen, ...apply(pathEl.getPointAtLength(totalLen)) });
+  }
+
+  // Refine: if midpoint between two samples diverges from straight chord by > tol, insert it.
+  // Bounded passes to prevent runaway on pathological paths.
+  for (let pass = 0; pass < 4; pass++) {
+    const out = [pts[0]];
+    let added = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i], b = pts[i + 1];
+      const midS = (a.s + b.s) / 2;
+      const m = apply(pathEl.getPointAtLength(midS));
+      // Distance from m to chord ab
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const dist = Math.abs(dx * (a.y - m.y) - (a.x - m.x) * dy) / len;
+      if (dist > tolerance && (b.s - a.s) > minStep / 2) {
+        out.push({ s: midS, x: m.x, y: m.y });
+        added++;
+      }
+      out.push(b);
+    }
+    pts = out;
+    if (added === 0) break;
+  }
+
+  return pts.map(p => ({ x: p.x, y: p.y }));
+}
+
+
+// Standard reference algorithm. Iterates two sub-passes until no pixels removed.
+function zhangSuenThin(mask, w, h) {
+  let img = new Uint8Array(mask);
+  let changed = true;
+  const idx = (x, y) => y * w + x;
+
+  while (changed) {
+    changed = false;
+    // Two sub-iterations
+    for (let pass = 0; pass < 2; pass++) {
+      const toRemove = [];
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          if (!img[idx(x, y)]) continue;
+          // 8 neighbors, clockwise from top
+          const p2 = img[idx(x,   y-1)];
+          const p3 = img[idx(x+1, y-1)];
+          const p4 = img[idx(x+1, y  )];
+          const p5 = img[idx(x+1, y+1)];
+          const p6 = img[idx(x,   y+1)];
+          const p7 = img[idx(x-1, y+1)];
+          const p8 = img[idx(x-1, y  )];
+          const p9 = img[idx(x-1, y-1)];
+          const B = p2+p3+p4+p5+p6+p7+p8+p9;
+          if (B < 2 || B > 6) continue;
+          // Count 0->1 transitions in p2..p9..p2
+          const seq = [p2,p3,p4,p5,p6,p7,p8,p9,p2];
+          let A = 0;
+          for (let i = 0; i < 8; i++) if (seq[i] === 0 && seq[i+1] === 1) A++;
+          if (A !== 1) continue;
+          if (pass === 0) {
+            if (p2 * p4 * p6 !== 0) continue;
+            if (p4 * p6 * p8 !== 0) continue;
+          } else {
+            if (p2 * p4 * p8 !== 0) continue;
+            if (p2 * p6 * p8 !== 0) continue;
+          }
+          toRemove.push(idx(x, y));
+        }
+      }
+      if (toRemove.length) {
+        changed = true;
+        for (const i of toRemove) img[i] = 0;
+      }
+    }
+  }
+  return img;
+}
+
+// Trace a thin (skeleton or edge) image into a list of polyline paths.
+// Strategy: find endpoints (pixels with exactly 1 neighbor) and walk from each.
+// Then process remaining unvisited pixels (closed loops) by picking any starting pixel.
+function traceSkeleton(skel, w, h, px2mm) {
+  const visited = new Uint8Array(w * h);
+  const idx = (x, y) => y * w + x;
+  const NEIGHBORS = [
+    [-1,-1],[ 0,-1],[ 1,-1],
+    [-1, 0],        [ 1, 0],
+    [-1, 1],[ 0, 1],[ 1, 1],
+  ];
+
+  function neighborCount(x, y) {
+    let n = 0;
+    for (const [dx, dy] of NEIGHBORS) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      if (skel[idx(nx, ny)]) n++;
+    }
+    return n;
+  }
+
+  function nextUnvisited(x, y) {
+    // Prefer 4-neighbors over diagonals for smoother paths
+    const order4 = [[0,-1],[1,0],[0,1],[-1,0]];
+    const orderDiag = [[1,-1],[1,1],[-1,1],[-1,-1]];
+    for (const list of [order4, orderDiag]) {
+      for (const [dx, dy] of list) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        if (skel[idx(nx, ny)] && !visited[idx(nx, ny)]) return [nx, ny];
+      }
+    }
+    return null;
+  }
+
+  function walkFrom(sx, sy) {
+    const path = [];
+    let x = sx, y = sy;
+    while (true) {
+      if (visited[idx(x, y)]) break;
+      visited[idx(x, y)] = 1;
+      path.push(px2mm(x, y));
+      const nxt = nextUnvisited(x, y);
+      if (!nxt) break;
+      // Stop at junctions (3+ skel-neighbors) so each branch becomes its own path
+      const nc = neighborCount(nxt[0], nxt[1]);
+      if (nc >= 3 && path.length > 1) {
+        // Include the junction pixel as the path's terminus, then stop
+        visited[idx(nxt[0], nxt[1])] = 1;
+        path.push(px2mm(nxt[0], nxt[1]));
+        break;
+      }
+      x = nxt[0]; y = nxt[1];
+    }
+    return path;
+  }
+
+  const paths = [];
+
+  // Pass 1: walk from every endpoint (1-neighbor pixel)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!skel[idx(x, y)] || visited[idx(x, y)]) continue;
+      if (neighborCount(x, y) === 1) {
+        const p = walkFrom(x, y);
+        if (p.length >= 2) paths.push(p);
+      }
+    }
+  }
+
+  // Pass 2: walk from junctions (sprouts that weren't covered by endpoints)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!skel[idx(x, y)] || visited[idx(x, y)]) continue;
+      if (neighborCount(x, y) >= 3) {
+        // Mark junction visited; walk each unvisited neighbor
+        visited[idx(x, y)] = 1;
+        for (const [dx, dy] of NEIGHBORS) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          if (skel[idx(nx, ny)] && !visited[idx(nx, ny)]) {
+            const p = [px2mm(x, y), ...walkFrom(nx, ny)];
+            if (p.length >= 2) paths.push(p);
+          }
+        }
+      }
+    }
+  }
+
+  // Pass 3: any remaining pixels are closed loops
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!skel[idx(x, y)] || visited[idx(x, y)]) continue;
+      const p = walkFrom(x, y);
+      if (p.length >= 2) {
+        // Close loop visually
+        if (p.length > 2) {
+          const first = p[0], last = p[p.length-1];
+          const d = Math.hypot(first.x - last.x, first.y - last.y);
+          const stepEst = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y) * 2;
+          if (d < stepEst) p.push(first);
+        }
+        paths.push(p);
+      }
+    }
+  }
+
+  return paths;
+}
+
+// Douglas-Peucker simplification: removes redundant near-collinear points.
+// This makes the resulting G-code dramatically smaller and smoother.
+function douglasPeucker(points, epsilon) {
+  if (points.length < 3) return points.slice();
+  const stack = [[0, points.length - 1]];
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1; keep[points.length - 1] = 1;
+  while (stack.length) {
+    const [first, last] = stack.pop();
+    let maxD = 0, idx = -1;
+    const a = points[first], b = points[last];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    for (let i = first + 1; i < last; i++) {
+      const p = points[i];
+      // Perpendicular distance to line ab
+      const d = Math.abs(dx * (a.y - p.y) - (a.x - p.x) * dy) / len;
+      if (d > maxD) { maxD = d; idx = i; }
+    }
+    if (maxD > epsilon && idx !== -1) {
+      keep[idx] = 1;
+      stack.push([first, idx]);
+      stack.push([idx, last]);
+    }
+  }
+  const out = [];
+  for (let i = 0; i < points.length; i++) if (keep[i]) out.push(points[i]);
+  return out;
+}
+
+// ============ KEYBOARD SHORTCUTS ============
+function isTyping() {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+}
+
+document.addEventListener('keydown', e => {
+  if (isTyping()) return;
+  // ? key to open help (no need to press shift on most layouts)
+  if (e.key === '?') {
+    e.preventDefault();
+    $('#help-modal').classList.add('active');
+    return;
+  }
+  if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+    e.preventDefault();
+    $('#console').innerHTML = '';
+    return;
+  }
+  // Esc closes any open modal first
+  if (e.key === 'Escape') {
+    if ($('#help-modal').classList.contains('active')) {
+      $('#help-modal').classList.remove('active');
+      return;
+    }
+    if ($('#modal').classList.contains('active')) {
+      $('#modal').classList.remove('active');
+      modalCallback = null;
+      return;
+    }
+  }
+  switch (e.key) {
+    case 'ArrowLeft':  e.preventDefault(); jog('X', -1); break;
+    case 'ArrowRight': e.preventDefault(); jog('X',  1); break;
+    case 'ArrowUp':    e.preventDefault(); jog('Y',  1); break;
+    case 'ArrowDown':  e.preventDefault(); jog('Y', -1); break;
+    case 'PageUp':     e.preventDefault(); jog('Z',  1); break;
+    case 'PageDown':   e.preventDefault(); jog('Z', -1); break;
+    case 'h': case 'H':
+      if (state.connected) { e.preventDefault(); sendCommand('G28'); }
+      break;
+    case '1': setStep(0.1); break;
+    case '2': setStep(1);   break;
+    case '3': setStep(10);  break;
+    case '4': setStep(50);  break;
+    case ' ':
+      e.preventDefault();
+      if (state.connected) {
+        confirmAction('Emergency Stop', 'Send M112? Both pressures will be turned off.', () => {
+          sendCommand('M761');
+          sendCommand('M763');
+          sendCommand('M112');
+          state.printing = false; state.paused = false;
+          setMode('Halted');
+        });
+      }
+      break;
+    case 'Escape':
+      if (path3dActive) { e.preventDefault(); cancel3DPath(); break; }
+      if (state.printing) { e.preventDefault(); $('#btn-pause').click(); }
+      break;
+  }
+});
+
+// ============ MODAL ============
+let modalCallback = null;
+function confirmAction(title, body, cb) {
+  $('#modal-title').textContent = title;
+  $('#modal-body').textContent = body;
+  modalCallback = cb;
+  $('#modal').classList.add('active');
+}
+$('#modal-cancel').addEventListener('click', () => {
+  $('#modal').classList.remove('active');
+  modalCallback = null;
+});
+$('#modal-ok').addEventListener('click', () => {
+  $('#modal').classList.remove('active');
+  if (modalCallback) modalCallback();
+  modalCallback = null;
+});
+
+// Help modal
+$('#help-toggle').addEventListener('click', () => {
+  $('#help-modal').classList.add('active');
+});
+$('#help-close').addEventListener('click', () => {
+  $('#help-modal').classList.remove('active');
+});
+$('#help-modal').addEventListener('click', e => {
+  if (e.target.id === 'help-modal') $('#help-modal').classList.remove('active');
+});
+
+// ============ CLOCK ============
+setInterval(() => {
+  $('#footer-clock').textContent = new Date().toTimeString().slice(0, 8);
+}, 1000);
+
+// ============ 3D SCENE (Three.js) ============
+// Lazy-initialized when the user first opens the 3D tab. Rebuilds geometry
+// whenever paths/G-code/STL change. Uses a custom orbit-style camera control
+// because we don't load OrbitControls (it's not on the same CDN bundle).
+const three = {
+  initialized: false,
+  scene: null,
+  camera: null,
+  renderer: null,
+  pathsGroup: null,
+  gcodeGroup: null,
+  stlGroup: null,
+  bedGroup: null,
+  source: 'paths',  // 'paths' | 'gcode' | 'stl'
+  loop: null,
+  // Orbit camera state
+  cam: { theta: -Math.PI/4, phi: Math.PI/3, dist: 80, target: { x:0, y:0, z:0 } },
+  stlMesh: null,    // raw mesh from loaded STL
+};
+
+function init3DScene() {
+  if (three.initialized) return;
+  if (typeof THREE === 'undefined') {
+    logLine('Three.js not loaded; check internet connection.', 'err');
+    return;
+  }
+  const wrap = $('#three-wrap');
+  const w = wrap.clientWidth || 600;
+  const h = wrap.clientHeight || 600;
+
+  three.scene = new THREE.Scene();
+  three.scene.background = new THREE.Color(cssVar('--canvas-bg'));
+
+  three.camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 2000);
+  applyCameraOrbit();
+
+  three.renderer = new THREE.WebGLRenderer({ antialias: true });
+  three.renderer.setSize(w, h);
+  three.renderer.setPixelRatio(window.devicePixelRatio || 1);
+  wrap.appendChild(three.renderer.domElement);
+
+  // Lights for STL shading
+  const amb = new THREE.AmbientLight(0xffffff, 0.6);
+  three.scene.add(amb);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+  dir.position.set(50, 80, 100);
+  three.scene.add(dir);
+
+  // Groups for swappable content
+  three.bedGroup = new THREE.Group();
+  three.pathsGroup = new THREE.Group();
+  three.gcodeGroup = new THREE.Group();
+  three.stlGroup = new THREE.Group();
+  three.scene.add(three.bedGroup, three.pathsGroup, three.gcodeGroup, three.stlGroup);
+
+  buildBedGeometry();
+  attach3DControls(three.renderer.domElement);
+  set3DSource('paths');
+
+  three.initialized = true;
+
+  // Resize observer keeps canvas in sync with column resizes
+  const ro = new ResizeObserver(() => {
+    if (!three.initialized) return;
+    const ww = wrap.clientWidth, hh = wrap.clientHeight;
+    if (ww > 0 && hh > 0) {
+      three.renderer.setSize(ww, hh);
+      three.camera.aspect = ww / hh;
+      three.camera.updateProjectionMatrix();
+    }
+  });
+  ro.observe(wrap);
+}
+
+function applyCameraOrbit() {
+  if (!three.camera) return;
+  const { theta, phi, dist, target } = three.cam;
+  // Spherical -> cartesian. Y is up in three.js; we map our XY plane to XZ
+  // so Z (height) becomes Y in the scene. This makes "up" feel natural.
+  const x = target.x + dist * Math.sin(phi) * Math.cos(theta);
+  const y = target.y + dist * Math.cos(phi);
+  const z = target.z + dist * Math.sin(phi) * Math.sin(theta);
+  three.camera.position.set(x, y, z);
+  three.camera.up.set(0, 1, 0);
+  three.camera.lookAt(target.x, target.y, target.z);
+}
+
+function attach3DControls(dom) {
+  let dragging = false, button = 0, lastX = 0, lastY = 0;
+  dom.addEventListener('mousedown', e => {
+    dragging = true; button = e.button; lastX = e.clientX; lastY = e.clientY;
+    e.preventDefault();
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    if (button === 2 || e.shiftKey) {
+      // Pan: move target in screen space
+      const k = three.cam.dist * 0.002;
+      // Compute camera right & up vectors from current position
+      const fwd = new THREE.Vector3();
+      three.camera.getWorldDirection(fwd);
+      const right = new THREE.Vector3().crossVectors(fwd, three.camera.up).normalize();
+      const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+      three.cam.target.x += -dx * k * right.x + dy * k * up.x;
+      three.cam.target.y += -dx * k * right.y + dy * k * up.y;
+      three.cam.target.z += -dx * k * right.z + dy * k * up.z;
+    } else {
+      three.cam.theta -= dx * 0.005;
+      three.cam.phi   -= dy * 0.005;
+      // Clamp phi to avoid gimbal flip
+      three.cam.phi = Math.max(0.05, Math.min(Math.PI - 0.05, three.cam.phi));
+    }
+    applyCameraOrbit();
+  });
+  dom.addEventListener('wheel', e => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 1.12 : 0.89;
+    three.cam.dist *= factor;
+    three.cam.dist = Math.max(5, Math.min(800, three.cam.dist));
+    applyCameraOrbit();
+  }, { passive: false });
+  dom.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+function buildBedGeometry() {
+  if (!three.bedGroup) return;
+  while (three.bedGroup.children.length) three.bedGroup.remove(three.bedGroup.children[0]);
+  const s = getSubstrate();
+  // Bed surface: thin disk for petri, thin rect for slide/custom
+  const bedColor = new THREE.Color(cssVar('--panel'));
+  const accentColor = new THREE.Color(cssVar('--accent'));
+
+  if (s.shape === 'circle') {
+    const geom = new THREE.CircleGeometry(s.d / 2, 64);
+    geom.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: bedColor, side: THREE.DoubleSide });
+    three.bedGroup.add(new THREE.Mesh(geom, mat));
+    // Outline ring
+    const ringPts = [];
+    const seg = 96;
+    for (let i = 0; i <= seg; i++) {
+      const a = (i / seg) * Math.PI * 2;
+      ringPts.push(new THREE.Vector3((s.d/2) * Math.cos(a), 0.01, (s.d/2) * Math.sin(a)));
+    }
+    const ringGeom = new THREE.BufferGeometry().setFromPoints(ringPts);
+    three.bedGroup.add(new THREE.Line(ringGeom, new THREE.LineBasicMaterial({ color: accentColor })));
+  } else {
+    const geom = new THREE.PlaneGeometry(s.w, s.h);
+    geom.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: bedColor, side: THREE.DoubleSide });
+    three.bedGroup.add(new THREE.Mesh(geom, mat));
+    const rectPts = [
+      new THREE.Vector3(-s.w/2, 0.01, -s.h/2),
+      new THREE.Vector3( s.w/2, 0.01, -s.h/2),
+      new THREE.Vector3( s.w/2, 0.01,  s.h/2),
+      new THREE.Vector3(-s.w/2, 0.01,  s.h/2),
+      new THREE.Vector3(-s.w/2, 0.01, -s.h/2),
+    ];
+    const rectGeom = new THREE.BufferGeometry().setFromPoints(rectPts);
+    three.bedGroup.add(new THREE.Line(rectGeom, new THREE.LineBasicMaterial({ color: accentColor })));
+  }
+
+  // Grid: 10mm major lines as a flat grid at y=0
+  const gridSize = s.shape === 'circle' ? Math.ceil(s.d/10)*10 : Math.ceil(Math.max(s.w, s.h)/10)*10;
+  const gridDivs = gridSize / 10;
+  const grid = new THREE.GridHelper(gridSize, gridDivs, 0x444444, 0x2a2a2a);
+  grid.position.y = 0;
+  three.bedGroup.add(grid);
+
+  // Origin marker: small axis tripod at (0,0,0)
+  const axisLen = Math.min(10, gridSize * 0.15);
+  const axes = new THREE.AxesHelper(axisLen);
+  three.bedGroup.add(axes);
+}
+
+function update3DScene() {
+  if (!three.initialized) return;
+  buildBedGeometry();
+  build3DPaths();
+  build3DGcode();
+  build3DStl();
+  // Auto-frame: set camera distance to fit bed bounds
+  const s = getSubstrate();
+  const dim = s.shape === 'circle' ? s.d : Math.max(s.w, s.h);
+  if (three.cam.dist < dim * 0.8 || three.cam.dist > dim * 4) {
+    three.cam.dist = dim * 1.8;
+    applyCameraOrbit();
+  }
+}
+
+function pathsToLineSegments(paths, defaultZ) {
+  // Convert array of paths (each is array of {x,y,z?}) to a flat positions array
+  // suitable for THREE.LineSegments. Each path becomes (n-1) line segments.
+  const positions = [];
+  const colors = [];
+  const layerColors = [
+    [0.78, 0.95, 0.29],  // accent lime
+    [0.29, 0.64, 1.00],  // info blue
+    [1.00, 0.48, 0.27],  // warn orange
+    [0.29, 0.87, 0.50],  // ok green
+    [0.86, 0.30, 0.34],  // danger
+    [0.79, 0.55, 0.96],  // purple
+    [1.00, 0.85, 0.30],  // yellow
+  ];
+  for (const path of paths) {
+    if (path.length < 2) continue;
+    // Color by layer: pick color based on Z value of first point
+    const z0 = path[0].z != null ? path[0].z : (defaultZ || 0);
+    const layerIdx = Math.round(z0 / 0.4);  // approx; visual only
+    const c = layerColors[((layerIdx % layerColors.length) + layerColors.length) % layerColors.length];
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i], b = path[i + 1];
+      const az = a.z != null ? a.z : (defaultZ || 0);
+      const bz = b.z != null ? b.z : (defaultZ || 0);
+      // Map our (X, Y, Z) to three.js (x, y=Z, z=-Y) so X stays X, Z height is up,
+      // and Y axis points toward the camera (correct for our convention).
+      positions.push(a.x, az, -a.y, b.x, bz, -b.y);
+      colors.push(c[0], c[1], c[2], c[0], c[1], c[2]);
+    }
+  }
+  return { positions, colors };
+}
+
+function build3DPaths() {
+  while (three.pathsGroup.children.length) three.pathsGroup.remove(three.pathsGroup.children[0]);
+  if (three.source !== 'paths') return;
+  if (!state.drawPaths.length) return;
+  const { positions, colors } = pathsToLineSegments(state.drawPaths, 0);
+  if (!positions.length) return;
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('color',    new THREE.Float32BufferAttribute(colors, 3));
+  const mat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 2 });
+  three.pathsGroup.add(new THREE.LineSegments(geom, mat));
+}
+
+function build3DGcode() {
+  while (three.gcodeGroup.children.length) three.gcodeGroup.remove(three.gcodeGroup.children[0]);
+  if (three.source !== 'gcode') return;
+  if (!state.parsedGcode || !state.parsedGcode.segments.length) return;
+  const ox = state.origin.x, oy = state.origin.y;
+  const printPositions = [], printColors = [];
+  const travelPositions = [];
+  const layerColors = [
+    [0.78, 0.95, 0.29], [0.29, 0.64, 1.00], [1.00, 0.48, 0.27],
+    [0.29, 0.87, 0.50], [0.86, 0.30, 0.34], [0.79, 0.55, 0.96], [1.00, 0.85, 0.30],
+  ];
+  for (const seg of state.parsedGcode.segments) {
+    const ax = seg.x0 - ox, ay = seg.y0 - oy, az = seg.z;
+    const bx = seg.x1 - ox, by = seg.y1 - oy, bz = seg.z;
+    if (seg.travel) {
+      travelPositions.push(ax, az, -ay, bx, bz, -by);
+    } else {
+      const layerIdx = Math.round(seg.z / 0.4);
+      const c = layerColors[((layerIdx % layerColors.length) + layerColors.length) % layerColors.length];
+      printPositions.push(ax, az, -ay, bx, bz, -by);
+      printColors.push(c[0], c[1], c[2], c[0], c[1], c[2]);
+    }
+  }
+  if (printPositions.length) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(printPositions, 3));
+    geom.setAttribute('color',    new THREE.Float32BufferAttribute(printColors, 3));
+    three.gcodeGroup.add(new THREE.LineSegments(geom,
+      new THREE.LineBasicMaterial({ vertexColors: true })));
+  }
+  if (travelPositions.length) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(travelPositions, 3));
+    three.gcodeGroup.add(new THREE.LineSegments(geom,
+      new THREE.LineDashedMaterial({ color: 0x666666, dashSize: 1, gapSize: 0.5 })));
+  }
+}
+
+function build3DStl() {
+  while (three.stlGroup.children.length) three.stlGroup.remove(three.stlGroup.children[0]);
+  if (three.source !== 'stl') return;
+  if (!three.stlMesh) return;
+  const mat = new THREE.MeshPhongMaterial({
+    color: new THREE.Color(cssVar('--info')),
+    specular: 0x222222,
+    shininess: 30,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.85,
+  });
+  three.stlGroup.add(new THREE.Mesh(three.stlMesh, mat));
+  // Wireframe overlay
+  const wire = new THREE.LineSegments(
+    new THREE.WireframeGeometry(three.stlMesh),
+    new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15 })
+  );
+  three.stlGroup.add(wire);
+}
+
+function set3DSource(src) {
+  three.source = src;
+  $('#src3d-paths').classList.toggle('active', src === 'paths');
+  $('#src3d-gcode').classList.toggle('active', src === 'gcode');
+  $('#src3d-stl').classList.toggle('active', src === 'stl');
+  build3DPaths();
+  build3DGcode();
+  build3DStl();
+}
+
+function start3DLoop() {
+  if (three.loop) return;
+  const tick = () => {
+    if (!three.initialized) { three.loop = null; return; }
+    three.renderer.render(three.scene, three.camera);
+    three.loop = requestAnimationFrame(tick);
+  };
+  three.loop = requestAnimationFrame(tick);
+}
+function stop3DLoop() {
+  if (three.loop) cancelAnimationFrame(three.loop);
+  three.loop = null;
+}
+
+$('#src3d-paths').addEventListener('click', () => set3DSource('paths'));
+$('#src3d-gcode').addEventListener('click', () => set3DSource('gcode'));
+$('#src3d-stl').addEventListener('click', () => set3DSource('stl'));
+$('#reset3d-view').addEventListener('click', () => {
+  three.cam.theta = -Math.PI/4;
+  three.cam.phi = Math.PI/3;
+  three.cam.target = { x:0, y:0, z:0 };
+  const s = getSubstrate();
+  three.cam.dist = (s.shape === 'circle' ? s.d : Math.max(s.w, s.h)) * 1.8;
+  applyCameraOrbit();
+});
+
+// ============ STL PARSER ============
+// Accepts both binary and ASCII STL formats. Returns a THREE.BufferGeometry
+// of triangles with computed normals.
+function parseStl(arrayBuffer) {
+  const view = new DataView(arrayBuffer);
+  // ASCII STL starts with "solid " and contains text. Binary STL has 80-byte header
+  // followed by a uint32 triangle count. Heuristic: check if file looks like text.
+  const headerStr = new TextDecoder().decode(arrayBuffer.slice(0, 80));
+  const looksAscii = headerStr.trim().toLowerCase().startsWith('solid') &&
+    !containsBinaryTriangleData(view, arrayBuffer.byteLength);
+  if (looksAscii) return parseStlAscii(new TextDecoder().decode(arrayBuffer));
+  return parseStlBinary(view, arrayBuffer.byteLength);
+}
+
+function containsBinaryTriangleData(view, length) {
+  // Binary STL has length = 80 + 4 + 50*N. If that pattern matches, it's binary.
+  if (length < 84) return false;
+  const triCount = view.getUint32(80, true);
+  return length === 80 + 4 + triCount * 50;
+}
+
+function parseStlBinary(view, length) {
+  const triCount = view.getUint32(80, true);
+  const positions = new Float32Array(triCount * 9);
+  const normals = new Float32Array(triCount * 9);
+  let off = 84, p = 0;
+  for (let i = 0; i < triCount; i++) {
+    const nx = view.getFloat32(off, true), ny = view.getFloat32(off+4, true), nz = view.getFloat32(off+8, true);
+    off += 12;
+    for (let v = 0; v < 3; v++) {
+      positions[p]   = view.getFloat32(off, true);
+      positions[p+1] = view.getFloat32(off+4, true);
+      positions[p+2] = view.getFloat32(off+8, true);
+      normals[p]   = nx; normals[p+1] = ny; normals[p+2] = nz;
+      off += 12; p += 3;
+    }
+    off += 2;  // attribute byte count (unused)
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('normal',   new THREE.BufferAttribute(normals, 3));
+  return geom;
+}
+
+function parseStlAscii(text) {
+  const positions = [];
+  const re = /vertex\s+(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)\s+(-?[\d.eE+-]+)/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    positions.push(parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3]));
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+// ============ STL SLICER ============
+// Slice a triangle mesh at horizontal Z planes to produce 2D contours.
+// Algorithm: for each Z plane, walk every triangle and check if it crosses
+// the plane. If yes, compute the line segment where it intersects the plane.
+// Then chain those segments end-to-end into closed loops (contours).
+function sliceMesh(geometry, layerH) {
+  const pos = geometry.attributes.position.array;
+  const triCount = pos.length / 9;
+  // Find Z range of the mesh
+  let minZ = Infinity, maxZ = -Infinity;
+  for (let i = 2; i < pos.length; i += 3) {
+    if (pos[i] < minZ) minZ = pos[i];
+    if (pos[i] > maxZ) maxZ = pos[i];
+  }
+  const layers = [];
+  // Slice slightly above each layer's nominal Z so we don't hit triangle vertices
+  for (let z = minZ + layerH * 0.5; z < maxZ; z += layerH) {
+    const segments = [];
+    for (let t = 0; t < triCount; t++) {
+      const i = t * 9;
+      const v = [
+        { x: pos[i],   y: pos[i+1], z: pos[i+2] },
+        { x: pos[i+3], y: pos[i+4], z: pos[i+5] },
+        { x: pos[i+6], y: pos[i+7], z: pos[i+8] },
+      ];
+      // Find which vertices are above and below the plane
+      const above = [], below = [], on = [];
+      for (let k = 0; k < 3; k++) {
+        if (v[k].z > z) above.push(k);
+        else if (v[k].z < z) below.push(k);
+        else on.push(k);
+      }
+      if (!above.length || !below.length) continue;
+      // Compute intersection points: each edge crossing the plane gives one point
+      const cross = [];
+      for (const a of above) {
+        for (const b of below) {
+          const va = v[a], vb = v[b];
+          const t2 = (z - va.z) / (vb.z - va.z);
+          cross.push({ x: va.x + (vb.x - va.x) * t2, y: va.y + (vb.y - va.y) * t2 });
+        }
+      }
+      if (cross.length === 2) segments.push(cross);
+    }
+    if (segments.length) {
+      const contours = chainSegments(segments);
+      layers.push({ z: z - minZ, contours });  // z relative to bottom of mesh
+    }
+  }
+  return { layers, minZ, maxZ };
+}
+
+// Chain unordered line segments end-to-end into closed loops.
+// Uses spatial hashing for performance on dense meshes.
+function chainSegments(segments) {
+  const eps = 1e-4;
+  const key = p => `${Math.round(p.x / eps)},${Math.round(p.y / eps)}`;
+  // Build endpoint -> [segIdx, endpointSide] map
+  const map = new Map();
+  for (let i = 0; i < segments.length; i++) {
+    for (const side of [0, 1]) {
+      const k = key(segments[i][side]);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push({ idx: i, side });
+    }
+  }
+  const used = new Uint8Array(segments.length);
+  const contours = [];
+  for (let start = 0; start < segments.length; start++) {
+    if (used[start]) continue;
+    used[start] = 1;
+    const contour = [segments[start][0], segments[start][1]];
+    // Walk forward
+    while (true) {
+      const last = contour[contour.length - 1];
+      const k = key(last);
+      const candidates = (map.get(k) || []).filter(c => !used[c.idx]);
+      if (!candidates.length) break;
+      const c = candidates[0];
+      used[c.idx] = 1;
+      const otherSide = c.side === 0 ? 1 : 0;
+      contour.push(segments[c.idx][otherSide]);
+    }
+    if (contour.length >= 3) contours.push(contour);
+  }
+  return contours;
+}
+
+// ============ STL SLICER UI ============
+$('#btn-load-stl').addEventListener('click', () => $('#stl-file').click());
+$('#stl-file').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const buffer = await f.arrayBuffer();
+    const geom = parseStl(buffer);
+    const pos = geom.attributes.position.array;
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity, minZ=Infinity, maxZ=-Infinity;
+    for (let i = 0; i < pos.length; i += 3) {
+      if (pos[i] < minX) minX = pos[i]; if (pos[i] > maxX) maxX = pos[i];
+      if (pos[i+1] < minY) minY = pos[i+1]; if (pos[i+1] > maxY) maxY = pos[i+1];
+      if (pos[i+2] < minZ) minZ = pos[i+2]; if (pos[i+2] > maxZ) maxZ = pos[i+2];
+    }
+    // Center XY and place bottom on Z=0
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    for (let i = 0; i < pos.length; i += 3) {
+      pos[i] -= cx;
+      pos[i+1] -= cy;
+      pos[i+2] -= minZ;  // bottom at 0
+    }
+    geom.attributes.position.needsUpdate = true;
+    geom.computeBoundingBox();
+    geom.computeVertexNormals();
+    three.stlMesh = geom;
+    const w = maxX - minX, h = maxY - minY, d = maxZ - minZ;
+    const tris = pos.length / 9;
+    $('#stl-info').innerHTML =
+      `Loaded: ${f.name}<br>` +
+      `Size: ${w.toFixed(1)} × ${h.toFixed(1)} × ${d.toFixed(1)} mm · ${tris} triangles`;
+    $('#btn-slice-stl').disabled = false;
+    if (three.initialized) {
+      set3DSource('stl');
+    }
+    logLine(`STL loaded: ${tris} triangles, ${w.toFixed(1)}×${h.toFixed(1)}×${d.toFixed(1)} mm`, 'ok');
+  } catch (err) {
+    logLine('STL parse error: ' + err.message, 'err');
+  }
+});
+
+$('#btn-slice-stl').addEventListener('click', () => {
+  if (!three.stlMesh) return;
+  const layerH = parseFloat($('#stl-layer-h').value) || 0.4;
+  const fitMm = parseFloat($('#stl-fit').value) || 20;
+  const mode = $('#stl-mode').value;
+  const infillSp = parseFloat($('#stl-infill-spacing').value) || 2;
+  const zOrigin = $('#stl-z-origin').value;
+  const infillPattern = $('#stl-infill-pattern').value;
+
+  // Compute scale: fit longest XY dimension to fitMm
+  three.stlMesh.computeBoundingBox();
+  const bb = three.stlMesh.boundingBox;
+  const meshW = bb.max.x - bb.min.x;
+  const meshH = bb.max.y - bb.min.y;
+  const meshD = bb.max.z - bb.min.z;
+  const longestXY = Math.max(meshW, meshH);
+  const scale = fitMm / longestXY;
+
+  // Slice in mesh-space coordinates, then scale results
+  const sliced = sliceMesh(three.stlMesh, layerH / scale);
+  const paths = [];
+  for (const layer of sliced.layers) {
+    let layerZ = layer.z * scale;
+    if (zOrigin === 'center') layerZ -= (meshD * scale) / 2;
+    // Each contour is already a closed loop. Add as a path with Z.
+    for (const contour of layer.contours) {
+      const tagged = contour.map(pt => ({
+        x: pt.x * scale,
+        y: pt.y * scale,
+        z: layerZ,
+      }));
+      paths.push(tagged);
+    }
+    // Infill: clip a lattice/grid pattern against each contour
+    if (mode === 'infill' && layer.contours.length) {
+      const horizontal = infillPattern === 'grid' ||
+        Math.round(layer.z / (layerH / scale)) % 2 === 0;
+      const vertical = infillPattern === 'grid' ||
+        Math.round(layer.z / (layerH / scale)) % 2 === 1;
+      // Compute layer XY bounds
+      let lminX = Infinity, lmaxX = -Infinity, lminY = Infinity, lmaxY = -Infinity;
+      for (const c of layer.contours) {
+        for (const p of c) {
+          if (p.x < lminX) lminX = p.x; if (p.x > lmaxX) lmaxX = p.x;
+          if (p.y < lminY) lminY = p.y; if (p.y > lmaxY) lmaxY = p.y;
+        }
+      }
+      const sp = infillSp / scale;
+      if (horizontal) {
+        for (let y = lminY; y <= lmaxY; y += sp) {
+          // Find intersections of horizontal line y=y with all contours
+          const xs = [];
+          for (const c of layer.contours) {
+            for (let i = 0; i < c.length - 1; i++) {
+              const a = c[i], b = c[i+1];
+              if ((a.y > y) === (b.y > y)) continue;
+              const t = (y - a.y) / (b.y - a.y);
+              xs.push(a.x + (b.x - a.x) * t);
+            }
+          }
+          xs.sort((a, b) => a - b);
+          // Pair up (even-odd fill rule)
+          for (let i = 0; i + 1 < xs.length; i += 2) {
+            paths.push([
+              { x: xs[i] * scale,   y: y * scale, z: layerZ },
+              { x: xs[i+1] * scale, y: y * scale, z: layerZ },
+            ]);
+          }
+        }
+      }
+      if (vertical) {
+        for (let x = lminX; x <= lmaxX; x += sp) {
+          const ys = [];
+          for (const c of layer.contours) {
+            for (let i = 0; i < c.length - 1; i++) {
+              const a = c[i], b = c[i+1];
+              if ((a.x > x) === (b.x > x)) continue;
+              const t = (x - a.x) / (b.x - a.x);
+              ys.push(a.y + (b.y - a.y) * t);
+            }
+          }
+          ys.sort((a, b) => a - b);
+          for (let i = 0; i + 1 < ys.length; i += 2) {
+            paths.push([
+              { x: x * scale, y: ys[i] * scale,   z: layerZ },
+              { x: x * scale, y: ys[i+1] * scale, z: layerZ },
+            ]);
+          }
+        }
+      }
+    }
+  }
+
+  // Filter to substrate bounds
+  const filtered = paths.filter(p => p.length >= 2);
+  if (!filtered.length) {
+    logLine('STL slice produced no printable paths within substrate. Reduce fit size.', 'err');
+    return;
+  }
+  state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  state.drawPaths = state.drawPaths.concat(filtered);
+  drawSketchCanvas();
+  if (three.initialized) update3DScene();
+  logLine(`STL sliced: ${sliced.layers.length} layers → ${filtered.length} paths.`, 'ok');
+  document.querySelector('.bed-mode-tab[data-mode="3d"]').click();
+  set3DSource('paths');
+});
+
+// Hook 3D refresh into drawing/gcode change paths via a refresh helper.
+function refresh3DIfActive() {
+  if (!three.initialized) return;
+  if (three.source === 'paths') build3DPaths();
+  else if (three.source === 'gcode') build3DGcode();
+}
+
+// ============ INIT ============
+updateSubstrate();
+updatePositionDisplay();
+renderMacros();
+applyHeadType(headType);
+setTimeout(() => {
+  resizeCanvases();
+  drawBedCanvas();
+  drawSketchCanvas();
+  drawPreviewCanvas();
+}, 50);
+logLine('Console ready. Connect to start.', 'sys');
+
+if (!('serial' in navigator)) {
+  logLine('Web Serial unavailable. Use Chrome/Edge served via http://localhost.', 'err');
+}
+
+window.addEventListener('resize', () => {
+  requestAnimationFrame(() => {
+    resizeCanvases();
+    drawBedCanvas();
+    drawSketchCanvas();
+    drawPreviewCanvas();
+  });
+});
+</script>
+
+</body>
+</html>
