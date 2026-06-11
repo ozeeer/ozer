@@ -201,7 +201,7 @@ section{padding:clamp(80px,13vh,170px) clamp(18px,5vw,56px);position:relative}
 .pub-stat{font-family:"DM Mono",monospace;border:1px solid var(--line);border-radius:30px;padding:8px 14px;font-size:11.5px;color:var(--muted)}
 .pub-stat b{color:var(--text);font-weight:600}
 .pub-list{margin-top:34px;border-top:1px solid var(--line)}
-.pub{display:grid;grid-template-columns:34px 1fr auto;gap:16px;padding:16px 8px;margin:0 -8px;border-bottom:1px solid var(--line);align-items:start;transition:background .25s;border-radius:10px}
+.pub{display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 8px;margin:0 -8px;border-bottom:1px solid var(--line);align-items:start;transition:background .25s;border-radius:10px}
 .pub:hover{background:var(--surface)}
 .pub-idx{font-family:"DM Mono",monospace;font-size:11px;color:var(--faint);padding-top:3px}
 .pub-main .pt{font-size:13.5px;line-height:1.5;color:var(--text);font-weight:500}
@@ -214,7 +214,7 @@ section{padding:clamp(80px,13vh,170px) clamp(18px,5vw,56px);position:relative}
 .pub-venue .yr{color:var(--faint)}
 .cite-badge{display:inline-flex;align-items:baseline;gap:5px;border:1px solid var(--line);border-radius:30px;padding:4px 11px;font-family:"DM Mono",monospace;font-size:10.5px;color:var(--muted);white-space:nowrap}
 .cite-badge b{color:var(--text);font-weight:600;font-size:12px}
-@media(max-width:680px){.pub{grid-template-columns:24px 1fr}.pub-cite{grid-column:2;padding-top:2px}}
+@media(max-width:680px){.pub{grid-template-columns:24px 1fr}}
 
 /* ---------- experience ---------- */
 .exp-list{margin-top:22px;border-top:1px solid var(--line)}
@@ -298,7 +298,6 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
     <g id="nodes" fill="var(--silver-1)"></g>
   </svg>
   <div class="hero-core">
-    <div class="hero-eyebrow">Bioprinting · Penn State · Ozbolat Lab</div>
     <div class="wordmark">Ozer</div>
     <div class="role-line">
       <div class="role"><b>Research</b> Engineer</div>
@@ -335,9 +334,8 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
       <h2>Printers that build with living material.</h2>
       <p>Custom motion systems, browser-based control over Web Serial, and process design for simultaneous extrusion and photocrosslinking. Hardware and software designed as one instrument, tuned for the demands of soft, living matter.</p>
       <div class="mini">
-        <div><span class="num">12+</span><span class="lbl">Lab platforms</span></div>
-        <div><span class="num">7</span><span class="lbl">Publications</span></div>
-        <div><span class="num">3D</span><span class="lbl">Tissue fab</span></div>
+        <div><span class="num">4+</span><span class="lbl">Lab platforms</span></div>
+        <div><span class="num">9</span><span class="lbl">Publications</span></div>
       </div>
     </div>
     <div class="showcase-art" id="scaffold-art"></div>
@@ -349,7 +347,7 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
   <div class="eyebrow">About</div>
   <div class="about-grid">
     <div>
-      <p class="about-lead">I work at the intersection of <em>biology, machines, and code</em>, building the printers, reactors, and tools that turn cells into structure.</p>
+      <p class="about-lead">I work at the intersection of <em>biology, chemistry and engineering</em>, building the printers, reactors, and tools that turn cells into structure.</p>
       <div class="about-body">
         <p>Based at the Ozbolat Bioprinting Lab at Penn State, my research spans light-based, extrusion, and aspiration-assisted bioprinting, microfluidics, and the lab infrastructure that holds it all together. I build 3D in vitro models, from cancer-on-a-chip systems to ventilated lung platforms, integrating spheroids, organoids, and biomimetic scaffolds.</p>
         <p>Much of the work is the connective tissue of a research lab: custom platforms, browser-based printer control over Web Serial, lung-sac bioreactors, and a quiet stack of web tools that keep the lab moving. I like clean interfaces and instruments that disappear into the task.</p>
@@ -360,7 +358,7 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
       <div class="fact"><span class="k">Lab</span><span class="v">Ozbolat Bioprinting Lab</span></div>
       <div class="fact"><span class="k">Institution</span><span class="v">Penn State University</span></div>
       <div class="fact"><span class="k">PhD</span><span class="v">Nanoscience, Istanbul Tech.</span></div>
-      <div class="fact"><span class="k">M.Sc.</span><span class="v">Biotech, Univ. of Kent</span></div>
+      <div class="fact"><span class="k">M.Sc.</span><span class="v">Biotech & Bioeng, U. Kent</span></div>
       <div class="fact"><span class="k">Based in</span><span class="v">State College, PA</span></div>
     </div>
   </div>
@@ -427,8 +425,7 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
       <h2 class="sec-title">Publications<span class="light">.</span></h2>
     </div>
     <div class="pub-stats">
-      <div class="pub-stat"><b>7</b> papers</div>
-      <div class="pub-stat"><b>12</b> citations</div>
+      <div class="pub-stat"><b>9</b> papers</div>
       <div class="pub-stat">Google Scholar</div>
     </div>
   </div>
@@ -647,13 +644,15 @@ document.querySelectorAll('.reveal,.stagger').forEach(el=>io.observe(el));
 
 /* publications */
 const pubs=[
-  {t:"Step-Ladder Bioprinting to Align Collagen Fibers for Anisotropic Tissue Fabrication",a:["I Namli","YO Yilmaz","JVS Robazzi","MD Sarikaya","M Baykara","IT Ozbolat"],v:"Small",y:2026,c:0,url:"https://doi.org/10.1002/smll.202510498"},
-  {t:"A toolbox for microvalve-based bioprinting",a:["ID Derman","MD Sarikaya","YO Yilmaz","D Gupta","SHA Rizvi","T Rivera","IT Ozbolat"],v:"Biofabrication 18, 025019",y:2026,c:0,url:"https://doi.org/10.1088/1758-5090/ae54d1"},
-  {t:"The Synergy of Artificial Intelligence and 3D Bioprinting: Unlocking New Frontiers in Precision and Tissue Fabrication",a:["JVS Robazzi","ID Derman","D Gupta","L Haugh","YP Singh","V Pal","YO Yilmaz","S Liu","AL Dias","RA Flauzino","IT Ozbolat"],v:"Advanced Functional Materials 36(1)",y:2026,c:1,url:"https://doi.org/10.1002/adfm.202509530"},
-  {t:"Schiff-Base Crosslinked Multifunctional Microgels for 4D Bioprinting of Tissues",a:["V Pal","D Gupta","S Liu","I Namli","YO Yilmaz","SHA Rizvi","L Haugh","IT Ozbolat"],v:"Small",y:2025,c:1,url:"https://scholar.google.com/citations?user=aF71kJgAAAAJ"},
-  {t:"A ventilated perfused lung model platform to dissect the response of the lungs to viral infection",a:["ID Derman","MA Alioglu","JC Moses","ZC Chroneos","YO Yilmaz","D Banerjee","et al.","IT Ozbolat"],v:"Trends in Biotechnology 43(7), 1714-1742",y:2025,c:4,url:"https://doi.org/10.1016/j.tibtech.2025.03.012"},
-  {t:"Nested Biofabrication: Matryoshka-Inspired Intra-Embedded Bioprinting",a:["YO Yilmaz","MA Alioglu","YP Singh","M Nagamine","N Celik","MH Kim","V Pal","D Gupta","IT Ozbolat"],v:"Small Methods 8(8), e2301325",y:2024,c:5,first:true,url:"https://doi.org/10.1002/smtd.202301325"},
-  {t:"A Versatile Photocrosslinkable Silicone Composite for 3D Printing Applications",a:["YO Yilmaz","MA Alioglu","EM Gerhard","V Pal","D Gupta","SHA Rizvi","IT Ozbolat"],v:"Advanced Materials Technologies, 2301858",y:2024,c:1,first:true,url:"https://doi.org/10.1002/admt.202301858"}
+  {t:"The Synergy of Artificial Intelligence and 3D Bioprinting: Unlocking New Frontiers in Precision and Tissue Fabrication",a:["JVS Robazzi","ID Derman","D Gupta","L Haugh","YP Singh","V Pal","YO Yilmaz","S Liu","AL Dias","RA Flauzino","IT Ozbolat"],v:"Advanced Functional Materials 36(1), e09530",y:2026,url:"https://doi.org/10.1002/adfm.202509530"},
+  {t:"Step-Ladder Bioprinting to Align Collagen Fibers for Anisotropic Tissue Fabrication",a:["I Namli","YP Singh","D Gupta","SHA Rizvi","YO Yilmaz","JVS Robazzi","MD Sarikaya","M Baykara","IT Ozbolat"],v:"Small, e10498",y:2026,url:"https://doi.org/10.1002/smll.202510498"},
+  {t:"A toolbox for microvalve-based bioprinting",a:["ID Derman","M Dogan Sarikaya","YO Yilmaz","D Gupta","SHA Rizvi","T Rivera","IT Ozbolat"],v:"Biofabrication 18(2), 025019",y:2026,url:"https://doi.org/10.1088/1758-5090/ae54d1"},
+  {t:"Interparticle Crosslinked Ion-Responsive Microgels for 3D and 4D (Bio)printing Applications",a:["V Pal","D Gupta","S Liu","I Namli","SHA Rizvi","YO Yilmaz","L Haugh","EM Gerhard","IT Ozbolat"],v:"Small 21(36), e02262",y:2025,url:"https://scholar.google.com/citations?user=aF71kJgAAAAJ"},
+  {t:"Unconventional bioprinting modalities for advanced tissue biofabrication",a:["ID Derman","MH Kim","MD Sarikaya","YO Yilmaz","EG Aliftiras","V Stepanyants","IT Ozbolat"],v:"Biomaterials, 123704",y:2025,url:"https://scholar.google.com/citations?user=aF71kJgAAAAJ"},
+  {t:"A ventilated perfused lung model platform to dissect the response of the lungs to viral infection",a:["ID Derman","MA Alioglu","JC Moses","ZC Chroneos","YO Yilmaz","D Banerjee","et al.","IT Ozbolat"],v:"Trends in Biotechnology 43(7), 1714-1742",y:2025,url:"https://doi.org/10.1016/j.tibtech.2025.03.012"},
+  {t:"3D Printing of Air",a:["D Gupta","HL Piva","V Pal","S Liu","SHA Rizvi","MA Alioglu","YO Yilmaz","A Smith","et al."],v:"Research Square (preprint), rs-7762382",y:2025,url:"https://scholar.google.com/citations?user=aF71kJgAAAAJ"},
+  {t:"A Versatile Photocrosslinkable Silicone Composite for 3D Printing Applications",a:["MA Alioglu","YO Yilmaz","EM Gerhard","V Pal","D Gupta","SHA Rizvi","IT Ozbolat"],v:"Advanced Materials Technologies 9(3), 2301858",y:2024,first:true,url:"https://doi.org/10.1002/admt.202301858"},
+  {t:"Nested Biofabrication: Matryoshka-Inspired Intra-Embedded Bioprinting",a:["MA Alioglu","YO Yilmaz","YP Singh","M Nagamine","N Celik","MH Kim","V Pal","D Gupta","IT Ozbolat"],v:"Small Methods 8(8), 2301325",y:2024,first:true,url:"https://doi.org/10.1002/smtd.202301325"}
 ];
 const authorHTML=l=>l.map(n=>n==='YO Yilmaz'?'<span class="me">YO Yilmaz</span>':n).join(', ');
 document.getElementById('pub-list').innerHTML=pubs.map((p,i)=>`
@@ -664,7 +663,6 @@ document.getElementById('pub-list').innerHTML=pubs.map((p,i)=>`
       <div class="pub-authors">${authorHTML(p.a)}</div>
       <div class="pub-venue">${p.v} <span class="yr">· ${p.y}</span></div>
     </div>
-    <div class="pub-cite"><span class="cite-badge"><b>${p.c}</b> cited</span></div>
   </div>`).join('');
 
 /* generated SVG thumbnails for project cards */
@@ -700,8 +698,7 @@ const fallback=[
   {name:'hemocount-ai',description:'Hemocytometer cell-counting web app using a vision model through a Cloudflare Worker proxy.',language:'JavaScript',stargazers_count:0,html_url:'https://github.com/ozeeer'},
   {name:'lung-sac-reactor',description:'Dashboard and pump control for a ventilated lung-sac bioreactor: push-pull media exchange, multi-camera switching, live monitoring.',language:'Python',stargazers_count:0,html_url:'https://github.com/ozeeer'},
   {name:'lab-city',description:'Central portal for the lab web-tool suite with a clickable building map. Booking, packages, duties, orders.',language:'HTML',stargazers_count:0,html_url:'https://github.com/ozeeer'},
-  {name:'incubator-monitor',description:'Raspberry Pi incubator monitoring: CO2, temperature, and humidity tracking with out-of-spec alerts on a Flask and SQLite stack.',language:'Python',stargazers_count:0,html_url:'https://github.com/ozeeer'},
-  {name:'o23r.com',description:'This portfolio. Single-file front end with live GitHub integration and publication highlights.',language:'HTML',stargazers_count:0,html_url:'https://github.com/ozeeer'}
+  {name:'incubator-monitor',description:'Raspberry Pi incubator monitoring: CO2, temperature, and humidity tracking with out-of-spec alerts on a Flask and SQLite stack.',language:'Python',stargazers_count:0,html_url:'https://github.com/ozeeer'}
 ];
 function card(r){
   const c=langColors[r.language]||'#999';
@@ -721,7 +718,7 @@ function card(r){
 const render=list=>{grid.innerHTML=list.map(card).join('')};
 fetch('https://api.github.com/users/ozeeer/repos?sort=updated&per_page=100')
   .then(r=>{if(!r.ok)throw 0;return r.json()})
-  .then(d=>{const f=d.filter(r=>!r.fork).sort((a,b)=>(b.stargazers_count-a.stargazers_count)||(new Date(b.updated_at)-new Date(a.updated_at))).slice(0,9);render(f.length?f:fallback)})
+  .then(d=>{const f=d.filter(r=>!r.fork&&!/o23r|portfolio|ozeeer\.github\.io/i.test(r.name)).sort((a,b)=>(b.stargazers_count-a.stargazers_count)||(new Date(b.updated_at)-new Date(a.updated_at))).slice(0,9);render(f.length?f:fallback)})
   .catch(()=>render(fallback));
 </script>
 </body>
