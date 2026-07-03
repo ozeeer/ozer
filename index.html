@@ -549,7 +549,7 @@ addEventListener('scroll',()=>{
   }
 },{passive:true});
 
-/* gradient mesh atmosphere */
+/* gradient mesh */
 const cv=document.getElementById('mesh'),ctx=cv.getContext('2d');
 let W,H,DPR=Math.min(devicePixelRatio||1,2),t=0;
 function size(){W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px'}
