@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Droplet Printer Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F1EA;
+    --card:#FBF8F0;
+    --ink:#1A1A1A;
+    --line:#1A1A1A;
+    --ember:#D9541E;
+    --ember-soft:rgba(217,84,30,0.14);
+    --muted:#6B6459;
+    --grid:#DDD6C6;
+    --good:#2F7D5B;
+    --shadow:4px 4px 0 var(--ink);
+    --shadow-sm:3px 3px 0 var(--ink);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"DM Sans",system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  code,pre,.mono{font-family:"DM Mono",ui-monospace,monospace}
+  a{color:var(--ember)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+  /* Header */
+  header.top{border-bottom:2px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:50}
+  .topbar{display:flex;align-items:center;gap:16px;padding:14px 0;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo-dot{width:34px;height:34px;border:2px solid var(--ink);border-radius:50%;position:relative;background:var(--card);flex:0 0 auto}
+  .logo-dot::after{content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:var(--ember);top:6px;left:6px;box-shadow:0 0 0 2px var(--card)}
+  .brand h1{font-size:19px;margin:0;letter-spacing:-0.02em;font-weight:700}
+  .brand .sub{font-size:12px;color:var(--muted);letter-spacing:0.02em;margin-top:-2px}
+  nav.tabs{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .tab-btn{font-family:"DM Mono",monospace;font-size:13px;background:var(--card);border:2px solid var(--ink);
+    padding:7px 14px;cursor:pointer;color:var(--ink);border-radius:2px;transition:transform .05s}
+  .tab-btn:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow-sm)}
+  .tab-btn[aria-selected="true"]{background:var(--ember);color:#fff}
+
+  section.page{display:none;padding:30px 0 60px}
+  section.page.active{display:block}
+
+  /* Hero */
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center;margin-bottom:8px}
+  .hero .eyebrow{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ember)}
+  .hero h2{font-size:40px;line-height:1.05;letter-spacing:-0.03em;margin:10px 0 12px}
+  .hero p{font-size:16px;color:var(--muted);max-width:46ch;margin:0 0 18px}
+  .hero-panel{border:2px solid var(--ink);background:var(--card);box-shadow:var(--shadow);border-radius:4px;padding:16px}
+  .hero-panel .cap{font-family:"DM Mono",monospace;font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase}
+
+  .btn{font-family:"DM Mono",monospace;font-size:13px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);
+    padding:9px 16px;cursor:pointer;border-radius:2px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:transform .05s}
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow-sm)}
+  .btn.ghost{background:var(--card);color:var(--ink)}
+  .btn.ember{background:var(--ember);color:#fff;border-color:var(--ink)}
+  .btn.small{padding:6px 11px;font-size:12px}
+
+  /* Cards & lesson layout */
+  .lesson{border:2px solid var(--ink);background:var(--card);border-radius:4px;box-shadow:var(--shadow);
+    margin:20px 0;overflow:hidden}
+  .lesson-head{display:flex;align-items:baseline;gap:14px;padding:16px 20px;border-bottom:2px solid var(--ink);background:linear-gradient(0deg,transparent,transparent)}
+  .lesson-num{font-family:"DM Mono",monospace;font-size:13px;color:#fff;background:var(--ink);border-radius:2px;padding:3px 9px}
+  .lesson-head h3{margin:0;font-size:20px;letter-spacing:-0.02em}
+  .lesson-body{padding:18px 20px}
+  .lesson-body p{margin:0 0 12px;color:#33302b}
+  .lesson-body p.mut{color:var(--muted)}
+  .lesson-body ul{margin:6px 0 14px;padding-left:20px}
+  .lesson-body li{margin:4px 0}
+  .kbd{font-family:"DM Mono",monospace;background:var(--ember-soft);color:#8a3410;padding:1px 6px;border-radius:3px;font-size:0.92em;border:1px solid rgba(217,84,30,.25)}
+
+  pre.code{background:#211E1A;color:#F4F1EA;border-radius:4px;padding:14px 16px;overflow:auto;font-size:13px;
+    line-height:1.5;border:2px solid var(--ink);margin:0 0 12px}
+  pre.code .c{color:#9a9488}
+  pre.code .k{color:#ffb27a}
+  pre.code .n{color:#8fd0a0}
+  .syntax{font-family:"DM Mono",monospace;font-size:13px;background:var(--ember-soft);border:1px dashed var(--ember);
+    padding:9px 12px;border-radius:4px;margin:0 0 14px;color:#7a2f0e;overflow:auto;white-space:pre}
+
+  table.params{width:100%;border-collapse:collapse;margin:2px 0 14px;font-size:13.5px}
+  table.params th,table.params td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+  table.params th{font-family:"DM Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);border-bottom:2px solid var(--ink)}
+  table.params td:first-child{font-family:"DM Mono",monospace;color:#7a2f0e;white-space:nowrap}
+
+  .lesson-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+
+  /* Playground */
+  .pg{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  .panel{border:2px solid var(--ink);background:var(--card);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+  .panel-head{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:2px solid var(--ink)}
+  .panel-head h4{margin:0;font-size:14px;font-family:"DM Mono",monospace;letter-spacing:0.02em}
+  .panel-head .spacer{margin-left:auto}
+  .panel-body{padding:14px}
+  textarea#editor{width:100%;height:420px;resize:vertical;border:2px solid var(--ink);border-radius:3px;
+    background:#211E1A;color:#F4F1EA;font-family:"DM Mono",monospace;font-size:13px;line-height:1.5;padding:12px;outline:none}
+  textarea#editor:focus{border-color:var(--ember)}
+  textarea#doc-input{width:100%;height:420px;resize:vertical;border:2px solid var(--ink);border-radius:3px;
+    background:#211E1A;color:#F4F1EA;font-family:"DM Mono",monospace;font-size:13px;line-height:1.5;padding:12px;outline:none}
+  textarea#doc-input:focus{border-color:var(--ember)}
+  .finding{border:2px solid var(--ink);border-radius:4px;padding:10px 12px;margin-bottom:10px;background:#fff}
+  .finding.err{border-left:6px solid #C0392B}
+  .finding.warn{border-left:6px solid var(--ember)}
+  .finding.info{border-left:6px solid #2C6E9B}
+  .finding .fh{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+  .finding .sev{font-family:"DM Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;padding:1px 7px;border-radius:20px;color:#fff}
+  .finding.err .sev{background:#C0392B}
+  .finding.warn .sev{background:var(--ember)}
+  .finding.info .sev{background:#2C6E9B}
+  .finding .ln{font-family:"DM Mono",monospace;font-size:12px;color:var(--muted)}
+  .finding .msg{font-size:13.5px;margin:2px 0}
+  .finding .sug{font-family:"DM Mono",monospace;font-size:12.5px;background:var(--ember-soft);padding:6px 9px;border-radius:3px;margin-top:5px;color:#7a2f0e;white-space:pre-wrap}
+  .doc-clean{border:2px solid var(--good);background:rgba(47,125,91,0.08);border-radius:4px;padding:14px;color:#1C4E38;font-size:14px}
+  .bed-wrap{position:relative;background:var(--card)}
+  canvas#bed{width:100%;display:block;background:#FCFAF4;border-radius:3px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-family:"DM Mono",monospace;font-size:11.5px;color:var(--muted);padding:10px 14px 2px}
+  .legend b{color:var(--ink);font-weight:500}
+  .warns{padding:8px 14px 14px;font-size:12.5px;color:#8a3410}
+  .warns .w{font-family:"DM Mono",monospace;margin:3px 0}
+  .stat-row{display:flex;flex-wrap:wrap;gap:8px 18px;font-family:"DM Mono",monospace;font-size:12px;color:var(--muted);padding:0 14px 12px}
+  .stat-row b{color:var(--ink);font-weight:500}
+
+  /* Generators */
+  .gen-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .gen-tab{font-family:"DM Mono",monospace;font-size:12.5px;border:2px solid var(--ink);background:var(--card);
+    padding:6px 12px;border-radius:2px;cursor:pointer}
+  .gen-tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+  .gen-grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-family:"DM Mono",monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px}
+  .field input,.field select{width:100%;border:2px solid var(--ink);border-radius:3px;padding:8px 10px;
+    font-family:"DM Mono",monospace;font-size:13px;background:#fff;color:var(--ink)}
+  .field.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .field.row2 .sub label{display:block}
+  .gen-out pre{max-height:360px}
+  .hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+  .drop-zone{border:2px dashed var(--ink);border-radius:4px;padding:18px;text-align:center;background:#fff;cursor:pointer;font-family:"DM Mono",monospace;font-size:12.5px;color:var(--muted)}
+  .drop-zone.hot{background:var(--ember-soft);border-color:var(--ember)}
+  .swatchbar{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .swatchbar canvas{border:2px solid var(--ink);border-radius:3px;image-rendering:pixelated;background:#fff}
+
+  .gen-genonly{display:none}
+  .gen-genonly.active{display:block}
+  .valve-key{display:flex;align-items:center;gap:12px;margin-top:8px;font-family:"DM Mono",monospace;font-size:11.5px;color:var(--muted)}
+  .valve-key span{display:inline-flex;align-items:center;gap:5px}
+  .valve-key i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--ink);display:inline-block}
+
+  /* Reference */
+  .ref-search{margin-bottom:16px}
+  .ref-search input{width:100%;max-width:420px;border:2px solid var(--ink);border-radius:3px;padding:9px 12px;
+    font-family:"DM Mono",monospace;font-size:13px;background:#fff}
+  table.ref{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);border:2px solid var(--ink);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+  table.ref th,table.ref td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+  table.ref th{font-family:"DM Mono",monospace;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;background:var(--ink);color:var(--bg)}
+  table.ref td:first-child{font-family:"DM Mono",monospace;color:#7a2f0e;white-space:nowrap;font-weight:500}
+  table.ref tr.hide{display:none}
+  .cat-pill{display:inline-block;font-family:"DM Mono",monospace;font-size:10.5px;padding:2px 7px;border:1px solid var(--ink);border-radius:20px;color:var(--muted)}
+
+  .note-box{border-left:4px solid var(--ember);background:var(--ember-soft);padding:10px 14px;border-radius:0 4px 4px 0;margin:0 0 14px;font-size:13.5px}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+    font-family:"DM Mono",monospace;font-size:13px;padding:10px 16px;border-radius:3px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+  .toast.show{opacity:1}
+
+  footer.site{border-top:2px solid var(--line);margin-top:20px}
+  .foot{padding:22px 0;text-align:center;font-family:"DM Mono",monospace;font-size:12.5px;color:var(--muted)}
+
+  @media (max-width:880px){
+    .hero{grid-template-columns:1fr}
+    .pg{grid-template-columns:1fr}
+    .gen-grid{grid-template-columns:1fr}
+    .hero h2{font-size:32px}
+    nav.tabs{width:100%}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap topbar">
+    <div class="brand">
+      <div class="logo-dot" aria-hidden="true"></div>
+      <div>
+        <h1>Droplet Printer Studio</h1>
+        <div class="sub"><a href="https://o23r.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">by o23r</a></div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab-btn" role="tab" aria-selected="true" data-page="learn">Learn</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-page="play">Playground</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-page="doctor">Doctor</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-page="gen">Generators</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-page="ref">Reference</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ LEARN ============ -->
+<section class="page active" id="page-learn">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Piezo inkjet dispensing &middot; MicroFab / Jetlab4</div>
+        <h2>Write scripts that place droplets exactly where you want them.</h2>
+        <p>A Jetlab4 script is a plain text file of one command per line. It moves the stage, fires drops, draws shapes, and stitches sub-scripts together. Work through the lessons below, then load any example straight into the live preview.</p>
+        <div class="lesson-actions">
+          <button class="btn ember" data-goto="play">Open Playground</button>
+          <button class="btn ghost" data-goto="gen">Generate a logo</button>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div class="cap">Anatomy of a script</div>
+<pre class="code"><span class="c">Basic printing example as a script</span>
+<span class="k">moveto</span> <span class="n">10.0 10.0</span>
+<span class="k">array</span> <span class="n">0.15 20 0.25 10 0.0 1</span>
+<span class="c">; ^ dx  nx  dy  ny  ang dev</span></pre>
+        <div class="hint">Line 1 is a free description. Lines starting with <span class="kbd">;</span> are comments. Everything else is a command.</div>
+      </div>
+    </div>
+
+    <div id="lesson-container"></div>
+  </div>
+</section>
+
+<!-- ============ PLAYGROUND ============ -->
+<section class="page" id="page-play">
+  <div class="wrap">
+    <div class="pg">
+      <div class="panel">
+        <div class="panel-head">
+          <h4>script.txt</h4>
+          <div class="spacer"></div>
+          <button class="btn small ghost" id="btn-clear">Clear</button>
+          <button class="btn small ghost" id="btn-copy-editor">Copy</button>
+          <button class="btn small ghost" id="btn-download-editor">Download</button>
+        </div>
+        <div class="panel-body">
+          <textarea id="editor" spellcheck="false"></textarea>
+          <div class="hint">Type or load an example. The preview updates as you type. Commands that touch external files (<span class="kbd">bitmap</span>, <span class="kbd">execute</span>) are shown as markers.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h4>Print bed preview</h4>
+          <div class="spacer"></div>
+          <button class="btn small ghost" id="btn-fit">Fit</button>
+        </div>
+        <div class="bed-wrap">
+          <canvas id="bed" width="640" height="470"></canvas>
+        </div>
+        <div class="stat-row" id="pg-stats"></div>
+        <div class="legend">
+          <span>micro-valves:</span>
+          <span><b style="color:#C44E1B">&#9679;</b>1</span>
+          <span><b style="color:#2F7D5B">&#9679;</b>2</span>
+          <span><b style="color:#2C6E9B">&#9679;</b>3</span>
+          <span><b style="color:#8A4FA3">&#9679;</b>4</span>
+          <span><b style="color:var(--ember)">+</b> current position</span>
+          <span><b>&#9633;</b> external file</span>
+          <span>1 grid = 1&nbsp;mm</span>
+        </div>
+        <div class="warns" id="pg-warns"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOCTOR ============ -->
+<section class="page" id="page-doctor">
+  <div class="wrap">
+    <div class="pg">
+      <div class="panel">
+        <div class="panel-head">
+          <h4>Paste a script to check</h4>
+          <div class="spacer"></div>
+          <button class="btn small ghost" id="doc-sample">Load a broken sample</button>
+        </div>
+        <div class="panel-body">
+          <textarea id="doc-input" spellcheck="false"></textarea>
+          <div class="lesson-actions" style="margin-top:10px">
+            <button class="btn ember small" id="doc-check">Check script</button>
+            <button class="btn ghost small" id="doc-fix">Apply safe fixes</button>
+          </div>
+          <div class="hint">The checker looks for the things that make the printer reject a file: unknown or misspelled commands, unbalanced or single-row polycurves, and <span class="kbd">repeat</span> paths that may not exist on this PC.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h4>Findings</h4><div class="spacer"></div><span class="mono" id="doc-count" style="font-size:12px;color:var(--muted)"></span></div>
+        <div class="panel-body">
+          <div id="doc-results"><p class="hint" style="margin:0">Paste a script and press <b>Check script</b>.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="doc-fixed-panel" style="margin-top:20px;display:none">
+      <div class="panel-head"><h4>Corrected script</h4><div class="spacer"></div>
+        <button class="btn small ghost" id="doc-copy">Copy</button>
+        <button class="btn small ghost" id="doc-download">Download</button>
+        <button class="btn small ember" id="doc-toplay">Open in Playground</button>
+      </div>
+      <div class="panel-body"><pre class="code" id="doc-fixed"></pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GENERATORS ============ -->
+<section class="page" id="page-gen">
+  <div class="wrap">
+    <div class="gen-tabs" role="tablist">
+      <button class="gen-tab" role="tab" aria-selected="true" data-gen="logo">Logo / image</button>
+      <button class="gen-tab" role="tab" aria-selected="false" data-gen="array">Array</button>
+      <button class="gen-tab" role="tab" aria-selected="false" data-gen="border">Border</button>
+      <button class="gen-tab" role="tab" aria-selected="false" data-gen="points">Point grid</button>
+      <button class="gen-tab" role="tab" aria-selected="false" data-gen="circle">Circle / arch</button>
+    </div>
+
+    <div class="gen-grid">
+      <div>
+        <div class="panel" style="margin-bottom:18px">
+          <div class="panel-head"><h4>Print start position</h4></div>
+          <div class="panel-body">
+            <div class="field row2">
+              <div class="sub"><label>Start X (mm)</label><input type="number" id="st-x" value="0" step="0.5"></div>
+              <div class="sub"><label>Start Y (mm)</label><input type="number" id="st-y" value="0" step="0.5"></div>
+            </div>
+            <div class="field row2">
+              <div class="sub"><label>Rotation (deg)</label><input type="number" id="st-ang" value="0" step="1"></div>
+              <div class="sub"><label>Micro-valve</label><select id="st-dev">
+                <option value="1">Valve 1</option>
+                <option value="2" selected>Valve 2</option>
+                <option value="3">Valve 3</option>
+                <option value="4">Valve 4</option>
+              </select></div>
+            </div>
+            <div class="field"><label>Layers (repeat block)</label><input type="number" id="st-layers" value="1" min="1" max="200"></div>
+            <div class="valve-key">
+              <span>Valve colors:</span>
+              <span><i style="background:#C44E1B"></i>1</span>
+              <span><i style="background:#2F7D5B"></i>2</span>
+              <span><i style="background:#2C6E9B"></i>3</span>
+              <span><i style="background:#8A4FA3"></i>4</span>
+            </div>
+            <p class="hint" style="margin:6px 0 0">The selected valve becomes a <span class="kbd">select N</span> line in the script. Coordinates are baked in directly (no reference-frame commands), matching your lab scripts. Rebuild after changing this.</p>
+          </div>
+        </div>
+        <!-- LOGO -->
+        <div class="gen-genonly active" data-genpanel="logo">
+          <div class="panel"><div class="panel-head"><h4>Image &rarr; script</h4></div>
+            <div class="panel-body">
+              <div class="drop-zone" id="logo-drop">Click or drop an image (PNG/JPG/SVG)</div>
+              <input type="file" id="logo-file" accept="image/*" style="display:none">
+              <div class="swatchbar"><canvas id="logo-thumb" width="120" height="120"></canvas>
+                <div class="hint" id="logo-info">No image loaded yet.</div></div>
+              <div class="field"><label>Width in dots (resolution)</label><input type="number" id="lg-cols" value="60" min="4" max="200"></div>
+              <div class="field"><label>Dot pitch (mm)</label><input type="number" id="lg-pitch" value="0.1" step="0.01" min="0.02"></div>
+              <div class="field"><label>Brightness threshold (0-255)</label><input type="number" id="lg-thresh" value="128" min="1" max="254"></div>
+              <div class="field"><label>Ink is</label><select id="lg-invert"><option value="dark">the dark pixels</option><option value="light">the light pixels</option></select></div>
+              <div class="field"><label>Output as</label><select id="lg-mode">
+                <option value="points">point list (one drop per pixel)</option>
+                <option value="bitmap">bitmap command (uses your .bmp)</option></select></div>
+              <div class="field" id="lg-bmp-field" style="display:none"><label>.bmp path on the Jetlab PC</label><input type="text" id="lg-bmp" value="C:\jetlab4\Scripts\MyLogo.bmp"></div>
+              <div class="field"><label>Fly speed (mm/s)</label><input type="number" id="lg-speed" value="35" step="1"></div>
+              <button class="btn ember" id="lg-build">Build script</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ARRAY -->
+        <div class="gen-genonly" data-genpanel="array">
+          <div class="panel"><div class="panel-head"><h4>Filled array</h4></div><div class="panel-body">
+            <div class="field row2"><div class="sub"><label>Pitch X (dx)</label><input type="number" id="ar-dx" value="0.2" step="0.01"></div><div class="sub"><label>Count X (nx)</label><input type="number" id="ar-nx" value="10" min="1"></div></div>
+            <div class="field row2"><div class="sub"><label>Pitch Y (dy)</label><input type="number" id="ar-dy" value="0.2" step="0.01"></div><div class="sub"><label>Count Y (ny)</label><input type="number" id="ar-ny" value="10" min="1"></div></div>
+            <div class="field"><label>Angle (deg)</label><input type="number" id="ar-ang" value="0" step="1"></div>
+            <div class="field row2"><div class="sub"><label>Fly</label><select id="ar-fly"><option value="on">on the fly</option><option value="off">on position</option></select></div><div class="sub"><label>Speed (mm/s)</label><input type="number" id="ar-speed" value="50" step="1"></div></div>
+            <button class="btn ember" id="ar-build">Build script</button>
+          </div></div>
+        </div>
+
+        <!-- BORDER -->
+        <div class="gen-genonly" data-genpanel="border">
+          <div class="panel"><div class="panel-head"><h4>Rectangle border</h4></div><div class="panel-body">
+            <div class="field row2"><div class="sub"><label>Pitch X (dx)</label><input type="number" id="bd-dx" value="0.2" step="0.01"></div><div class="sub"><label>Count X (nx)</label><input type="number" id="bd-nx" value="30" min="2"></div></div>
+            <div class="field row2"><div class="sub"><label>Pitch Y (dy)</label><input type="number" id="bd-dy" value="0.2" step="0.01"></div><div class="sub"><label>Count Y (ny)</label><input type="number" id="bd-ny" value="20" min="2"></div></div>
+            <div class="field row2"><div class="sub"><label>Angle (deg)</label><input type="number" id="bd-ang" value="0" step="1"></div><div class="sub"><label>Double border</label><select id="bd-double"><option value="no">single</option><option value="yes">double (nested)</option></select></div></div>
+            <div class="field row2"><div class="sub"><label>Fly</label><select id="bd-fly"><option value="on">on the fly</option><option value="off">on position</option></select></div><div class="sub"><label>Speed (mm/s)</label><input type="number" id="bd-speed" value="50" step="1"></div></div>
+            <button class="btn ember" id="bd-build">Build script</button>
+          </div></div>
+        </div>
+
+        <!-- POINTS -->
+        <div class="gen-genonly" data-genpanel="points">
+          <div class="panel"><div class="panel-head"><h4>Dose-gradient point grid</h4></div><div class="panel-body">
+            <p class="hint" style="margin-top:0">Makes a <span class="kbd">begin/end</span> point list placed at the start position. Drop count sweeps from min to max across the rows, handy for dose or calibration studies.</p>
+            <div class="field row2"><div class="sub"><label>Pitch X</label><input type="number" id="pt-dx" value="0.5" step="0.05"></div><div class="sub"><label>Cols</label><input type="number" id="pt-nx" value="5" min="1"></div></div>
+            <div class="field row2"><div class="sub"><label>Pitch Y</label><input type="number" id="pt-dy" value="0.5" step="0.05"></div><div class="sub"><label>Rows</label><input type="number" id="pt-ny" value="5" min="1"></div></div>
+            <div class="field row2"><div class="sub"><label>Min drops</label><input type="number" id="pt-min" value="1" min="1"></div><div class="sub"><label>Max drops</label><input type="number" id="pt-max" value="10" min="1"></div></div>
+            <button class="btn ember" id="pt-build">Build script</button>
+          </div></div>
+        </div>
+
+        <!-- CIRCLE -->
+        <div class="gen-genonly" data-genpanel="circle">
+          <div class="panel"><div class="panel-head"><h4>Circle &amp; arch (polycurve)</h4></div><div class="panel-body">
+            <div class="field"><label>Shape</label><select id="cr-shape"><option value="circle">circle (two half arcs)</option><option value="arch">arch (open, straight sides + top arc)</option></select></div>
+            <div class="field row2"><div class="sub"><label>Center X (rel.)</label><input type="number" id="cr-cx" value="0" step="0.5"></div><div class="sub"><label>Center Y (rel.)</label><input type="number" id="cr-cy" value="0" step="0.5"></div></div>
+            <div class="field row2"><div class="sub"><label>Radius / half-width</label><input type="number" id="cr-r" value="2.5" step="0.5"></div><div class="sub"><label>Side height (arch)</label><input type="number" id="cr-h" value="10" step="0.5"></div></div>
+            <div class="field row2"><div class="sub"><label>Fill</label><select id="cr-fill"><option value="1">filled</option><option value="0">outline</option></select></div><div class="sub"><label>Raster step</label><input type="number" id="cr-step" value="0.25" step="0.05"></div></div>
+            <div class="field"><label>Fly speed (mm/s)</label><input type="number" id="cr-speed" value="50" step="1"></div>
+            <button class="btn ember" id="cr-build">Build script</button>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="gen-out">
+        <div class="panel">
+          <div class="panel-head"><h4>Generated script</h4><div class="spacer"></div>
+            <button class="btn small ghost" id="gen-copy">Copy</button>
+            <button class="btn small ghost" id="gen-download">Download</button>
+            <button class="btn small ember" id="gen-toplay">Open in Playground</button>
+          </div>
+          <div class="panel-body"><pre class="code" id="gen-output">Fill in the fields and press <b>Build script</b>.</pre></div>
+        </div>
+        <div class="panel" style="margin-top:18px">
+          <div class="panel-head"><h4>Preview</h4></div>
+          <div class="bed-wrap"><canvas id="gen-bed" width="640" height="420"></canvas></div>
+          <div class="stat-row" id="gen-stats"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCE ============ -->
+<section class="page" id="page-ref">
+  <div class="wrap">
+    <div class="ref-search"><input type="text" id="ref-q" placeholder="Search commands, e.g. array, fly, reference..."></div>
+    <table class="ref">
+      <thead><tr><th style="width:26%">Command</th><th style="width:14%">Group</th><th>What it does</th></tr></thead>
+      <tbody id="ref-body"></tbody>
+    </table>
+    <p class="hint">Angles are in degrees, distances in millimetres. A <span class="kbd">*</span> in an argument means "leave unchanged". Trailing arguments in brackets are optional.</p>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<footer class="site"><div class="wrap foot">Ozbolat Lab &middot; 2026 &middot; Made by Ozer</div></footer>
+
+<script>
+"use strict";
+
+/* ============================================================
+   EXAMPLE SCRIPTS (from the real Jetlab4 script set)
+   ============================================================ */
+const EXAMPLES = {
+  basic:
+`Basic printing example as a script
+moveto 10.0 10.0
+array 0.15 20 0.25 10 0.0 1`,
+
+  popof:
+`Printing on position and on the fly - 7.5 mm x 7.5 mm from (0,0).
+; Print an array on position.
+set fly off
+moveto 0.0 0.0
+array 0.2 10 0.2 10  0.0
+; Print an array on the fly
+set fly on 50.0
+moveto 5.0 0.0
+array 0.25 10 0.25 10  0.0
+; Print an array on position.
+set fly off
+moveto 5.0 5.0
+array 0.2 10 0.2 10  0.0
+; Print an array on the fly with elongated pixels from bursts.
+set fly on 50.0 3 0.025
+moveto 0.0 5.0
+array 0.25 10 0.25 10  0.0`,
+
+  singledev:
+`Two arrays printed with a single device. - 8 mm x 21 mm from (0,0).
+set fly on 25.0 0
+moveto 0.0 0.0
+array 0.3 25 0.3 16 0.0 1
+moveto 8.0 0.0
+array 0.3 25 0.3 40 0.0 1`,
+
+  pointlist:
+`Prints a point list with different number of drops
+; x    y     device#    no. drops
+begin
+0.000 0.000 1 1
+0.000 0.500 1 5
+0.000 1.000 1 10
+end`,
+
+  border:
+`A stand-in for a complex sub-pattern.
+moveto 0.0 0.0
+border 0.2 50 0.2 30 0.0
+moveby 0.2 0.2
+border 0.2 48 0.2 28 0.0
+moveto 1.0 1.0
+array 0.2 30 0.2 10 0.0 1`,
+
+  circle:
+`a circle made with polycurve
+set fly on 20
+; polycurve    type  step  angle  margin
+beginpolycurve    1   0.5   0.0    0
+; x,  y    arc_angle  xcntr  ycntr
+2.5  0.0   180        0.0  0.0
+-2.5 0.0   180        0.0  0.0
+endpolycurve`,
+
+  arches:
+`Shapes beyond lines and rectangles - 20 mm x 30 mm from (-10,-10)
+set fly on 50.0
+;   Open arch line.
+beginpolycurve 0 0.25 0.0 0.05 0 0
+-10.0 -10.0
+-10.0 10.0 -180.0 0.0 10.0
+10.0 -10.0
+endpolycurve
+set fly on 50.0
+;   Filled arch.
+beginpolycurve 1 0.25 0.0 0.05 0 0
+7.0 -10.0
+7.0 10.0 180.0 0.0 10.0
+-7.0 -10.0
+endpolycurve`,
+
+  jeanluc:
+`JeanLuc's Polycurve - 15 mm wide times 6 mm high from (0,0).
+set fly on 50.0 0
+beginpolycurve 1 0.2 0.0 0
+3  0
+12 0  180.0  12 3  0 0
+3  6  180.0  3  3  0 0
+endpolycurve`,
+
+  logo:
+`Logo print script.
+set fly on 35.0 0
+moveto 0.0 0.0
+bitmap 1 1 0.0   1   1   "C:\\jetlab4\\Scripts\\TestLogo003.bmp"`,
+
+  reference:
+`A stand-in for a complex pattern using reference frames.
+set fly on 50.0 0
+moveto -5.0 -8.0
+set reference current current *
+border 0.2 20 0.2 12 0.0
+set reference * * * 20.0 5.0 90.0
+border 0.2 20 0.2 12 0.0
+restoreglobalreference
+border 0.2 20 0.2 12 0.0`,
+
+  labcircle:
+`Home Circular Construct Multiple layers
+; Two heads, two half-discs side by side (alveolar + bronchial).
+set fly on 15.0 0
+select 2
+beginpolycurve 1 0.8 0.0 0
+-2.0 0.0 180 0.0 0.0
+endpolycurve
+set fly on 15.0 0
+select 3
+beginpolycurve 1 0.8 0.0 0
+2.0 0.0 180 0.0 0.0
+endpolycurve`,
+
+  labrepeat:
+`Circular Construct Number of Repeats
+repeat 30 "circle_alveolar.txt"`,
+
+  clean:
+`Clean jet device.
+saveparameters "C:\\jetlab4\\cleansavepars.jpr"
+rememberposition
+movetomaintenance
+trigger cont off
+trigger cont on
+wait 5.0
+trigger cont off
+wait 1.0
+set frequency 5000 1
+wait 1.0
+trigger cont on
+wait 5.0
+trigger cont off
+recallparameters "C:\\jetlab4\\cleansavepars.jpr"
+returntoposition`
+};
+
+/* ============================================================
+   INTERPRETER  ->  turns a script into geometry for preview
+   ============================================================ */
+function tokenize(line){
+  const out=[]; let cur=''; let inq=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){ inq=!inq; cur+=ch; continue; }
+    if(!inq && ch===';'){ break; }
+    if(!inq && /\s/.test(ch)){ if(cur){out.push(cur);cur='';} continue; }
+    cur+=ch;
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+const KNOWN = new Set(['set','moveto','moveby','moveall','array','border','bitmap','begin','end',
+  'beginpolycurve','endpolycurve','endpolycurves','execute','repeat','select','restoreglobalreference',
+  'wait','trigger','capturestill','rememberstrobedelay','restorestrobedelay','rememberposition',
+  'returntoposition','movetomaintenance','saveparameters','recallparameters']);
+const num = t => parseFloat(t);
+const rad = d => d*Math.PI/180;
+
+function interpret(text){
+  const shapes=[]; const warns=[]; let title=null;
+  let pen={x:0,y:0};                    // in current reference frame (local)
+  let ref={ox:0,oy:0,th:0};             // world = R(th)*local + o
+  let globalRef={ox:0,oy:0,th:0};
+  let mode='normal';                    // normal | points | poly
+  let poly=null;
+  let curDev=1;                         // current print head from 'select'
+
+  const toWorld=(x,y)=>{
+    const c=Math.cos(ref.th), s=Math.sin(ref.th);
+    return {x: ref.ox + x*c - y*s, y: ref.oy + x*s + y*c};
+  };
+  const rot=(x,y,a)=>{ const c=Math.cos(a),s=Math.sin(a); return {x:x*c-y*s,y:x*s+y*c}; };
+
+  const lines=text.split(/\r?\n/);
+  for(let li=0; li<lines.length; li++){
+    const raw=lines[li];
+    if(!raw.trim()) continue;
+    if(raw.trim()[0]===';') continue;
+    const tk=tokenize(raw);
+    if(tk.length===0) continue;
+    const cmd=tk[0].toLowerCase();
+
+    // description line (first non-comment line that is not a command / not numeric)
+    if(title===null && !KNOWN.has(cmd) && isNaN(num(tk[0])) && mode==='normal'){
+      title=raw.trim(); continue;
+    }
+
+    /* ---- point list ---- */
+    if(mode==='points'){
+      if(cmd==='end'){ mode='normal'; continue; }
+      const x=num(tk[0]), y=num(tk[1]); const dev=tk[2]!==undefined?Math.round(num(tk[2])):curDev;
+      const drops=tk[3]!==undefined?num(tk[3]):1;
+      if(!isNaN(x)&&!isNaN(y)){
+        const w=toWorld(x,y);
+        shapes.push({t:'dot',x:w.x,y:w.y,r:0.05+0.045*Math.sqrt(Math.max(1,drops)),drops:drops,dev:dev});
+      }
+      continue;
+    }
+    /* ---- polycurve ---- */
+    if(mode==='poly'){
+      if(cmd==='endpolycurve'||cmd==='endpolycurves'){
+        if(cmd==='endpolycurves') warns.push(`Line ${li+1}: "endpolycurves" is likely a typo; the printer expects "endpolycurve".`);
+        buildPoly(poly,shapes); mode='normal'; poly=null; continue;
+      }
+      const vals=tk.map(num).filter(v=>!isNaN(v));
+      if(vals.length>=2) poly.rows.push(vals);
+      continue;
+    }
+
+    /* ---- normal commands ---- */
+    switch(cmd){
+      case 'set':{
+        const sub=(tk[1]||'').toLowerCase();
+        if(sub==='fly'){
+          const st=(tk[2]||'').toLowerCase();
+          if(st==='off') shapes.push({t:'fly',on:false});
+          else shapes.push({t:'fly',on:true,speed:num(tk[3])||0,burst:num(tk[4])||0});
+        } else if(sub==='reference'){
+          // set reference <ox> <oy> <ang> [dx dy dth]
+          const a=tk[2],b=tk[3],c=tk[4];
+          const star=v=>v==='*';
+          const cur=v=>v&&v.toLowerCase()==='current';
+          const pw0=toWorld(pen.x,pen.y);           // snapshot BEFORE mutating ref
+          let ox=ref.ox, oy=ref.oy, th=ref.th;
+          if(!star(a)) ox = cur(a)? pw0.x : num(a);
+          if(!star(b)) oy = cur(b)? pw0.y : num(b);
+          if(c && !star(c) && !cur(c) && !isNaN(num(c))) th = rad(num(c));
+          if(tk[5]!==undefined){                    // incremental move dx dy dth in the (new) frame
+            const dx=num(tk[5])||0, dy=num(tk[6])||0, dth=num(tk[7])||0;
+            const d=rot(dx,dy,th); ox+=d.x; oy+=d.y; th+=rad(dth);
+          }
+          ref={ox,oy,th}; pen={x:0,y:0};
+        }
+        // set frequency / strobedelay / etc -> no geometry
+        break;
+      }
+      case 'moveto':{ pen={x:num(tk[1])||0,y:num(tk[2])||0}; break; }
+      case 'moveby':{ pen={x:pen.x+(num(tk[1])||0),y:pen.y+(num(tk[2])||0)}; break; }
+      case 'moveall': break;
+      case 'restoreglobalreference':{ ref={...globalRef}; pen={x:0,y:0}; break; }
+      case 'array':
+      case 'border':{
+        const dx=num(tk[1]),nx=Math.round(num(tk[2])),dy=num(tk[3]),ny=Math.round(num(tk[4]));
+        const ang=rad(num(tk[5])||0);
+        if([dx,nx,dy,ny].some(v=>isNaN(v))){ warns.push(`Line ${li+1}: could not read ${cmd} numbers.`); break; }
+        const r=Math.max(0.02,Math.min(0.12,0.3*Math.min(Math.abs(dx),Math.abs(dy))));
+        const place=(ix,iy)=>{
+          const lp=rot(ix*dx,iy*dy,ang);
+          const w=toWorld(pen.x+lp.x,pen.y+lp.y);
+          shapes.push({t:'dot',x:w.x,y:w.y,r:r,dev:curDev});
+        };
+        if(cmd==='array'){ for(let iy=0;iy<ny;iy++) for(let ix=0;ix<nx;ix++) place(ix,iy); }
+        else { // border = perimeter only
+          for(let ix=0;ix<nx;ix++){ place(ix,0); place(ix,ny-1); }
+          for(let iy=1;iy<ny-1;iy++){ place(0,iy); place(nx-1,iy); }
+        }
+        break;
+      }
+      case 'bitmap':{
+        const dx=num(tk[1])||1, dy=num(tk[2])||1;
+        const path=(tk[tk.length-1]||'').replace(/"/g,'');
+        const w=toWorld(pen.x,pen.y);
+        shapes.push({t:'ext',x:w.x,y:w.y,w:dx*8,h:dy*8,label:'bitmap: '+fileName(path)});
+        warns.push('Bitmap uses an external .bmp; preview shows a placeholder box.');
+        break;
+      }
+      case 'select':{ curDev=Math.round(num(tk[1]))||1; break; }
+      case 'repeat':{
+        const n=Math.round(num(tk[1]))||1;
+        const path=(tk[2]||'').replace(/"/g,'');
+        const w=toWorld(pen.x,pen.y);
+        shapes.push({t:'ext',x:w.x,y:w.y,w:8,h:5,label:`repeat ${n}\u00d7: ${fileName(path)}`});
+        warns.push(`repeat runs "${fileName(path)}" ${n}\u00d7; external file, not previewed here.`);
+        break;
+      }
+      case 'begin':{ mode='points'; break; }
+      case 'beginpolycurve':{
+        const type=Math.round(num(tk[1])||0), step=num(tk[2])||0.25, ang=rad(num(tk[3])||0);
+        poly={type:type,step:step,ang:ang,rows:[]};
+        mode='poly'; break;
+      }
+      case 'execute':{
+        const path=(tk[1]||'').replace(/"/g,'');
+        const w=toWorld(pen.x,pen.y);
+        shapes.push({t:'ext',x:w.x,y:w.y,w:6,h:4,label:'execute: '+fileName(path)});
+        warns.push('execute runs an external script that cannot be previewed here.');
+        break;
+      }
+      // maintenance / imaging -> ignore silently
+      case 'wait': case 'trigger': case 'capturestill':
+      case 'rememberstrobedelay': case 'restorestrobedelay':
+      case 'rememberposition': case 'returntoposition': case 'movetomaintenance':
+      case 'saveparameters': case 'recallparameters': case 'end': case 'endpolycurve': case 'endpolycurves':
+        break;
+      default:
+        warns.push(`Line ${li+1}: unrecognised command "${tk[0]}".`);
+    }
+  }
+  // final pen marker (world)
+  const pw=toWorld(pen.x,pen.y);
+  return {shapes, warns, title, pen:pw};
+
+  // Build a polycurve. Model: the first x,y is the start point. Each row is a
+  // straight move to (x,y); if the row has 5+ numbers it is then followed by an
+  // arc of arc_angle degrees around center (xc,yc). Negative angle = clockwise.
+  function buildPoly(p,shapes){
+    if(!p || p.rows.length===0) return;
+    const local=[];
+    let cur={x:p.rows[0][0], y:p.rows[0][1]};
+    local.push({...cur});
+    const doArc=(r)=>{
+      const cen={x:r[3], y:r[4]}, sweep=rad(r[2]);
+      const rr=Math.hypot(cur.x-cen.x, cur.y-cen.y);
+      const a0=Math.atan2(cur.y-cen.y, cur.x-cen.x);
+      const N=Math.max(8,Math.round(Math.abs(r[2])/3));
+      for(let i=1;i<=N;i++){
+        const a=a0+sweep*(i/N);
+        cur={x:cen.x+rr*Math.cos(a), y:cen.y+rr*Math.sin(a)};
+        local.push({...cur});
+      }
+    };
+    if(p.rows[0].length>=5) doArc(p.rows[0]);            // first row may carry an arc
+    for(let i=1;i<p.rows.length;i++){
+      const r=p.rows[i];
+      cur={x:r[0], y:r[1]}; local.push({...cur});         // straight move to point
+      if(r.length>=5) doArc(r);                           // then optional arc
+    }
+    if(local.length<2) return;
+    // apply header angle (about local origin), then the reference frame
+    const ca=Math.cos(p.ang), sa=Math.sin(p.ang);
+    const cf=Math.cos(ref.th), sf=Math.sin(ref.th);
+    const wpts=local.map(pt=>{
+      const rx=pt.x*ca-pt.y*sa, ry=pt.x*sa+pt.y*ca;
+      return {x:ref.ox+rx*cf-ry*sf, y:ref.oy+rx*sf+ry*cf};
+    });
+    shapes.push({t:'poly',pts:wpts,fill:p.type===1,step:p.step,dev:curDev});
+  }
+}
+function fileName(p){ const m=String(p).split(/[\\/]/); return m[m.length-1]||p; }
+
+/* ============================================================
+   RENDER geometry to a canvas
+   ============================================================ */
+function bounds(shapes){
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,has=false;
+  const upd=(x,y)=>{has=true;minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);};
+  for(const s of shapes){
+    if(s.t==='dot'){upd(s.x-s.r,s.y-s.r);upd(s.x+s.r,s.y+s.r);}
+    else if(s.t==='poly'){s.pts.forEach(p=>upd(p.x,p.y));}
+    else if(s.t==='ext'){upd(s.x,s.y);upd(s.x+s.w,s.y+s.h);}
+  }
+  if(!has){minX=0;minY=0;maxX=10;maxY=10;}
+  return {minX,minY,maxX,maxY};
+}
+function render(canvas, res, fit){
+  const ctx=canvas.getContext('2d');
+  const cssW=canvas.clientWidth||canvas.width;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const W=canvas.width=Math.round(cssW*dpr);
+  const H=canvas.height=Math.round((canvas.getAttribute('data-h')||canvas.height)*1); // keep attr height
+  canvas.style.height=(H/dpr)+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=W/dpr, h=H/dpr;
+  ctx.clearRect(0,0,w,h);
+
+  const shapes=res.shapes;
+  const bb=bounds(shapes);
+  const pad=Math.max(1,(bb.maxX-bb.minX+bb.maxY-bb.minY)*0.06);
+  const bx0=bb.minX-pad, by0=bb.minY-pad, bx1=bb.maxX+pad, by1=bb.maxY+pad;
+  const bw=Math.max(0.5,bx1-bx0), bh=Math.max(0.5,by1-by0);
+  const margin=34;
+  const scale=Math.min((w-2*margin)/bw,(h-2*margin)/bh);
+  const offX=(w-scale*bw)/2, offY=(h-scale*bh)/2;
+  // world(mm) -> px, flip Y (Jetlab y is up)
+  const X=x=>offX+(x-bx0)*scale;
+  const Y=y=>h-(offY+(y-by0)*scale);
+
+  // grid at 1mm (or 5mm if dense)
+  let gstep=1; if(scale<8) gstep=5; if(scale<3) gstep=10;
+  ctx.lineWidth=1; ctx.strokeStyle='#E7E0D0';
+  ctx.font='9px "DM Mono", monospace'; ctx.fillStyle='#B8AF9C';
+  const gx0=Math.floor(bx0/gstep)*gstep, gy0=Math.floor(by0/gstep)*gstep;
+  for(let gx=gx0; gx<=bx1; gx+=gstep){ ctx.beginPath();ctx.moveTo(X(gx),0);ctx.lineTo(X(gx),h);ctx.stroke(); }
+  for(let gy=gy0; gy<=by1; gy+=gstep){ ctx.beginPath();ctx.moveTo(0,Y(gy));ctx.lineTo(w,Y(gy));ctx.stroke(); }
+  // axes at 0
+  ctx.strokeStyle='#CFC6B2'; ctx.lineWidth=1.4;
+  if(0>bx0&&0<bx1){ctx.beginPath();ctx.moveTo(X(0),0);ctx.lineTo(X(0),h);ctx.stroke();}
+  if(0>by0&&0<by1){ctx.beginPath();ctx.moveTo(0,Y(0));ctx.lineTo(w,Y(0));ctx.stroke();}
+
+  // polycurves
+  for(const s of shapes){
+    if(s.t!=='poly') continue;
+    const col=devColor(s.dev);
+    const path=new Path2D();
+    s.pts.forEach((p,i)=>{ i?path.lineTo(X(p.x),Y(p.y)):path.moveTo(X(p.x),Y(p.y)); });
+    if(s.fill){
+      path.closePath();
+      ctx.save(); ctx.fillStyle=col.fill; ctx.fill(path);
+      ctx.clip(path);
+      ctx.strokeStyle=col.hatch; ctx.lineWidth=1;
+      const stepPx=Math.max(3,s.step*scale);
+      for(let yy=0; yy<h; yy+=stepPx){ ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(w,yy);ctx.stroke(); }
+      ctx.restore();
+      ctx.strokeStyle=col.line; ctx.lineWidth=1.6; ctx.stroke(path);
+    } else {
+      ctx.strokeStyle=col.line; ctx.lineWidth=1.8; ctx.stroke(path);
+    }
+  }
+  // external markers
+  for(const s of shapes){
+    if(s.t!=='ext') continue;
+    ctx.save(); ctx.setLineDash([5,4]); ctx.strokeStyle='#6B6459'; ctx.lineWidth=1.4;
+    ctx.strokeRect(X(s.x),Y(s.y+s.h),s.w*scale,s.h*scale);
+    ctx.setLineDash([]); ctx.fillStyle='#6B6459'; ctx.font='10px "DM Mono", monospace';
+    ctx.fillText(s.label,X(s.x)+3,Y(s.y+s.h)-5); ctx.restore();
+  }
+  // dots (drops)
+  let dotCount=0;
+  for(const s of shapes){
+    if(s.t!=='dot') continue; dotCount++;
+    const col=devColor(s.dev);
+    const px=X(s.x), py=Y(s.y); const rp=Math.max(1.3,s.r*scale);
+    const g=ctx.createRadialGradient(px-rp*0.3,py-rp*0.3,rp*0.15,px,py,rp);
+    g.addColorStop(0,col.dropHi); g.addColorStop(1,col.dropLo);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py,rp,0,7); ctx.fill();
+  }
+  // pen position
+  if(res.pen){
+    const px=X(res.pen.x),py=Y(res.pen.y);
+    ctx.strokeStyle=getCss('--ember'); ctx.lineWidth=1.6;
+    ctx.beginPath();ctx.arc(px,py,5,0,7);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px-8,py);ctx.lineTo(px+8,py);ctx.moveTo(px,py-8);ctx.lineTo(px,py+8);ctx.stroke();
+  }
+  return {dotCount, bb, scale};
+}
+// Per-device colour so multi-head scripts (select 2/3/4...) read distinctly.
+const DEV_PALETTE={
+  1:{line:'#C44E1B',fill:'rgba(196,78,27,0.12)',hatch:'rgba(196,78,27,0.45)',dropHi:'#E2865A',dropLo:'#8A3410'},
+  2:{line:'#2F7D5B',fill:'rgba(47,125,91,0.12)',hatch:'rgba(47,125,91,0.45)',dropHi:'#5BAE86',dropLo:'#1C4E38'},
+  3:{line:'#2C6E9B',fill:'rgba(44,110,155,0.12)',hatch:'rgba(44,110,155,0.45)',dropHi:'#5C9CC6',dropLo:'#1A4460'},
+  4:{line:'#8A4FA3',fill:'rgba(138,79,163,0.12)',hatch:'rgba(138,79,163,0.45)',dropHi:'#B27FC6',dropLo:'#563066'}
+};
+function devColor(d){ return DEV_PALETTE[d]||DEV_PALETTE[1]; }
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+/* ============================================================
+   PLAYGROUND wiring
+   ============================================================ */
+const editor=document.getElementById('editor');
+const bed=document.getElementById('bed');
+bed.setAttribute('data-h',470);
+const pgWarns=document.getElementById('pg-warns');
+const pgStats=document.getElementById('pg-stats');
+
+function runPlayground(){
+  const res=interpret(editor.value);
+  const info=render(bed,res,true);
+  pgWarns.innerHTML = res.warns.length
+    ? res.warns.slice(0,8).map(w=>`<div class="w">! ${escapeHtml(w)}</div>`).join('')
+    : '';
+  const bb=info.bb;
+  const wmm=(bb.maxX-bb.minX).toFixed(2), hmm=(bb.maxY-bb.minY).toFixed(2);
+  pgStats.innerHTML =
+    `<span>drops: <b>${info.dotCount}</b></span>`+
+    `<span>extent: <b>${wmm} &times; ${hmm} mm</b></span>`+
+    (res.title?`<span>title: <b>${escapeHtml(res.title)}</b></span>`:'');
+}
+editor.addEventListener('input', debounce(runPlayground,120));
+document.getElementById('btn-clear').onclick=()=>{editor.value='';runPlayground();};
+document.getElementById('btn-fit').onclick=runPlayground;
+document.getElementById('btn-copy-editor').onclick=()=>copy(editor.value);
+document.getElementById('btn-download-editor').onclick=()=>download('script.txt',editor.value);
+window.addEventListener('resize',debounce(runPlayground,150));
+
+function loadIntoPlayground(txt){
+  editor.value=txt; switchPage('play'); requestAnimationFrame(runPlayground);
+  toast('Loaded into Playground');
+}
+
+/* ============================================================
+   LEARN content
+   ============================================================ */
+const LESSONS=[
+ {n:1,title:'Coordinates, comments, and your first line',
+  body:`<p>Every script is plain text, one command per line, and it runs top to bottom. Positions are in <b>millimetres</b>, angles in <b>degrees</b>. The stage origin is the bottom-left corner and Y increases upward, so normal printing runs from the bottom up.</p>
+  <ul><li>The very first line is a free <b>description</b>. It prints nothing.</li>
+  <li>Any line beginning with <span class="kbd">;</span> is a comment.</li>
+  <li>Numbers can be separated by one or more spaces.</li></ul>`,
+  syntax:`&lt;description on line 1&gt;\n; a comment\ncommand arg1 arg2 ...`,
+  example:'basic'},
+
+ {n:2,title:'Moving the stage',
+  body:`<p>Before you print, you position the jet over the substrate. <span class="kbd">moveto</span> jumps to an absolute point; <span class="kbd">moveby</span> steps relative to where you are now. Most print commands (array, border, polycurve) begin at the current position.</p>`,
+  params:[['moveto x y','Go to absolute (x, y).'],['moveby dx dy','Shift by (dx, dy) from the current spot.'],['moveall * * *','Move all axes; * keeps an axis where it is.']],
+  syntax:`moveto 10.0 10.0\nmoveby 0.2 0.2`,
+  example:'border'},
+
+ {n:3,title:'On position vs on the fly',
+  body:`<p>Two printing modes. <b>On position</b> stops the stage, fires, then moves to the next spot: slow but precise. <b>On the fly</b> keeps the stage moving at a set speed and times the drops so they land on a grid: much faster.</p>
+  <p class="mut">The third and fourth arguments turn on <b>bursts</b>, firing several drops per pixel to build elongated features.</p>`,
+  params:[['set fly off','Print on position (stop-and-drop).'],['set fly on speed','Print on the fly at speed (mm/s).'],['set fly on speed n gap','n bursts per pixel, gap mm apart, for elongated pixels.']],
+  syntax:`set fly off\nset fly on 50.0\nset fly on 50.0 3 0.025`,
+  example:'popof'},
+
+ {n:4,title:'Arrays and borders',
+  body:`<p><span class="kbd">array</span> prints a solid grid of drops; <span class="kbd">border</span> prints just the outline of that grid. Both start at the current position and share the same arguments: pitch and count in X and Y, plus a rotation angle and an optional device number.</p>`,
+  params:[['dx / nx','Spacing and number of drops along X.'],['dy / ny','Spacing and number of drops along Y.'],['angle','Rotation of the whole grid, degrees.'],['device','Which print head to use (optional).']],
+  syntax:`array  dx nx dy ny angle [device]\nborder dx nx dy ny angle`,
+  example:'singledev'},
+
+ {n:5,title:'Point lists for varied doses',
+  body:`<p>When you want individual drops with different volumes, list them explicitly between <span class="kbd">begin</span> and <span class="kbd">end</span>. Each row is a point with its own device and drop count, so you can build dose gradients or calibration matrices.</p>`,
+  params:[['x y','Location of the drop, mm.'],['device','Print head to fire.'],['no. drops','How many drops to stack at that point.']],
+  syntax:`begin\n; x     y     device  drops\n0.000  0.000  1       1\n0.000  0.500  1       5\nend`,
+  example:'pointlist'},
+
+ {n:6,title:'Bitmaps and logos',
+  body:`<p><span class="kbd">bitmap</span> prints a monochrome image file: every black pixel becomes a drop. You give the pixel pitch, a rotation, whether to start from the top, whether to print bidirectionally, and the path to the .bmp on the Jetlab PC.</p>
+  <div class="note-box">Rather than hand-authoring a .bmp, use the <b>Generators &rarr; Logo / image</b> tab to convert any picture into either a bitmap command or a self-contained point list.</div>`,
+  params:[['dx dy','Pixel pitch in X and Y, mm.'],['ang','Rotation, degrees.'],['top','1 = start from the top row.'],['bidir','1 = print bidirectionally (faster).'],['"path"','Full path to the .bmp file.']],
+  syntax:`bitmap dx dy ang top bidir "C:\\jetlab4\\Scripts\\Logo.bmp"`,
+  example:'logo'},
+
+ {n:7,title:'Polycurves: circles, arcs, and arches',
+  body:`<p>For anything beyond rectangles, use a polycurve. The header sets the fill type, the raster <b>step</b>, an overall rotation, and a margin. Then each row is a vertex. A row with only <span class="kbd">x y</span> is a straight segment; a row with five numbers draws an <b>arc</b> to that point.</p>`,
+  params:[['type','0 = outline, 1 = filled.'],['step','Raster line spacing for the fill, mm.'],['angle','Rotation of the whole curve.'],['x y','A straight move to this vertex.'],['x y arc xc yc','Arc to (x,y): sweep "arc" degrees around center (xc,yc). Negative sweeps clockwise.']],
+  syntax:`beginpolycurve type step angle margin\n  x0 y0                 ; start point\n  x1 y1 arc xc yc       ; arc segment\nendpolycurve`,
+  example:'arches'},
+
+ {n:8,title:'Devices, layers, and reuse',
+  body:`<p>Real multi-material prints switch micro-valves with <span class="kbd">select N</span>: everything after it comes from that valve until the next <span class="kbd">select</span>. The machine has four micro-valves (1 to 4), so each material gets its own valve. To build up a construct, you stack layers, either by repeating the print block in one file or by calling <span class="kbd">repeat N "file"</span> on a sub-script.</p>
+  <div class="note-box">Your lab scripts use exactly this pattern: a <span class="kbd">select</span> per material and a separate <span class="kbd">repeat</span> file for the layer count. The Generators tab writes this same dialect, with a Micro-valve and Layers control.</div>
+  <p class="mut">The vendor examples also offer reference frames (<span class="kbd">set reference</span>, <span class="kbd">execute</span>, <span class="kbd">restoreglobalreference</span>) to stamp a pattern at different places; useful, but not required for the circular constructs above.</p>`,
+  params:[['select N','Use micro-valve N (1-4) for the following commands.'],['repeat N "file"','Run a script file N times, e.g. N layers.'],['set reference current current *','Origin to current point, keep angle.'],['execute "file"','Run another script inline (single pass).'],['restoreglobalreference','Return to the global origin.']],
+  syntax:`select 2\nbeginpolycurve 1 0.8 0.0 0\n  -2.0 0.0 180 0.0 0.0\nendpolycurve\n; ...then in a wrapper file:\nrepeat 30 "circle.txt"`,
+  example:'labcircle'},
+
+ {n:9,title:'Maintenance and imaging',
+  body:`<p>Housekeeping commands keep the jet healthy and capture droplet images. A cleaning routine saves the parameters, jets continuously to clear the nozzle, then restores everything. Drop-formation studies sweep the strobe delay while capturing stills to film a droplet as it forms.</p>`,
+  params:[['trigger cont on / off','Start / stop continuous jetting.'],['wait s','Pause for s seconds.'],['save / recallparameters','Store and restore the .jpr parameter set.'],['remember / returntoposition','Bookmark and come back to a stage position.'],['set strobedelay us dev','Strobe timing for imaging.'],['capturestill','Grab a camera frame.']],
+  syntax:`saveparameters "clean.jpr"\nmovetomaintenance\ntrigger cont on\nwait 5.0\ntrigger cont off\nrecallparameters "clean.jpr"`,
+  example:'clean'}
+];
+
+function renderLessons(){
+  const wrap=document.getElementById('lesson-container');
+  wrap.innerHTML=LESSONS.map(L=>{
+    const params=L.params?`<table class="params"><thead><tr><th>Argument</th><th>Meaning</th></tr></thead><tbody>${
+      L.params.map(p=>`<tr><td>${escapeHtml(p[0])}</td><td>${p[1]}</td></tr>`).join('')}</tbody></table>`:'';
+    const syntax=L.syntax?`<div class="syntax">${L.syntax}</div>`:'';
+    return `<div class="lesson">
+      <div class="lesson-head"><span class="lesson-num">${String(L.n).padStart(2,'0')}</span><h3>${L.title}</h3></div>
+      <div class="lesson-body">${L.body}${syntax}${params}
+        <div class="lesson-actions">
+          <button class="btn ember small" data-ex="${L.example}">Load example in Playground</button>
+        </div>
+      </div></div>`;
+  }).join('');
+  wrap.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>loadIntoPlayground(EXAMPLES[b.dataset.ex]));
+}
+
+/* ============================================================
+   REFERENCE table
+   ============================================================ */
+const REF=[
+ ['moveto x y','Motion','Move to an absolute point (mm).'],
+ ['moveby dx dy','Motion','Move relative to the current point.'],
+ ['moveall * * *','Motion','Move all axes; * leaves an axis unchanged.'],
+ ['movetomaintenance','Motion','Move to the maintenance station.'],
+ ['rememberposition','Motion','Bookmark the current stage position.'],
+ ['returntoposition','Motion','Return to the bookmarked position.'],
+ ['set fly off','Printing','Print on position (stop-and-drop).'],
+ ['set fly on speed [n gap]','Printing','Print on the fly at speed; optional n bursts gap mm apart.'],
+ ['array dx nx dy ny ang [dev]','Printing','Solid grid of drops from the current point.'],
+ ['border dx nx dy ny ang','Printing','Outline of a grid from the current point.'],
+ ['select N','Printing','Choose micro-valve N (1-4) for the commands that follow.'],
+ ['begin ... end','Printing','Point list; each row: x y device drops.'],
+ ['bitmap dx dy ang top bidir "f"','Printing','Print a monochrome .bmp; black pixels become drops.'],
+ ['beginpolycurve type step ang mrg','Shapes','Start a curve; type 0 outline / 1 filled.'],
+ ['x y','Shapes','Inside a polycurve: straight segment to (x,y).'],
+ ['x y arc xc yc','Shapes','Inside a polycurve: arc to (x,y) around (xc,yc).'],
+ ['endpolycurve','Shapes','Close the polycurve block.'],
+ ['set reference current current *','Frames','Origin to current point, keep angle.'],
+ ['set reference * * * dx dy dth','Frames','Shift and rotate the reference frame.'],
+ ['restoreglobalreference','Frames','Return to the global origin.'],
+ ['execute "file"','Frames','Run another script file inline.'],
+ ['repeat N "file"','Frames','Run a script file N times, e.g. to stack N layers.'],
+ ['trigger cont on / off','Maintenance','Start / stop continuous jetting.'],
+ ['wait s','Maintenance','Pause for s seconds.'],
+ ['set frequency hz dev','Maintenance','Set jetting frequency for a device.'],
+ ['saveparameters "f"','Maintenance','Save the current .jpr parameters.'],
+ ['recallparameters "f"','Maintenance','Reload parameters from a .jpr file.'],
+ ['set strobedelay us dev','Imaging','Set the stroboscope delay for a device.'],
+ ['remember / restorestrobedelay','Imaging','Bookmark and restore the strobe delay.'],
+ ['capturestill','Imaging','Capture a still camera frame.']
+];
+function renderRef(){
+  document.getElementById('ref-body').innerHTML=REF.map(r=>
+    `<tr data-txt="${(r[0]+' '+r[1]+' '+r[2]).toLowerCase()}"><td>${escapeHtml(r[0])}</td><td><span class="cat-pill">${r[1]}</span></td><td>${r[2]}</td></tr>`).join('');
+}
+document.getElementById('ref-q').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase().trim();
+  document.querySelectorAll('#ref-body tr').forEach(tr=>{
+    tr.classList.toggle('hide', q && !tr.dataset.txt.includes(q));
+  });
+});
+
+/* ============================================================
+   GENERATORS
+   ============================================================ */
+const genBed=document.getElementById('gen-bed'); genBed.setAttribute('data-h',420);
+const genOut=document.getElementById('gen-output');
+const genStats=document.getElementById('gen-stats');
+let lastGen='';
+
+function setGen(txt){
+  lastGen=txt;
+  genOut.textContent=txt;
+  const res=interpret(txt);
+  const info=render(genBed,res,true);
+  const bb=info.bb;
+  genStats.innerHTML=`<span>drops: <b>${info.dotCount}</b></span><span>extent: <b>${(bb.maxX-bb.minX).toFixed(2)} &times; ${(bb.maxY-bb.minY).toFixed(2)} mm</b></span>`;
+}
+document.getElementById('gen-copy').onclick=()=>copy(lastGen);
+document.getElementById('gen-download').onclick=()=>download('generated.txt',lastGen);
+document.getElementById('gen-toplay').onclick=()=>{ if(lastGen) loadIntoPlayground(lastGen); };
+
+// gen sub-tabs
+document.querySelectorAll('.gen-tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.gen-tab').forEach(x=>x.setAttribute('aria-selected','false'));
+  t.setAttribute('aria-selected','true');
+  document.querySelectorAll('[data-genpanel]').forEach(p=>p.classList.toggle('active',p.dataset.genpanel===t.dataset.gen));
+});
+
+// Read the shared start position / device / layers controls.
+function getStart(){
+  const g=id=>document.getElementById(id);
+  return {
+    x:(+g('st-x').value)||0, y:(+g('st-y').value)||0,
+    ang:(+g('st-ang').value)||0,
+    dev:Math.max(1,Math.round(+g('st-dev').value)||1),
+    layers:Math.max(1,Math.round(+g('st-layers').value)||1)
+  };
+}
+const f3=n=>(Math.round(n*1000)/1000).toFixed(3);
+// Bake a pattern-space point into machine coordinates: rotate about the start
+// by the start angle, then translate to the start position. No reference frames.
+function bake(x,y){
+  const st=getStart(), t=st.ang*Math.PI/180, c=Math.cos(t), s=Math.sin(t);
+  return [x*c-y*s+st.x, x*s+y*c+st.y];
+}
+// Assemble a full script: description, then the fly+select+body block repeated per layer.
+function assemble(desc, fly, body){
+  const st=getStart();
+  const block=(fly?fly+'\n':'')+`select ${st.dev}\n`+body.replace(/\s+$/,'');
+  let s=desc+'\n';
+  for(let i=0;i<st.layers;i++){
+    if(st.layers>1) s+=`; --- layer ${i+1} of ${st.layers} ---\n`;
+    s+=block+(i<st.layers-1?'\n\n':'');
+  }
+  return s;
+}
+
+// ARRAY
+document.getElementById('ar-build').onclick=()=>{
+  const g=id=>document.getElementById(id);
+  const st=getStart();
+  const fly=g('ar-fly').value==='on'?`set fly on ${(+g('ar-speed').value).toFixed(1)} 0`:'set fly off';
+  const ang=((+g('ar-ang').value)||0)+st.ang;
+  const body=`moveto ${f3(st.x)} ${f3(st.y)}
+array ${(+g('ar-dx').value)} ${Math.round(+g('ar-nx').value)} ${(+g('ar-dy').value)} ${Math.round(+g('ar-ny').value)} ${ang.toFixed(1)} ${st.dev}`;
+  setGen(assemble('Filled array generated in Droplet Printer Studio.',fly,body));
+};
+// BORDER
+document.getElementById('bd-build').onclick=()=>{
+  const g=id=>document.getElementById(id);
+  const st=getStart();
+  const fly=g('bd-fly').value==='on'?`set fly on ${(+g('bd-speed').value).toFixed(1)} 0`:'set fly off';
+  const dx=+g('bd-dx').value, dy=+g('bd-dy').value, nx=Math.round(+g('bd-nx').value), ny=Math.round(+g('bd-ny').value);
+  const ang=(((+g('bd-ang').value)||0)+st.ang).toFixed(1);
+  let body=`moveto ${f3(st.x)} ${f3(st.y)}
+border ${dx} ${nx} ${dy} ${ny} ${ang}`;
+  if(g('bd-double').value==='yes' && nx>2 && ny>2){
+    body+=`\nmoveby ${dx.toFixed(3)} ${dy.toFixed(3)}\nborder ${dx} ${nx-2} ${dy} ${ny-2} ${ang}`;
+  }
+  setGen(assemble('Rectangle border generated in Droplet Printer Studio.',fly,body));
+};
+// POINTS
+document.getElementById('pt-build').onclick=()=>{
+  const g=id=>document.getElementById(id);
+  const st=getStart();
+  const dx=+g('pt-dx').value, dy=+g('pt-dy').value;
+  const nx=Math.round(+g('pt-nx').value), ny=Math.round(+g('pt-ny').value);
+  const dmin=Math.round(+g('pt-min').value), dmax=Math.round(+g('pt-max').value);
+  const total=nx*ny; let rows='';
+  for(let iy=0;iy<ny;iy++){
+    const drops=ny>1?Math.round(dmin+(dmax-dmin)*iy/(ny-1)):dmin;
+    for(let ix=0;ix<nx;ix++){
+      const [X,Y]=bake(ix*dx,iy*dy);
+      rows+=`${f3(X)} ${f3(Y)} ${st.dev} ${drops}\n`;
+    }
+  }
+  const body=`; x y device drops  (${total} points)\nbegin\n${rows}end`;
+  setGen(assemble('Dose-gradient point grid generated in Droplet Printer Studio.','',body));
+};
+// CIRCLE / ARCH
+document.getElementById('cr-build').onclick=()=>{
+  const g=id=>document.getElementById(id);
+  const shape=g('cr-shape').value, cx=+g('cr-cx').value, cy=+g('cr-cy').value, r=+g('cr-r').value, hgt=+g('cr-h').value;
+  const fill=g('cr-fill').value, step=+g('cr-step').value, fly=`set fly on ${(+g('cr-speed').value).toFixed(1)} 0`;
+  let desc, body;
+  if(shape==='circle'){
+    const [p1x,p1y]=bake(cx-r,cy), [p2x,p2y]=bake(cx+r,cy), [ccx,ccy]=bake(cx,cy);
+    desc='Circle generated in Droplet Printer Studio.';
+    body=`beginpolycurve ${fill} ${step} 0.0 0
+${f3(p1x)} ${f3(p1y)} 180 ${f3(ccx)} ${f3(ccy)}
+${f3(p2x)} ${f3(p2y)} 180 ${f3(ccx)} ${f3(ccy)}
+endpolycurve`;
+  } else {
+    const [a0x,a0y]=bake(cx+r,cy), [a1x,a1y]=bake(cx+r,cy+hgt), [topx,topy]=bake(cx,cy+hgt), [a2x,a2y]=bake(cx-r,cy);
+    desc='Arch generated in Droplet Printer Studio.';
+    body=`beginpolycurve ${fill} ${step} 0.0 0.05 0 0
+${f3(a0x)} ${f3(a0y)}
+${f3(a1x)} ${f3(a1y)} 180 ${f3(topx)} ${f3(topy)}
+${f3(a2x)} ${f3(a2y)}
+endpolycurve`;
+  }
+  setGen(assemble(desc,fly,body));
+};
+
+// LOGO / IMAGE
+let logoImg=null;
+const logoDrop=document.getElementById('logo-drop');
+const logoFile=document.getElementById('logo-file');
+const logoThumb=document.getElementById('logo-thumb');
+const logoInfo=document.getElementById('logo-info');
+document.getElementById('lg-mode').onchange=e=>{
+  document.getElementById('lg-bmp-field').style.display=e.target.value==='bitmap'?'block':'none';
+};
+logoDrop.onclick=()=>logoFile.click();
+logoDrop.ondragover=e=>{e.preventDefault();logoDrop.classList.add('hot');};
+logoDrop.ondragleave=()=>logoDrop.classList.remove('hot');
+logoDrop.ondrop=e=>{e.preventDefault();logoDrop.classList.remove('hot');if(e.dataTransfer.files[0])loadLogo(e.dataTransfer.files[0]);};
+logoFile.onchange=e=>{if(e.target.files[0])loadLogo(e.target.files[0]);};
+function loadLogo(file){
+  const img=new Image();
+  img.onload=()=>{ logoImg=img; drawThumb(); logoInfo.textContent=`${file.name} loaded (${img.width}\u00d7${img.height}px). Press Build.`; };
+  img.onerror=()=>toast('Could not read that image');
+  img.src=URL.createObjectURL(file);
+}
+function drawThumb(){
+  const c=logoThumb, ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+  const s=Math.min(c.width/logoImg.width,c.height/logoImg.height);
+  const w=logoImg.width*s,h=logoImg.height*s;
+  ctx.drawImage(logoImg,(c.width-w)/2,(c.height-h)/2,w,h);
+}
+document.getElementById('lg-build').onclick=()=>{
+  if(!logoImg){ toast('Load an image first'); return; }
+  const g=id=>document.getElementById(id);
+  const cols=Math.max(4,Math.min(200,Math.round(+g('lg-cols').value)));
+  const pitch=+g('lg-pitch').value, thresh=+g('lg-thresh').value;
+  const inkDark=g('lg-invert').value==='dark';
+  const rows=Math.max(1,Math.round(cols*logoImg.height/logoImg.width));
+  // sample the image at cols x rows
+  const oc=document.createElement('canvas'); oc.width=cols; oc.height=rows;
+  const octx=oc.getContext('2d'); octx.drawImage(logoImg,0,0,cols,rows);
+  const data=octx.getImageData(0,0,cols,rows).data;
+  const on=[];
+  for(let ry=0;ry<rows;ry++) for(let cxp=0;cxp<cols;cxp++){
+    const i=(ry*cols+cxp)*4; const a=data[i+3];
+    const lum=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+    let ink = inkDark ? (lum<thresh) : (lum>=thresh);
+    if(a<40) ink=false; // transparent = no drop
+    if(ink) on.push([cxp,ry]);
+  }
+  const speed=(+g('lg-speed').value).toFixed(1);
+  const fly=`set fly on ${speed} 0`;
+  const st=getStart();
+  if(g('lg-mode').value==='bitmap'){
+    const body=`moveto ${f3(st.x)} ${f3(st.y)}
+bitmap ${pitch} ${pitch} ${st.ang.toFixed(1)}   1   1   "${g('lg-bmp').value}"
+; ${on.length} ink pixels at ${cols}\u00d7${rows}, pitch ${pitch} mm  ->  ${(cols*pitch).toFixed(2)}\u00d7${(rows*pitch).toFixed(2)} mm`;
+    setGen(assemble('Logo print script generated in Droplet Printer Studio.',fly,body));
+    return;
+  }
+  // point list: flip Y so image is upright on the bed, bake into machine coords
+  let rows_txt='';
+  for(const [px,py] of on){
+    const [X,Y]=bake(px*pitch,(rows-1-py)*pitch);
+    rows_txt+=`${f3(X)} ${f3(Y)} ${st.dev} 1\n`;
+  }
+  const size=`${(cols*pitch).toFixed(2)}\u00d7${(rows*pitch).toFixed(2)} mm`;
+  const body=`; ${on.length} drops, ${cols}\u00d7${rows} grid, pitch ${pitch} mm, size ${size}\nbegin\n${rows_txt}end`;
+  if(on.length>6000) toast(`${on.length} points: consider a coarser resolution`);
+  setGen(assemble('Logo as point list, generated in Droplet Printer Studio.',fly,body));
+};
+
+/* ============================================================
+   PAGE / TAB switching + utilities
+   ============================================================ */
+function switchPage(p){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.setAttribute('aria-selected', b.dataset.page===p?'true':'false'));
+  document.querySelectorAll('.page').forEach(s=>s.classList.toggle('active', s.id==='page-'+p));
+  if(p==='play') requestAnimationFrame(runPlayground);
+  window.scrollTo({top:0,behavior:'instant' in window?'instant':'auto'});
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
+document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>switchPage(b.dataset.goto));
+
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function copy(txt){navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>toast('Copied'),()=>toast('Copy failed'));}
+function download(name,txt){const b=new Blob([txt],{type:'text/plain'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);toast('Downloaded '+name);}
+let toastT;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1600);}
+
+/* ============================================================
+   SCRIPT DOCTOR  ->  find what makes the printer reject a file
+   ============================================================ */
+const CANON_CMDS=['set','moveto','moveby','moveall','array','border','bitmap','begin','end',
+  'beginpolycurve','endpolycurve','execute','repeat','select','restoreglobalreference','wait',
+  'trigger','capturestill','rememberstrobedelay','restorestrobedelay','rememberposition',
+  'returntoposition','movetomaintenance','saveparameters','recallparameters'];
+
+function levenshtein(a,b){
+  const m=a.length,n=b.length;
+  const dp=new Array(n+1); for(let j=0;j<=n;j++) dp[j]=j;
+  for(let i=1;i<=m;i++){
+    let prev=dp[0]; dp[0]=i;
+    for(let j=1;j<=n;j++){
+      const tmp=dp[j];
+      dp[j]=Math.min(dp[j]+1, dp[j-1]+1, prev+(a[i-1]===b[j-1]?0:1));
+      prev=tmp;
+    }
+  }
+  return dp[n];
+}
+function nearestCmd(w){
+  let best=null,bd=99;
+  for(const c of CANON_CMDS){ const d=levenshtein(w,c); if(d<bd){bd=d;best=c;} }
+  return {cmd:best,dist:bd};
+}
+
+function lintScript(text){
+  const lines=text.split(/\r?\n/);
+  const issues=[]; const fixes=[];
+  let firstContent=-1, inPoly=false, inPoints=false;
+  let polyStart=0, polyRows=0, lastRowNums=0;
+
+  function closePoly(){
+    if(polyRows===1 && lastRowNums>=5){
+      issues.push({line:polyStart+1,sev:'info',
+        msg:'Single-row polycurve (one arc row). On some Jetlab builds a one-row arc does not form a closed path and prints nothing. If this shape is not appearing, give it an explicit start point, then the arc as a second row.',
+        sug:'beginpolycurve 1 <step> 0.0 0\n  <startX> <startY>\n  <endX> <endY> <arc> <cx> <cy>\nendpolycurve'});
+    }
+    inPoly=false;
+  }
+
+  for(let i=0;i<lines.length;i++){
+    const raw=lines[i], t=raw.trim();
+    if(t===''||t[0]===';') continue;
+    const tk=tokenize(raw);
+    if(tk.length===0) continue;
+    const first=tk[0].toLowerCase();
+    const isNum=!isNaN(parseFloat(tk[0]));
+
+    if(firstContent===-1){
+      firstContent=i;
+      if(!CANON_CMDS.includes(first) && isNaN(parseFloat(first))) continue; // description/title line
+    }
+    if(inPoints){ if(first==='end') inPoints=false; continue; }
+
+    if(inPoly){
+      if(isNum){ polyRows++; lastRowNums=tk.map(x=>parseFloat(x)).filter(x=>!isNaN(x)).length; continue; }
+      if(first==='endpolycurve'){ closePoly(); continue; }
+      const nc=nearestCmd(first);
+      if(nc.cmd==='endpolycurve' && nc.dist<=3){
+        issues.push({line:i+1,sev:'err',msg:`"${tk[0]}" is not a valid command. A polycurve must be closed with exactly "endpolycurve".`,sug:`Change "${tk[0]}" to "endpolycurve"`});
+        fixes.push({i,from:tk[0],to:'endpolycurve'}); closePoly(); continue;
+      }
+      issues.push({line:polyStart+1,sev:'err',msg:'This polycurve is never closed with "endpolycurve" before the next command.'});
+      inPoly=false; // fall through and process this line normally
+    }
+
+    if(first==='beginpolycurve'){ inPoly=true; polyStart=i; polyRows=0; lastRowNums=0; continue; }
+    if(first==='begin'){ inPoints=true; continue; }
+    if(first==='repeat'){
+      const path=(tk[2]||tk[1]||'').replace(/"/g,'');
+      const hasPath=/["\\/]/.test(tk.slice(1).join(' '));
+      if(!hasPath) issues.push({line:i+1,sev:'err',msg:'repeat has no target file in quotes.'});
+      else issues.push({line:i+1,sev:'warn',
+        msg:`repeat uses an absolute path. If "${fileName(path)}" is not exactly at that location on THIS computer, the repeat finds nothing and prints nothing.`,
+        sug:'Confirm the file exists at that exact path, or update the path to where the file lives now.'});
+      continue;
+    }
+    if(CANON_CMDS.includes(first)) continue;
+    if(isNum){ issues.push({line:i+1,sev:'warn',msg:`Numbers outside a polycurve or point list: "${t}". These would be ignored.`}); continue; }
+
+    const nc=nearestCmd(first);
+    if(nc.dist<=2){
+      issues.push({line:i+1,sev:'err',msg:`"${tk[0]}" is not a recognized command.`,sug:`Did you mean "${nc.cmd}"?`});
+      if(nc.dist<=1) fixes.push({i,from:tk[0],to:nc.cmd});
+    } else {
+      issues.push({line:i+1,sev:'err',msg:`"${tk[0]}" is not a recognized command.`});
+    }
+  }
+  if(inPoly) issues.push({line:polyStart+1,sev:'err',msg:'This polycurve is never closed with "endpolycurve".'});
+
+  let fixed=null;
+  if(fixes.length){
+    const out=lines.slice();
+    for(const fx of fixes){
+      const esc=fx.from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      out[fx.i]=out[fx.i].replace(new RegExp('(^\\s*)'+esc+'\\b'), '$1'+fx.to);
+    }
+    fixed=out.join('\n');
+  }
+  issues.sort((a,b)=>a.line-b.line);
+  return {issues, fixed, fixCount:fixes.length};
+}
+
+const docInput=document.getElementById('doc-input');
+const docResults=document.getElementById('doc-results');
+const docCount=document.getElementById('doc-count');
+const docFixedPanel=document.getElementById('doc-fixed-panel');
+const docFixed=document.getElementById('doc-fixed');
+let docFixedText='';
+
+function runDoctor(){
+  const r=lintScript(docInput.value);
+  const errs=r.issues.filter(x=>x.sev==='err').length;
+  const warns=r.issues.filter(x=>x.sev==='warn').length;
+  const infos=r.issues.filter(x=>x.sev==='info').length;
+  docCount.textContent=`${errs} error${errs!==1?'s':''}, ${warns} warning${warns!==1?'s':''}${infos?`, ${infos} note${infos!==1?'s':''}`:''}`;
+  if(!r.issues.length){
+    docResults.innerHTML=`<div class="doc-clean">No problems found. Every command here is recognized and the polycurves are balanced.</div>`;
+  } else {
+    docResults.innerHTML=r.issues.map(it=>`
+      <div class="finding ${it.sev}">
+        <div class="fh"><span class="sev">${it.sev==='err'?'error':it.sev==='warn'?'warning':'note'}</span><span class="ln">line ${it.line}</span></div>
+        <div class="msg">${escapeHtml(it.msg)}</div>
+        ${it.sug?`<div class="sug">${escapeHtml(it.sug)}</div>`:''}
+      </div>`).join('');
+  }
+  docFixedText=r.fixed||'';
+  if(r.fixCount){ docFixed.textContent=r.fixed; docFixedPanel.style.display='block'; }
+  else docFixedPanel.style.display='none';
+}
+document.getElementById('doc-check').onclick=runDoctor;
+document.getElementById('doc-fix').onclick=()=>{
+  const r=lintScript(docInput.value);
+  if(r.fixCount){ docInput.value=r.fixed; runDoctor(); toast(`Applied ${r.fixCount} safe fix${r.fixCount!==1?'es':''}`); }
+  else { runDoctor(); toast('No auto-fixable issues'); }
+};
+document.getElementById('doc-copy').onclick=()=>copy(docFixedText||docInput.value);
+document.getElementById('doc-download').onclick=()=>download('corrected.txt',docFixedText||docInput.value);
+document.getElementById('doc-toplay').onclick=()=>loadIntoPlayground(docFixedText||docInput.value);
+document.getElementById('doc-sample').onclick=()=>{
+  docInput.value=`Home Circular Construct Multiple layers
+set fly on 15.0 0
+select 4
+beginpolycurve 1 0.6 0.0 0
+-0.5 0.0 180 0.0 0.0
+0.5 0.0 180 0.0 0.0
+endpolycurve
+set fly on 25.0 0
+selct 2
+beginpolycurve 1 1.30 0.0 0
+-5 0 180 0.0 0.0
+5 0 180 0.0 0.0
+endpolycurves`;
+  runDoctor();
+};
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderLessons();
+renderRef();
+editor.value=EXAMPLES.popof;
+runPlayground();
+setGen(`Fill in the fields and press Build script.\n; the preview and output will appear here`);
+</script>
+</body>
+</html>
