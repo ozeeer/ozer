@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -734,16 +734,54 @@ canvas.clickable { cursor: crosshair; }
   border-color: var(--accent);
 }
 
-/* ============ PRINT JOB ============ */
-.print-job-section {
-  background: linear-gradient(to right, var(--highlight) 0%, transparent 30%), var(--bg);
-  border-left: 3px solid var(--accent);
+.brand a { transition: opacity 0.15s; }
+.brand a:hover { opacity: 0.7; }
+footer a { transition: opacity 0.15s; }
+footer a:hover { opacity: 0.6; text-decoration: underline; }
+
+/* ============ HIGHLIGHTED SECTIONS: CONSOLE + PRINT JOB ============ */
+/* These two sections are the most-used parts of the app, so they get a
+   distinct treatment: subtle blue tint borrowed from the Droplet Printer
+   Studio palette (#378ADD family), a slightly larger section title, and
+   a colored left border to pull the eye there first. */
+.print-job-section,
+.console-section {
+  background: rgba(55, 138, 221, 0.06);
+  border-left: 3px solid #378ADD;
   position: relative;
 }
-.print-job-section .section-title > span:first-child {
-  color: var(--accent);
-  font-weight: 700;
+[data-theme="light"] .print-job-section,
+[data-theme="light"] .console-section {
+  background: #eef5fd;
 }
+.print-job-section .section-title > span:first-child,
+.console-section .section-title > span:first-child {
+  color: #378ADD;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+[data-theme="light"] .print-job-section .section-title > span:first-child,
+[data-theme="light"] .console-section .section-title > span:first-child {
+  color: #0C447C;
+}
+.print-job-section .stat-val,
+.console-section .stat-val { color: #378ADD; }
+.print-job-section .progress-bar { background: #378ADD; }
+
+.print-job-section .btn.primary,
+.console-section .btn.primary {
+  background: #378ADD;
+  border-color: #378ADD;
+  color: #fff;
+}
+.print-job-section .btn.primary:hover:not(:disabled),
+.console-section .btn.primary:hover:not(:disabled) {
+  background: #0C447C;
+  border-color: #0C447C;
+}
+
+/* ============ PRINT JOB ============ */
 .print-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -993,7 +1031,7 @@ footer .spacer { flex: 1; }
 
 <header>
   <div class="brand">
-    <h1>OZ Bioprinter</h1>
+    <a href="https://o23r.com" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;"><h1>OZ Bioprinter</h1></a>
     <span class="sub">Console v0.2</span>
   </div>
 
@@ -1273,6 +1311,16 @@ footer .spacer { flex: 1; }
             <span class="z-label" style="margin-left: 4px; opacity: 0.6;">Step</span>
             <input type="number" id="draw-z-step" value="0.4" step="0.05" min="0.05" class="z-value" style="width: 50px;" title="Step size for Z +/− buttons"/>
           </div>
+          <div class="z-control-group" id="line-precision-group" style="display: none;">
+            <span class="z-label">Length</span>
+            <input type="number" id="line-length" value="10" step="0.5" min="0.1" class="z-value" style="width: 60px;" title="Line length in mm. Set to 0 for free draw."/>
+            <span class="z-label" style="margin-left: 4px; opacity: 0.6;">Angle°</span>
+            <input type="number" id="line-angle" value="0" step="1" class="z-value" style="width: 55px;" title="Angle in degrees (0=right, 90=up). Set to blank for free angle."/>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-dim); cursor: pointer; margin-left: 6px;">
+              <input type="checkbox" id="line-snap" checked style="width: auto; margin: 0;"/>
+              Snap 45°
+            </label>
+          </div>
           <div class="toolbar-sep"></div>
           <button class="tool-btn" id="btn-side-view" title="Toggle XZ side view">XZ Side</button>
           <button class="btn sm" id="btn-finish-3d-path" title="Finish current 3D path" style="display: none;">✓ Finish Path</button>
@@ -1321,7 +1369,8 @@ footer .spacer { flex: 1; }
           <button class="tool-btn" id="src3d-stl">STL Mesh</button>
           <div class="toolbar-sep"></div>
           <button class="btn sm" id="reset3d-view" title="Reset camera">Reset View</button>
-          <span class="toolbar-info" id="info3d">Drag to rotate · scroll to zoom · right-drag to pan</span>
+          <button class="btn sm btn-clear-style" id="btn-clear-3d" title="Clear all paths from sketch and 3D view">✕ Clear</button>
+          <span class="toolbar-info" id="info3d">Drag to rotate · scroll · right-drag to pan</span>
         </div>
         <div class="bed-container" id="container-3d">
           <div class="bed-overlay">
@@ -1338,7 +1387,7 @@ footer .spacer { flex: 1; }
   <div class="col">
 
     <!-- Console -->
-    <div class="section fixed" style="display: flex; flex-direction: column; padding-bottom: 12px;">
+    <div class="section fixed console-section" style="display: flex; flex-direction: column; padding-bottom: 12px;">
       <div class="section-title">
         <span>Console</span>
         <div class="actions">
@@ -1407,6 +1456,8 @@ footer .spacer { flex: 1; }
         <div class="field" style="margin: 0;">
           <label>Pattern</label>
           <select id="scaffold-pattern" style="font-size: 10px;">
+            <option value="meander" selected>Meander (continuous snake)</option>
+            <option value="meander-xy">Meander 0°/90° (alternating layers)</option>
             <option value="grid">Grid</option>
             <option value="lattice">Lattice (0/90)</option>
             <option value="hex">Hexagonal</option>
@@ -1515,6 +1566,10 @@ footer .spacer { flex: 1; }
           <input type="number" id="vasc-seed" value="42" min="0" title="Same seed = same shape (for reproducibility)"/>
         </div>
       </div>
+      <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;">
+        <input type="checkbox" id="vasc-replace" checked style="width: auto; margin: 0;"/>
+        Replace existing paths
+      </label>
       <div class="btn-row" style="margin-top: 6px;">
         <button class="btn primary sm" id="btn-gen-vasc" style="flex: 1;">Generate Tree</button>
         <button class="btn sm" id="btn-vasc-randomize" title="New random seed and regenerate">⟳</button>
@@ -1670,7 +1725,7 @@ footer .spacer { flex: 1; }
   <div class="spacer"></div>
   <div class="stat"><span>Queue</span><span class="v" id="footer-queue">0</span></div>
   <div class="stat"><span id="footer-clock">--:--:--</span></div>
-  <div class="stat" style="color: var(--accent-dim);">Ozbolat Lab · 2026 · Made by Ozer</div>
+  <div class="stat" style="color: var(--accent-dim);">Ozbolat Lab · 2026 · <a href="https://o23r.com" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">Made by Ozer</a></div>
 </footer>
 
 <div class="modal-bg" id="modal">
@@ -1786,8 +1841,12 @@ themeBtn.addEventListener('click', () => {
 });
 try {
   const saved = localStorage.getItem('bp-theme');
-  if (saved) applyTheme(saved);
-} catch (e) {}
+  // Default to light mode if the user has never chosen; the toggle button
+  // still lets them switch to dark whenever they want.
+  applyTheme(saved || 'light');
+} catch (e) {
+  applyTheme('light');
+}
 
 // ============ BED VIEW MODES ============
 $$('.bed-mode-tab').forEach(tab => {
@@ -2312,6 +2371,29 @@ function drawSketchCanvas() {
         ctx.fillText(`Z${z.toFixed(1)}`, p.x + 6, p.y - 4);
       }
     }
+    // For Line tool, show live length + angle at the mid-point of the line
+    if (state.drawTool === 'line' && state.currentPath.length === 2) {
+      const a = state.currentPath[0], b = state.currentPath[1];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = Math.hypot(dx, dy);
+      const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+      const mid = t.mmToPx((a.x + b.x) / 2, (a.y + b.y) / 2);
+      ctx.fillStyle = cssVar('--accent');
+      ctx.font = 'bold 11px JetBrains Mono';
+      ctx.textBaseline = 'bottom';
+      ctx.textAlign = 'center';
+      // Small badge with dark background for readability
+      const label = `${len.toFixed(1)}mm  ${ang.toFixed(0)}°`;
+      const pad = 4;
+      const metrics = ctx.measureText(label);
+      const bgX = mid.x - metrics.width/2 - pad;
+      const bgY = mid.y - 20;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(bgX, bgY, metrics.width + pad*2, 16);
+      ctx.fillStyle = cssVar('--accent');
+      ctx.fillText(label, mid.x, bgY + 12);
+      ctx.textAlign = 'start';
+    }
   }
 
   // Side-view companion (XZ): each path's points drawn with X→horizontal, Z→vertical.
@@ -2609,7 +2691,45 @@ drawCanvas.addEventListener('mousemove', e => {
   if (state.drawTool === 'pen') {
     state.currentPath.push(mm);
   } else if (state.drawTool === 'line') {
-    state.currentPath = [state.shapeStart, mm];
+    // Precise Line tool: apply length + angle constraints if set.
+    // - Length > 0: force the end point at that distance from the start
+    // - Angle field: force the direction
+    // - Snap 45°: while dragging with no angle set, snap to nearest 0/45/90/135... angle
+    // If both length and angle are set, the mouse position doesn't matter at all,
+    // the line is drawn at exactly the specified length and angle from the start.
+    const a = state.shapeStart;
+    const lenInput = parseFloat($('#line-length').value);
+    const angleInputRaw = $('#line-angle').value;
+    const angleInput = angleInputRaw === '' ? null : parseFloat(angleInputRaw);
+    const snap = $('#line-snap').checked;
+
+    // Compute mouse angle from start
+    let dx = mm.x - a.x, dy = mm.y - a.y;
+    let mouseLen = Math.hypot(dx, dy);
+    let mouseAng = Math.atan2(dy, dx);  // radians
+
+    // Decide final angle
+    let finalAng;
+    if (angleInput != null && !isNaN(angleInput)) {
+      finalAng = angleInput * Math.PI / 180;
+    } else if (snap) {
+      // Snap to nearest 15° when Alt held, 45° otherwise
+      const snapStep = e.altKey ? (Math.PI / 12) : (Math.PI / 4);
+      finalAng = Math.round(mouseAng / snapStep) * snapStep;
+    } else {
+      finalAng = mouseAng;
+    }
+
+    // Decide final length
+    let finalLen;
+    if (lenInput > 0 && !isNaN(lenInput)) {
+      finalLen = lenInput;
+    } else {
+      finalLen = mouseLen;
+    }
+
+    const b = { x: a.x + Math.cos(finalAng) * finalLen, y: a.y + Math.sin(finalAng) * finalLen };
+    state.currentPath = [a, b];
   } else if (state.drawTool === 'rect') {
     const a = state.shapeStart, b = mm;
     state.currentPath = [
@@ -2672,6 +2792,9 @@ $$('.tool-btn[data-tool]').forEach(b => {
     $$('.tool-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     state.drawTool = b.dataset.tool;
+    // Show line-precision controls only when Line tool active
+    const lineGroup = $('#line-precision-group');
+    if (lineGroup) lineGroup.style.display = (state.drawTool === 'line') ? '' : 'none';
   });
 });
 
@@ -2790,7 +2913,55 @@ function generateScaffold() {
     x: pt.x, y: pt.y, z: layerIdx * layerH
   }));
 
-  if (pattern === 'grid' || pattern === 'lattice') {
+  if (pattern === 'meander' || pattern === 'meander-xy') {
+    // Meander (snake): a single continuous zig-zag path per layer. No lifts, no
+    // travels — the printer just weaves back and forth. This is what most bioprinting
+    // papers use for hydrogel scaffolds because it eliminates ooze from travel moves.
+    //
+    // For 'meander-xy' the direction rotates 90° each layer, so odd layers have
+    // horizontal strands and even layers have vertical, exactly like the reference
+    // image from the paper. The strands then interlock across layers to form a
+    // 3D lattice structure using only continuous paths.
+    for (let layer = 0; layer < layers; layer++) {
+      const horizontal = pattern === 'meander' || layer % 2 === 0;
+      const pts = [];
+      if (horizontal) {
+        // Sweep Y from bottom to top, alternating X direction each row
+        let dir = 1;
+        let y = -h/2;
+        let first = true;
+        while (y <= h/2 + 1e-6) {
+          if (first) {
+            pts.push({ x: dir > 0 ? -w/2 : w/2, y });
+            first = false;
+          } else {
+            // Connect prev row's endpoint to this row's start (one Y hop)
+            pts.push({ x: dir > 0 ? -w/2 : w/2, y });
+          }
+          pts.push({ x: dir > 0 ? w/2 : -w/2, y });
+          dir *= -1;
+          y += sp;
+        }
+      } else {
+        // Vertical strands: sweep X, alternate Y direction each column
+        let dir = 1;
+        let x = -w/2;
+        let first = true;
+        while (x <= w/2 + 1e-6) {
+          if (first) {
+            pts.push({ x, y: dir > 0 ? -h/2 : h/2 });
+            first = false;
+          } else {
+            pts.push({ x, y: dir > 0 ? -h/2 : h/2 });
+          }
+          pts.push({ x, y: dir > 0 ? h/2 : -h/2 });
+          dir *= -1;
+          x += sp;
+        }
+      }
+      if (pts.length >= 2) paths.push(tagLayer(pts, layer));
+    }
+  } else if (pattern === 'grid' || pattern === 'lattice') {
     for (let layer = 0; layer < layers; layer++) {
       const horizontal = pattern === 'grid' || layer % 2 === 0;
       const vertical   = pattern === 'grid' || layer % 2 === 1;
@@ -3035,7 +3206,14 @@ function generateVascularTree() {
   spawnBranches({ x: 0, y: 0, z: trunkH }, { x: 0, y: 0, z: 1 }, trunkH, 0);
 
   state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
-  state.drawPaths = state.drawPaths.concat(paths);
+  // If "Replace existing paths" is checked, start fresh so picking a new preset
+  // doesn't pile trees on top of each other.
+  const shouldReplace = $('#vasc-replace') && $('#vasc-replace').checked;
+  if (shouldReplace) {
+    state.drawPaths = paths;
+  } else {
+    state.drawPaths = state.drawPaths.concat(paths);
+  }
   drawSketchCanvas();
   if (typeof update3DScene === 'function') update3DScene();
   // Compute total branches and total height for the log line
@@ -5014,6 +5192,21 @@ $('#reset3d-view').addEventListener('click', () => {
   const s = getSubstrate();
   three.cam.dist = (s.shape === 'circle' ? s.d : Math.max(s.w, s.h)) * 1.8;
   applyCameraOrbit();
+});
+
+$('#btn-clear-3d').addEventListener('click', () => {
+  // Clears sketch paths AND any STL mesh currently loaded. Same effect as
+  // hitting Clear in the Draw toolbar but accessible from 3D view.
+  if (state.drawPaths.length) {
+    state.drawHistory.push(JSON.parse(JSON.stringify(state.drawPaths)));
+  }
+  state.drawPaths = [];
+  three.stlMesh = null;
+  $('#btn-slice-stl').disabled = true;
+  $('#stl-info').innerHTML = 'No STL loaded. Slicing will produce printable layer paths.';
+  drawSketchCanvas();
+  if (three.initialized) update3DScene();
+  logLine('Cleared all paths and STL mesh.', 'sys');
 });
 
 // ============ STL PARSER ============
