@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OZ Robot Studio · EPSON SPEL+</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F1EA; --ink:#1c1a17; --muted:#6b6559; --line:#1c1a17;
+  --card:#fbf9f4; --card2:#f0ece1; --ember:#d8541f; --ember-soft:#f4d8c8;
+  --ok:#2f7d4f; --warn:#b5820b; --err:#c0392b; --info:#3a6ea5;
+  --shadow:4px 4px 0 var(--line);
+  --shadow-sm:2px 2px 0 var(--line);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif; font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+code,pre,.mono,textarea,.tag,.kbd{font-family:'DM Mono',ui-monospace,monospace}
+a{color:var(--ember)}
+button{font-family:inherit;cursor:pointer}
+::selection{background:var(--ember-soft)}
+
+.wrap{max-width:1220px;margin:0 auto;padding:22px 20px 60px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.brand h1{font-size:26px;margin:0;letter-spacing:-.3px;font-weight:700}
+.brand h1 .dot{color:var(--ember)}
+.brand p{margin:3px 0 0;color:var(--muted);font-size:13.5px}
+.modelbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.modelbar label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+select,input[type=text],input[type=number]{
+  font-family:'DM Mono',monospace;font-size:13px;background:var(--card);color:var(--ink);
+  border:2px solid var(--line);border-radius:8px;padding:7px 9px;box-shadow:var(--shadow-sm);
+}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--ember);outline-offset:1px}
+
+.specstrip{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.chip{background:var(--card);border:2px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;box-shadow:var(--shadow-sm)}
+.chip b{font-family:'DM Mono',monospace}
+
+nav.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+nav.tabs button{
+  background:var(--card2);border:2px solid var(--line);border-radius:10px;padding:9px 15px;
+  font-size:14px;font-weight:500;box-shadow:var(--shadow-sm);transition:transform .04s}
+nav.tabs button:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--line)}
+nav.tabs button.active{background:var(--ember);color:#fff;box-shadow:var(--shadow)}
+
+.panel{display:none}
+.panel.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px}
+.card + .card{margin-top:16px}
+h2.sec{font-size:19px;margin:0 0 4px;letter-spacing:-.2px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+h3{font-size:15px;margin:18px 0 6px}
+
+/* two column layout for playground */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-lp{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+@media(max-width:900px){.grid2,.grid-lp{grid-template-columns:1fr}}
+
+/* editor */
+.editor-shell{border:2px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:#1c1a17}
+.editor-bar{display:flex;align-items:center;gap:8px;background:#2a2622;padding:7px 10px;border-bottom:2px solid #000}
+.editor-bar .fname{color:#e8e2d4;font-family:'DM Mono',monospace;font-size:12px}
+.editor-bar .spacer{flex:1}
+.mini{background:#3a352e;color:#e8e2d4;border:1px solid #000;border-radius:7px;padding:5px 10px;font-size:12px;font-family:'DM Mono',monospace}
+.mini:hover{background:#4a443a}
+.mini.go{background:var(--ember);color:#fff;border-color:#000}
+.code-area{position:relative}
+.code-area textarea,.code-area pre{
+  margin:0;padding:14px 14px 14px 52px;font-size:13px;line-height:1.55;
+  font-family:'DM Mono',monospace;white-space:pre;tab-size:4;border:0;
+}
+.code-area textarea{
+  position:absolute;inset:0;width:100%;height:100%;resize:none;color:transparent;
+  background:transparent;caret-color:#f6b26b;overflow:auto;z-index:2}
+.code-area pre{
+  position:relative;color:#e8e2d4;overflow:auto;min-height:340px;max-height:520px;
+  background:#1c1a17;z-index:1;counter-reset:ln}
+.code-area pre .ln{display:block;position:relative}
+.code-area pre .ln::before{
+  content:counter(ln);counter-increment:ln;position:absolute;left:-40px;width:30px;
+  text-align:right;color:#615a4e;font-size:12px}
+/* token colors */
+.t-cmd{color:#f6b26b;font-weight:500}
+.t-flow{color:#e88fc9}
+.t-str{color:#a6d489}
+.t-num{color:#7fc4e0}
+.t-com{color:#6b6559;font-style:italic}
+.t-pt{color:#f2c14e}
+.t-fn{color:#c9a0ff}
+
+.console{background:#141210;border:2px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  padding:12px 14px;font-family:'DM Mono',monospace;font-size:12.5px;color:#cfc8b8;
+  min-height:120px;max-height:240px;overflow:auto;white-space:pre-wrap}
+.console .c-out{color:#e8e2d4}
+.console .c-mot{color:#f6b26b}
+.console .c-io{color:#7fc4e0}
+.console .c-err{color:#ff8a7a}
+.console .c-sys{color:#8a8375}
+.console .c-ok{color:#9fd68a}
+
+canvas{display:block;width:100%;background:var(--card);border:2px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.viz-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
+.viz-legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:12px;height:12px;border:1.5px solid var(--line);border-radius:3px;display:inline-block}
+
+/* points + io tables */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-family:'DM Mono',monospace}
+.tbl th,.tbl td{border:1.5px solid var(--line);padding:5px 7px;text-align:left}
+.tbl th{background:var(--card2);font-weight:500}
+.tbl input{border:1px solid var(--line);border-radius:5px;padding:3px 5px;width:100%;box-shadow:none;font-size:12px}
+.tbl td.pl{color:var(--ember);font-weight:500}
+
+.io-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.io-bit{border:2px solid var(--line);border-radius:8px;padding:6px 0;text-align:center;font-size:11px;
+  font-family:'DM Mono',monospace;background:var(--card2);box-shadow:var(--shadow-sm);user-select:none}
+.io-bit .n{font-size:10px;color:var(--muted)}
+.io-bit.on{background:var(--ember);color:#fff}
+.io-bit.on .n{color:#ffe}
+
+.btn{background:var(--ember);color:#fff;border:2px solid var(--line);border-radius:10px;padding:9px 16px;
+  font-size:14px;font-weight:500;box-shadow:var(--shadow-sm)}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--line)}
+.btn.ghost{background:var(--card);color:var(--ink)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* lessons */
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-item{border:2px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card2);
+  box-shadow:var(--shadow-sm);cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.lesson-item:hover{background:#eae5d8}
+.lesson-item.active{background:var(--card);border-color:var(--ember);box-shadow:3px 3px 0 var(--ember)}
+.lesson-item .num{font-family:'DM Mono',monospace;color:var(--ember);font-weight:500;font-size:13px;min-width:24px}
+.lesson-item h4{margin:0;font-size:14.5px}
+.lesson-item p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.lesson-body h3{margin-top:0}
+.lesson-body p{font-size:14px}
+.lesson-body ul{font-size:14px;padding-left:20px}
+.snippet{background:#1c1a17;color:#e8e2d4;border-radius:10px;padding:12px 14px;font-family:'DM Mono',monospace;
+  font-size:12.5px;line-height:1.55;white-space:pre;overflow:auto;border:2px solid var(--line);box-shadow:var(--shadow-sm)}
+.snippet .t-cmd{color:#f6b26b}.snippet .t-flow{color:#e88fc9}.snippet .t-str{color:#a6d489}
+.snippet .t-num{color:#7fc4e0}.snippet .t-com{color:#7a7364}.snippet .t-pt{color:#f2c14e}.snippet .t-fn{color:#c9a0ff}
+.loadbtn{margin-top:8px}
+
+/* generator */
+.gen-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.gen-tabs button{background:var(--card2);border:2px solid var(--line);border-radius:8px;padding:6px 12px;font-size:12.5px;box-shadow:var(--shadow-sm)}
+.gen-tabs button.active{background:var(--ink);color:var(--bg)}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.field .hint{font-size:11px;color:var(--muted);font-style:italic}
+.gen-out{margin-top:14px}
+.fgroup{border:2px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--card2);box-shadow:var(--shadow-sm)}
+.fgroup > h5{margin:0 0 9px;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ember);font-weight:700}
+.statbox{margin-top:10px;border:2px solid var(--line);border-radius:10px;background:var(--card2);padding:10px 12px;
+  font-family:'DM Mono',monospace;font-size:12px;box-shadow:var(--shadow-sm)}
+.statbox div{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.statbox span:last-child{color:var(--ember);font-weight:500}
+.pastehint{font-size:12px;color:var(--muted);margin:0 0 12px;padding:8px 11px;border-left:3px solid var(--ember);background:var(--card2);border-radius:0 8px 8px 0}
+
+/* linter */
+.diag{border:2px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;background:var(--card2);
+  display:flex;gap:10px;align-items:flex-start;box-shadow:var(--shadow-sm);font-size:13px}
+.diag .sev{font-family:'DM Mono',monospace;font-size:11px;padding:2px 7px;border-radius:6px;border:1.5px solid var(--line);white-space:nowrap;font-weight:500}
+.diag.err .sev{background:var(--err);color:#fff}
+.diag.warn .sev{background:var(--warn);color:#fff}
+.diag.info .sev{background:var(--info);color:#fff}
+.diag .lnk{font-family:'DM Mono',monospace;font-size:12px;color:var(--ember);cursor:pointer;white-space:nowrap}
+.diag .msg{flex:1}
+.diag .msg .rule{color:var(--muted);font-size:11.5px}
+.clean{padding:16px;text-align:center;color:var(--ok);font-weight:500;border:2px dashed var(--ok);border-radius:10px}
+
+/* reference */
+.ref-search{width:100%;margin-bottom:12px}
+.ref-cat{margin-bottom:6px}
+.ref-cat h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ember)}
+.ref-item{border:2px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:7px;background:var(--card2);box-shadow:var(--shadow-sm)}
+.ref-item .sig{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);font-weight:500}
+.ref-item .sig b{color:var(--ember)}
+.ref-item .desc{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+footer{margin-top:34px;text-align:center;color:var(--muted);font-size:12px;font-family:'DM Mono',monospace}
+.warnnote{font-size:11.5px;color:var(--muted);margin-top:8px;font-style:italic}
+.pill{font-family:'DM Mono',monospace;font-size:11px;background:var(--card2);border:1.5px solid var(--line);border-radius:6px;padding:1px 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>OZ Robot Studio<span class="dot">.</span></h1>
+      <p>SPEL+ workbench for the lab&#39;s EPSON C8 6&#8209;axis arm. Learn, write, generate, and lint offline, then paste into RC+.</p>
+    </div>
+    <div class="modelbar">
+      <span class="chip" style="background:var(--ink);color:var(--bg);border-color:var(--ink)">EPSON <b>C8</b> &middot; C8-A701</span>
+    </div>
+  </header>
+
+  <div class="specstrip" id="specstrip"></div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="lessons" class="active">Lessons</button>
+    <button data-tab="playground">Playground</button>
+    <button data-tab="bioprint">Bioprint</button>
+    <button data-tab="pickplace">Pick &amp; Place</button>
+    <button data-tab="generator">Generator</button>
+    <button data-tab="linter">Linter</button>
+    <button data-tab="reference">Reference</button>
+  </nav>
+
+  <!-- LESSONS -->
+  <section class="panel active" id="lessons">
+    <div class="grid2">
+      <div class="card">
+        <h2 class="sec">Course</h2>
+        <p class="sub">Nine short lessons from a first program to a full dispensing cell. Each one loads into the Playground.</p>
+        <div class="lesson-list" id="lessonList"></div>
+      </div>
+      <div class="card">
+        <div class="lesson-body" id="lessonBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAYGROUND -->
+  <section class="panel" id="playground">
+    <div class="grid-lp">
+      <div>
+        <div class="editor-shell">
+          <div class="editor-bar">
+            <span class="fname">Main.prg</span>
+            <span class="spacer"></span>
+            <button class="mini" id="btnFormat">Tidy</button>
+            <button class="mini" id="btnClear">Clear</button>
+            <button class="mini" id="btnCopy">Copy</button>
+            <button class="mini" id="btnPrg">Save .prg</button>
+            <button class="mini go" id="btnRun">&#9654; Run</button>
+          </div>
+          <div class="code-area">
+            <pre id="highlight"><code></code></pre>
+            <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <div class="editor-bar" style="border-radius:10px 10px 0 0;border:2px solid var(--line);border-bottom:0">
+            <span class="fname" style="color:#e8e2d4">Run window &mdash; Status</span>
+            <span class="spacer"></span>
+            <button class="mini" id="btnClearCon">clear</button>
+          </div>
+          <div class="console" id="console" style="border-radius:0 0 12px 12px;border-top:0"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:14px">
+          <h2 class="sec" style="font-size:16px">Path preview</h2>
+          <p class="sub" style="margin-bottom:10px">Top&#8209;down XY view of taught points and simulated motion.</p>
+          <canvas id="viz" width="640" height="440"></canvas>
+          <div class="viz-legend">
+            <span><i class="sw" style="background:var(--card)"></i> envelope</span>
+            <span><i class="sw" style="background:#7fc4e0;border-radius:50%"></i> point</span>
+            <span><i class="sw" style="background:#b8b0a0"></i> travel</span>
+            <span><i class="sw" style="background:var(--ember)"></i> process (output on)</span>
+          </div>
+        </div>
+        <div class="card" style="padding:14px;margin-top:14px">
+          <h2 class="sec" style="font-size:16px">Points</h2>
+          <p class="sub" style="margin-bottom:8px">Robot coordinates in mm / deg. Referenced by <span class="pill">Go P0</span>, <span class="pill">Jump P1</span> &hellip;</p>
+          <div style="overflow:auto">
+            <table class="tbl" id="ptTable"></table>
+          </div>
+          <div class="btnrow">
+            <button class="btn ghost sm" id="btnAddPt">+ point</button>
+            <button class="btn ghost sm" id="btnPtsFromCode">Read P#= from code</button>
+          </div>
+        </div>
+        <div class="card" style="padding:14px;margin-top:14px">
+          <h2 class="sec" style="font-size:16px">I/O board</h2>
+          <p class="sub" style="margin-bottom:8px">Click an input bit to toggle it for <span class="pill">Sw(n)</span> / <span class="pill">Wait Sw(n)=1</span>. Outputs light up as the program runs.</p>
+          <h3 style="margin:6px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Inputs</h3>
+          <div class="io-grid" id="inGrid"></div>
+          <h3 style="margin:12px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Outputs</h3>
+          <div class="io-grid" id="outGrid"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIOPRINT -->
+  <section class="panel" id="bioprint">
+    <div class="card">
+      <h2 class="sec">Bioprint scaffold</h2>
+      <p class="sub">Barrel on the J6 flange, pneumatic pressure triggered from a controller output. Set the parameters, then paste the result into <span class="pill">Main.prg</span> in EPSON RC+.</p>
+      <div class="grid-lp">
+        <div id="bioForm"></div>
+        <div>
+          <canvas id="bioViz" width="520" height="380"></canvas>
+          <div class="viz-legend">
+            <span><i class="sw" style="background:var(--ember)"></i> extruding</span>
+            <span><i class="sw" style="background:#b8b0a0"></i> travel</span>
+          </div>
+          <div id="bioStats" class="statbox"></div>
+        </div>
+      </div>
+      <div class="gen-out">
+        <div class="editor-bar" style="border-radius:10px 10px 0 0;border:2px solid var(--line);border-bottom:0">
+          <span class="fname" style="color:#e8e2d4">Main.prg</span>
+          <span class="spacer"></span>
+          <button class="mini" id="bioPrg">Save .prg</button>
+          <button class="mini" id="bioCopy">Copy for RC+</button>
+          <button class="mini go" id="bioToPlay">Simulate</button>
+        </div>
+        <pre class="snippet" id="bioOut" style="border-radius:0 0 12px 12px;margin:0;max-height:400px"></pre>
+      </div>
+      <p class="warnnote">The barrel tip offset is set with <b>TLSet</b> and must be measured on the real arm before the first print. Pressure is released with <b>Off</b> on every abort path &mdash; check your dispenser fails closed.</p>
+    </div>
+  </section>
+
+  <!-- PICK & PLACE -->
+  <section class="panel" id="pickplace">
+    <div class="card">
+      <h2 class="sec">Pick &amp; place with rotation</h2>
+      <p class="sub">For parts that need orienting on the way, like turning a small solar cell square to its pads.</p>
+      <div class="grid-lp">
+        <div id="pnpForm"></div>
+        <div>
+          <canvas id="pnpViz" width="520" height="380"></canvas>
+          <div class="viz-legend">
+            <span><i class="sw" style="background:#7fc4e0;border-radius:50%"></i> point</span>
+            <span><i class="sw" style="background:var(--ember)"></i> holding part</span>
+            <span><i class="sw" style="background:#b8b0a0"></i> empty travel</span>
+          </div>
+          <div id="pnpStats" class="statbox"></div>
+        </div>
+      </div>
+      <div class="gen-out">
+        <div class="editor-bar" style="border-radius:10px 10px 0 0;border:2px solid var(--line);border-bottom:0">
+          <span class="fname" style="color:#e8e2d4">Main.prg</span>
+          <span class="spacer"></span>
+          <button class="mini" id="pnpPrg">Save .prg</button>
+          <button class="mini" id="pnpCopy">Copy for RC+</button>
+          <button class="mini go" id="pnpToPlay">Simulate</button>
+        </div>
+        <pre class="snippet" id="pnpOut" style="border-radius:0 0 12px 12px;margin:0;max-height:400px"></pre>
+      </div>
+      <p class="warnnote">Rotating joint 6 past &plusmn;180&deg; needs a <b>J6Flag</b> attribute on the target point, otherwise the controller can pick the other turn. Check wrist singularities near the pick pose at low speed first.</p>
+    </div>
+  </section>
+
+  <!-- GENERATOR -->
+  <section class="panel" id="generator">
+    <div class="card">
+      <h2 class="sec">Routine generator</h2>
+      <p class="sub">Fill in the cell parameters and get clean SPEL+ you can drop straight into Main.prg.</p>
+      <div class="gen-tabs" id="genTabs">
+        <button data-gen="pallet" class="active">Palletize</button>
+        <button data-gen="probe">Touch probe</button>
+      </div>
+      <div id="genForm"></div>
+      <div class="gen-out">
+        <div class="editor-bar" style="border-radius:10px 10px 0 0;border:2px solid var(--line);border-bottom:0">
+          <span class="fname" style="color:#e8e2d4">Generated SPEL+</span>
+          <span class="spacer"></span>
+          <button class="mini" id="genCopy">Copy</button>
+          <button class="mini go" id="genToPlay">Send to Playground</button>
+        </div>
+        <pre class="snippet" id="genOut" style="border-radius:0 0 12px 12px;margin:0;max-height:360px"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINTER -->
+  <section class="panel" id="linter">
+    <div class="grid2">
+      <div class="card">
+        <h2 class="sec">Paste code to check</h2>
+        <p class="sub">Static checks for structure, motion safety, and undefined references. Nothing is sent anywhere.</p>
+        <div class="editor-shell">
+          <div class="editor-bar"><span class="fname">check.prg</span><span class="spacer"></span>
+            <button class="mini" id="lintFromPlay">Pull from Playground</button>
+            <button class="mini go" id="lintRun">Check</button></div>
+          <div class="code-area">
+            <pre id="lintHi"><code></code></pre>
+            <textarea id="lintEditor" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="sec">Diagnostics</h2>
+        <p class="sub">Click a line number to jump the caret there.</p>
+        <div id="diagOut"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REFERENCE -->
+  <section class="panel" id="reference">
+    <div class="card">
+      <h2 class="sec">C8 limits</h2>
+      <p class="sub">From the C series manual, Appendix A. These are the numbers the Bioprint and Pick &amp; Place tabs check against.</p>
+      <div style="overflow:auto"><table class="tbl" id="jointTable"></table></div>
+      <div id="c8Extra" class="statbox" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h2 class="sec">SPEL+ command reference</h2>
+      <p class="sub">Condensed working set for the C&#8209;series. Search by name or purpose.</p>
+      <input type="text" class="ref-search" id="refSearch" placeholder="search commands... e.g. jump, speed, output, tool">
+      <div id="refOut"></div>
+    </div>
+  </section>
+
+  <footer>Ozbolat Lab &middot; 2026 &middot; Made by Ozer</footer>
+</div>
+<script>
+/* =========================================================================
+   OZ Robot Studio  ·  EPSON RC+ SPEL+ workbench (offline)
+   Single-file lab tool · Ozbolat Lab
+   ========================================================================= */
+"use strict";
+
+/* ---------- C8 manipulator (C8-A701***) -------------------------------
+   Values below are from the C series manual, Appendix A: Specifications.
+   This lab runs a single C8, so the whole tool is pinned to it.       */
+const C8 = {
+  model:"C8-A701***", name:"C8", reach:700,
+  payloadRated:3, payloadMax:8, rep:0.02, mass:49, massProtect:53,
+  controller:"RC700-A", software:"EPSON RC+ 7.0 Ver.7.1.4 or later",
+  synthetic:8958,
+  joints:[
+    {n:1, min:-240, max:240, speed:331, watt:1000, res:0.0000252},
+    {n:2, min:-158, max:65,  speed:332, watt:750,  res:0.0000253},
+    {n:3, min:-61,  max:202, speed:450, watt:400,  res:0.0000343},
+    {n:4, min:-200, max:200, speed:450, watt:100,  res:0.0000366},
+    {n:5, min:-135, max:135, speed:450, watt:100,  res:0.0000343},
+    {n:6, min:-360, max:360, speed:720, watt:100,  res:0.0000549},
+  ],
+  moment:{j4:16.6, j5:16.6, j6:9.4},          // N.m
+  inertia:{j4:0.47, j5:0.47, j6:0.15},        // kg.m2
+};
+
+/* ---------- word lists for highlighting / linting ------------------------ */
+const FLOW = ["Function","Fend","If","Then","Else","ElseIf","EndIf","For","Next","Do","Loop",
+  "While","Until","Select","Send","Case","Default","GoTo","GoSub","Return","Call","Xqt",
+  "Halt","Quit","Pause","Continue","Exit","Trap","OnErr","EResume","Wait","Print","Signal","WaitSig",
+  "Integer","Long","Real","Double","Short","Byte","String","Boolean","Global","Preserve",
+  "Redim","To","Step","And","Or","Not","Mod","Xor","As","ByRef","Declare"];
+const CMD = ["Go","Jump","Jump3","Jump3CP","Move","Arc","Arc3","CVMove","TGo","BGo","TMove",
+  "BMove","Pass","Pulse","Motor","Power","Speed","SpeedS","SpeedR","Accel","AccelS","AccelR",
+  "Tool","TLSet","Base","Local","ECP","Arm","Here","Home","HomeSet","Hordr","Hofs","LimZ",
+  "Weight","Inertia","Fine","CP","On","Off","Sw","In","InW","MemOn","MemOff","MemSw","Out",
+  "OutW","Oport","Reset","SFree","SLock","Brake","CurPos","Pallet","Box","Plane","Till",
+  "Find","Cont","Range","JRange","Sense","BASE","PTP",
+  "JA","Agl","CX","CY","CZ","CU","CV","CW","OpenCom","CloseCom","SetCom","ChkCom","TLSet","Dist"];
+const FLOW_SET = new Set(FLOW.map(w=>w.toLowerCase()));
+const CMD_SET  = new Set(CMD.map(w=>w.toLowerCase()));
+const KNOWN = new Set([...FLOW,...CMD].map(w=>w.toLowerCase()));
+
+/* ---------- reference dictionary ----------------------------------------- */
+const REFERENCE = [
+  ["Motion","Go P<em>n</em>","Point-to-point (PTP) move of all joints to a point. Fastest general move."],
+  ["Motion","Jump P<em>n</em>","Gate motion: up to LimZ, across, then down. The standard pick/place move for SCARA-style approach on a 6-axis cell."],
+  ["Motion","Move P<em>n</em>","Linear (CP) move: the tool travels in a straight line to the point. Uses SpeedS / AccelS."],
+  ["Motion","Arc P<em>mid</em>, P<em>end</em>","Circular interpolation through a midpoint to an end point (CP)."],
+  ["Motion","TGo / BGo","PTP move in the current Tool / Base coordinate system."],
+  ["Motion","Pass P<em>n</em>, ...","Move near points without stopping (path blending) for smooth multi-point paths."],
+  ["Motion","Here","The current robot position; usable as a point in expressions and offsets, e.g. Go Here +Z(20)."],
+  ["Motion","Pn +X(<em>d</em>)","Relative offset on an axis from a base point. Axes: X Y Z U V W. Combine several."],
+  ["Speed","Speed <em>n</em>","PTP speed, 1&ndash;100 %. Applies to Go / Jump."],
+  ["Speed","Accel <em>a</em>, <em>d</em>","PTP acceleration and deceleration, 1&ndash;100 %."],
+  ["Speed","SpeedS <em>n</em>","CP (linear/arc) speed in mm/s. Applies to Move / Arc."],
+  ["Speed","AccelS <em>a</em>[, <em>d</em>]","CP acceleration / deceleration in mm/s&sup2;."],
+  ["Power","Motor On / Motor Off","Energize / de-energize the servo motors. Required before any motion."],
+  ["Power","Power High / Low","High power enables full speed and torque; Low is the reduced teach state."],
+  ["Coordinates","Tool <em>n</em>","Select tool coordinate system n (0 = flange). Define with TLSet."],
+  ["Coordinates","Base <em>...</em>","Set the base coordinate system relative to the robot's world frame."],
+  ["Coordinates","Local <em>n</em>, <em>...</em>","Define a local coordinate frame; points can be expressed in it."],
+  ["Coordinates","LimZ <em>z</em>","Set the Z ceiling for Jump arch motion."],
+  ["Coordinates","Arm / ECP","Select an arm (multi-arm) or external control point coordinate set."],
+  ["Payload","Weight <em>m</em>[, <em>len</em>]","Tell the controller the end-effector mass so it can plan acceleration safely."],
+  ["Payload","Inertia <em>GD2</em>[, <em>ecc</em>]","Set load moment of inertia and eccentricity for tuning."],
+  ["I/O","On <em>n</em> / Off <em>n</em>","Turn a discrete output bit on or off. On n, t pulses for t seconds."],
+  ["I/O","Sw(<em>n</em>)","Read an input bit (0/1) inside an expression."],
+  ["I/O","In(<em>n</em>) / Out(<em>n</em>)","Read an input byte / read-back an output byte."],
+  ["I/O","Oport(<em>n</em>)","Read the current state of output bit n."],
+  ["Flow","Function <em>name</em> &hellip; Fend","Define a routine. Project must contain Function main."],
+  ["Flow","For <em>v</em> = <em>a</em> To <em>b</em> [Step <em>s</em>] &hellip; Next","Counted loop."],
+  ["Flow","Do [While/Until <em>c</em>] &hellip; Loop","Conditional loop."],
+  ["Flow","If <em>c</em> Then &hellip; [Else] &hellip; EndIf","Branch. Single-line form: If c Then stmt."],
+  ["Flow","Call <em>name</em> / Xqt <em>name</em>","Run a routine as a subroutine / as a parallel task."],
+  ["Flow","Wait <em>t</em> / Wait Sw(<em>n</em>)=1","Pause for time, or until an input condition is met."],
+  ["Flow","Print <em>expr</em>","Write to the Run window / Status console."],
+  ["Vars","Integer / Real / Double / String i","Declare local variables. Global / Global Preserve for retained scope."],
+  ["Homing","Home / HomeSet / Hordr","Move to the home position / define it / set joint homing order."],
+  ["Safety","Reset","Clear errors and reset outputs to their default state."],
+  ["Orientation","U / V / W","On a 6-axis arm these are the tool orientation angles: roll, pitch, yaw. Rolling the part flat on the table is a U change."],
+  ["Orientation","JA(<em>j1</em>&hellip;<em>j6</em>)","Build a point from joint angles. Combine with Agl() to move one joint: Go JA(Agl(1),&hellip;,Agl(6)+90)."],
+  ["Orientation","Agl(<em>n</em>)","Current angle of joint n, in degrees."],
+  ["Orientation","Pulse(<em>p1</em>&hellip;<em>p6</em>)","Build a point from raw encoder pulses for each joint."],
+  ["Orientation","/J6F0 /J6F1 /J6F<em>n</em>","J6Flag point attribute. Needed when joint 6 goes past &plusmn;180&deg;, because the same pose is reachable by more than one turn."],
+  ["Orientation","/L /R, /A /B, /NF /F","6-axis pose attributes: lefty/righty, above/below elbow, noflip/flip wrist."],
+  ["Tools","TLSet <em>n</em>, XY(&hellip;)","Define tool coordinate system n &mdash; the offset from the J6 flange to the tip. Set it once for a barrel or nozzle, then Tool n."],
+  ["Tools","CX(<em>pt</em>) &hellip; CW(<em>pt</em>)","Read one coordinate out of a point, e.g. CZ(Here) for the current Z."],
+  ["Serial","OpenCom #<em>n</em> / CloseCom #<em>n</em>","Open / close an RS-232 port. The controller has one port as standard, expandable to five."],
+  ["Serial","Print #<em>n</em>, <em>data</em> / Input #<em>n</em>, <em>var</em>","Send to / read from an open port. Useful for pressure controllers and other peripherals."],
+];
+
+/* ---------- lessons ------------------------------------------------------ */
+const LESSONS = [
+  {t:"Your first program", d:"Function, Print, and the Run window.",
+   body:`<h3>1 · Your first program</h3>
+   <p>A SPEL+ project always has one <b>Function main</b>. When you press Run, the controller
+   builds the project and starts <span class="pill">main</span>. Everything between
+   <span class="pill">Function main</span> and <span class="pill">Fend</span> runs top to bottom.</p>
+   <p>An apostrophe starts a comment. <span class="pill">Print</span> writes to the Run window.</p>
+   <ul><li>Load this into the Playground and press <b>Run</b>.</li>
+   <li>Watch the Status console echo the print line.</li></ul>`,
+   code:`' First program
+Function main
+    Print "Ozbolat Lab cell online."
+    Print "Ready."
+Fend`},
+
+  {t:"Turning on the robot", d:"Motor, Power, and safe speeds before moving.",
+   body:`<h3>2 · Powering up</h3>
+   <p>Before any motion you must energize the servos with <span class="pill">Motor On</span>.
+   <span class="pill">Power High</span> allows full speed; keep <span class="pill">Speed</span>
+   and <span class="pill">Accel</span> modest while testing.</p>
+   <ul><li><b>Speed</b> is 1&ndash;100 % for PTP moves (Go, Jump).</li>
+   <li><b>Accel a, d</b> sets acceleration and deceleration.</li>
+   <li>Always tell the controller the tool mass with <b>Weight</b>.</li></ul>`,
+   code:`Function main
+    Motor On
+    Power High
+    Speed 20
+    Accel 30, 30
+    Weight 0.5          ' 0.5 kg end effector
+    Print "Servos energized, ready to move."
+Fend`},
+
+  {t:"Teaching points", d:"Points, coordinates, and Go between them.",
+   body:`<h3>3 · Points</h3>
+   <p>Points are stored positions (X Y Z in mm, U V W in deg). On a real cell you jog and Teach them;
+   here you can type them into the <b>Points</b> table or define them in code with
+   <span class="pill">P1 = XY(x, y, z, u, v, w)</span>.</p>
+   <p><span class="pill">Go</span> makes a point-to-point move; the path preview draws each move.</p>`,
+   code:`Function main
+    Motor On
+    Power High
+    Speed 30
+    Accel 40, 40
+
+    P0 = XY(300, 0, 400, 0, 90, 0)      ' safe home
+    P1 = XY(420, -120, 200, 0, 90, 0)
+    P2 = XY(420, 120, 200, 0, 90, 0)
+
+    Go P0
+    Go P1
+    Go P2
+    Go P0
+Fend`},
+
+  {t:"Jump and the LimZ ceiling", d:"Gate motion for approach and retreat.",
+   body:`<h3>4 · Jump</h3>
+   <p><span class="pill">Jump</span> lifts to the <b>LimZ</b> ceiling, travels across, then descends.
+   It is the workhorse move for picking and placing without clipping fixtures.</p>
+   <ul><li>Set <b>LimZ</b> once, high enough to clear everything in the cell.</li>
+   <li>Approach offsets like <b>Go P1 +Z(30)</b> give you a controlled final descent.</li></ul>`,
+   code:`Function main
+    Motor On
+    Power High
+    Speed 40 : Accel 50, 50
+    LimZ 450
+
+    P1 = XY(420, -120, 150, 0, 90, 0)
+    P2 = XY(420, 120, 150, 0, 90, 0)
+
+    Jump P1              ' arch over to the pick
+    Jump P2              ' arch over to the place
+Fend`},
+
+  {t:"Digital I/O", d:"On, Off, Sw, and waiting on inputs.",
+   body:`<h3>5 · Inputs and outputs</h3>
+   <p>Drive a gripper or valve with an output: <span class="pill">On 0</span> /
+   <span class="pill">Off 0</span>. Read a sensor with <span class="pill">Sw(n)</span>.</p>
+   <p>In the Playground, click an <b>input</b> bit to simulate a sensor, then run. Outputs light up
+   as the program sets them, and any move made while an output is on is drawn as a <b>process</b> segment.</p>`,
+   code:`Function main
+    Motor On : Power High
+    Speed 40 : Accel 50,50
+    LimZ 450
+
+    P1 = XY(420, 0, 150, 0, 90, 0)
+
+    Wait Sw(0) = 1       ' wait for part-present sensor
+    Jump P1
+    On 0                 ' close gripper
+    Wait 0.3
+    Go P1 +Z(60)
+Fend`},
+
+  {t:"Loops", d:"For / Next and Do / Loop.",
+   body:`<h3>6 · Repetition</h3>
+   <p>Counted work uses <span class="pill">For&nbsp;v = a To b</span> &hellip; <span class="pill">Next</span>.
+   Point indexing with <span class="pill">P(i)</span> lets one loop visit many taught points.</p>`,
+   code:`Function main
+    Motor On : Power High
+    Speed 40 : Accel 50,50
+
+    Integer i
+
+    P1 = XY(380, -100, 200, 0,90,0)
+    P2 = XY(400, -100, 200, 0,90,0)
+    P3 = XY(420, -100, 200, 0,90,0)
+
+    For i = 1 To 3
+        Go P(i)
+        Print "Visited point ", i
+    Next i
+Fend`},
+
+  {t:"Branching", d:"If / Else and conditions.",
+   body:`<h3>7 · Decisions</h3>
+   <p><span class="pill">If cond Then</span> &hellip; <span class="pill">Else</span> &hellip;
+   <span class="pill">EndIf</span> branches on a condition. Conditions can read inputs, compare
+   variables, and combine with <b>And</b> / <b>Or</b> / <b>Not</b>.</p>`,
+   code:`Function main
+    Motor On : Power High
+    Speed 40 : Accel 50,50
+
+    P0 = XY(300,0,400,0,90,0)
+    P1 = XY(420,0,180,0,90,0)
+
+    If Sw(0) = 1 Then
+        Jump P1
+        On 0
+        Print "Part picked."
+    Else
+        Go P0
+        Print "No part, staying home."
+    EndIf
+Fend`},
+
+  {t:"Subroutines", d:"Split a program into Call-able functions.",
+   body:`<h3>8 · Structure</h3>
+   <p>Break the job into functions and <span class="pill">Call</span> them from main. This keeps
+   the cell readable and lets you reuse a pick or a place routine.</p>`,
+   code:`Function main
+    Motor On : Power High
+    Speed 40 : Accel 50,50
+    LimZ 450
+
+    P1 = XY(420,-120,150,0,90,0)
+    P2 = XY(420, 120,150,0,90,0)
+
+    Call PickAt(1)      ' pick from P1
+    Call PlaceAt(2)     ' place at P2
+Fend
+
+Function PickAt(n As Integer)
+    Jump P(n)
+    On 0
+    Wait 0.3
+Fend
+
+Function PlaceAt(n As Integer)
+    Jump P(n)
+    Off 0
+    Wait 0.3
+Fend`},
+
+  {t:"A dispensing cell", d:"Putting it together: a serpentine deposit path.",
+   body:`<h3>9 · A dispensing pass</h3>
+   <p>This ties everything together into something close to lab work: energize, set a linear
+   speed, then run a serpentine raster over a rectangle while a valve output is on. Every move made
+   with the valve open shows as a <b>process</b> segment in the preview.</p>
+   <p>The <b>Generator</b> tab builds paths like this for you from width / pitch parameters.</p>`,
+   code:`' Serpentine dispense over a 40 x 30 mm area
+Function main
+    Motor On : Power High
+    Speed 30
+    SpeedS 20            ' 20 mm/s linear
+    AccelS 200, 200
+
+    Real x0, y0, z, w, h, pitch, y
+    x0 = 380 : y0 = -20 : z = 60
+    w = 40 : h = 30 : pitch = 4
+
+    Integer row, nrows, dir
+    nrows = Int(h / pitch) + 1
+    dir = 1
+
+    Go XY(x0, y0, z + 20, 0, 90, 0)
+    For row = 0 To nrows - 1
+        y = y0 + row * pitch
+        Move XY(x0, y, z, 0, 90, 0)
+        On 0                          ' valve open
+        If dir = 1 Then
+            Move XY(x0 + w, y, z, 0, 90, 0)
+        Else
+            Move XY(x0, y, z, 0, 90, 0)
+        EndIf
+        Off 0                         ' valve closed
+        dir = -dir
+    Next row
+    Go XY(x0, y0, z + 20, 0, 90, 0)
+Fend`},
+];
+
+/* ---------- default program ---------------------------------------------- */
+const DEFAULT_PROG = LESSONS[2].code;
+
+/* ================= HIGHLIGHTER =========================================== */
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function highlightLine(line){
+  let out = esc(line);
+  const strings = [];
+  // protect string literals
+  out = out.replace(/"[^"]*"/g, m=>{strings.push(m); return "\u0000"+(strings.length-1)+"\u0001";});
+  // comment (apostrophe) after strings removed
+  let comment = "";
+  const ci = out.indexOf("'");
+  if(ci >= 0){ comment = out.slice(ci); out = out.slice(0, ci); }
+  // point labels P0, P(i)
+  out = out.replace(/\bP(\d+)\b/g, '<span class="t-pt">P$1</span>');
+  out = out.replace(/\bP(?=\s*\()/g, '<span class="t-pt">P</span>');
+  // numbers
+  out = out.replace(/\b(\d+\.?\d*)\b/g, '<span class="t-num">$1</span>');
+  // keywords
+  out = out.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g, (m)=>{
+    // skip if already inside a span tag fragment
+    const low = m.toLowerCase();
+    if(FLOW_SET.has(low)) return '<span class="t-flow">'+m+'</span>';
+    if(CMD_SET.has(low))  return '<span class="t-cmd">'+m+'</span>';
+    return m;
+  });
+  if(comment) out += '<span class="t-com">'+comment+'</span>';
+  // restore strings
+  out = out.replace(/\u0000(\d+)\u0001/g,(m,i)=>'<span class="t-str">'+strings[+i]+'</span>');
+  return out;
+}
+function highlightAll(code){
+  return code.split("\n").map(l=>'<span class="ln">'+(highlightLine(l)||"&nbsp;")+'</span>').join("\n");
+}
+function snippet(code){ // for lessons/generator (no line-number gutter counter)
+  return code.split("\n").map(l=>highlightLine(l)||"&nbsp;").join("\n");
+}
+
+/* ================= SIMULATOR ============================================= */
+/* --- expression evaluator (recursive descent) --- */
+function tokenizeExpr(s){
+  const t=[]; let i=0;
+  const two = ["<=",">=","<>"];
+  while(i<s.length){
+    const c=s[i];
+    if(c===" "||c==="\t"){i++;continue;}
+    if(c==='"'){let j=i+1;while(j<s.length&&s[j]!=='"')j++;t.push({k:"str",v:s.slice(i+1,j)});i=j+1;continue;}
+    if(/[0-9.]/.test(c)){let j=i;while(j<s.length&&/[0-9.]/.test(s[j]))j++;t.push({k:"num",v:parseFloat(s.slice(i,j))});i=j;continue;}
+    if(/[A-Za-z_]/.test(c)){let j=i;while(j<s.length&&/[A-Za-z0-9_]/.test(s[j]))j++;t.push({k:"id",v:s.slice(i,j)});i=j;continue;}
+    const pair=s.substr(i,2);
+    if(two.includes(pair)){t.push({k:"op",v:pair});i+=2;continue;}
+    if("=<>+-*/(),".includes(c)){t.push({k:"op",v:c});i++;continue;}
+    i++; // skip unknown
+  }
+  return t;
+}
+function makeEvaluator(env){
+  function evalStr(s){
+    // resolve coordinate accessors like CZ(Here) / CX(P1) to literals first
+    s = s.replace(/C([XYZUVW])\s*\(\s*(Here|P\d+)\s*\)/gi,(m,ax,tok)=>{
+      let pt = /here/i.test(tok) ? env.cur : env.points[tok.toUpperCase()];
+      if(!pt) return "0";
+      return String(pt[ax.toLowerCase()]||0);
+    });
+    const tk = tokenizeExpr(s); let p=0;
+    const peek=()=>tk[p], next=()=>tk[p++];
+    const isKw=(w)=>peek()&&peek().k==="id"&&peek().v.toLowerCase()===w;
+    function orE(){let a=andE();while(isKw("or")){next();const b=andE();a=(a||b)?1:0;}return a;}
+    function andE(){let a=notE();while(isKw("and")){next();const b=notE();a=(a&&b)?1:0;}return a;}
+    function notE(){if(isKw("not")){next();return notE()?0:1;}return cmp();}
+    function cmp(){let a=add();const o=peek();
+      if(o&&o.k==="op"&&["=","<>","<",">","<=",">="].includes(o.v)){next();const b=add();
+        switch(o.v){case"=":return a===b?1:0;case"<>":return a!==b?1:0;
+          case"<":return a<b?1:0;case">":return a>b?1:0;case"<=":return a<=b?1:0;case">=":return a>=b?1:0;}}
+      return a;}
+    function add(){let a=mul();while(peek()&&peek().k==="op"&&(peek().v==="+"||peek().v==="-")){const o=next().v;const b=mul();
+      a=(o==="+")?(typeof a==="string"||typeof b==="string"?(""+a+b):a+b):a-b;}return a;}
+    function mul(){let a=un();while((peek()&&peek().k==="op"&&(peek().v==="*"||peek().v==="/"))||isKw("mod")){
+      let o; if(isKw("mod")){next();o="mod";}else{o=next().v;} const b=un();
+      a=(o==="*")?a*b:(o==="/")?a/b:a%b;}return a;}
+    function un(){if(peek()&&peek().k==="op"&&peek().v==="-"){next();return -un();}return prim();}
+    function prim(){
+      const tok=peek(); if(!tok)return 0;
+      if(tok.k==="num"){next();return tok.v;}
+      if(tok.k==="str"){next();return tok.v;}
+      if(tok.k==="op"&&tok.v==="("){next();const v=orE();if(peek()&&peek().v===")")next();return v;}
+      if(tok.k==="id"){
+        const name=next().v; const low=name.toLowerCase();
+        if(peek()&&peek().k==="op"&&peek().v==="("){ // function call
+          next(); const args=[];
+          if(!(peek()&&peek().v===")")){ args.push(orE()); while(peek()&&peek().v===","){next();args.push(orE());} }
+          if(peek()&&peek().v===")")next();
+          return callFn(low,args);
+        }
+        if(name in env.vars) return env.vars[name];
+        return 0; // undefined var -> 0
+      }
+      next(); return 0;
+    }
+    function callFn(name,a){
+      switch(name){
+        case"agl": { // current joint angle; only J6 is tracked by this previewer
+          const j=a[0]|0;
+          if(j===6) return env.cur?(env.cur.u||0):0;
+          return 0;
+        }
+        case"sw": return env.inputs[a[0]|0]?1:0;
+        case"oport": return env.outputs[a[0]|0]?1:0;
+        case"in": {let v=0;for(let b=0;b<8;b++)if(env.inputs[(a[0]|0)*8+b])v|=(1<<b);return v;}
+        case"int": return Math.trunc(a[0]);
+        case"abs": return Math.abs(a[0]);
+        case"sqr": return Math.sqrt(a[0]);
+        case"sgn": return Math.sign(a[0]);
+        case"rnd": return Math.random();
+        case"str$": return String(a[0]);
+        case"val": return parseFloat(a[0])||0;
+        case"xy": return a; // returns coord array; handled by point resolver
+        default: return 0;
+      }
+    }
+    return orE();
+  }
+  return evalStr;
+}
+
+/* --- parse code into nested blocks (only the chosen function body runs) --- */
+function splitStatements(line){
+  // SPEL allows ':' to separate statements on one line (outside strings)
+  const parts=[]; let cur=""; let inStr=false;
+  for(let i=0;i<line.length;i++){const c=line[i];
+    if(c==='"'){inStr=!inStr;cur+=c;continue;}
+    if(c==="'"&&!inStr){break;} // comment
+    if(c===":"&&!inStr){parts.push(cur);cur="";continue;}
+    cur+=c;}
+  if(cur.trim()!=="")parts.push(cur);
+  return parts.map(s=>s.trim()).filter(s=>s.length);
+}
+function lexProgram(code){
+  const raw = code.split("\n");
+  const stmts=[];
+  raw.forEach((line,idx)=>{
+    const ln=idx+1;
+    for(const s of splitStatements(line)){
+      const kw=(s.match(/^([A-Za-z_][A-Za-z0-9_]*)/)||[])[1]||"";
+      stmts.push({raw:s, kw, kwl:kw.toLowerCase(), rest:s.slice(kw.length).trim(), ln});
+    }
+  });
+  return stmts;
+}
+function parseBody(stmts, i, enders){
+  const nodes=[];
+  while(i<stmts.length){
+    const st=stmts[i]; const k=st.kwl;
+    if(enders.includes(k)) return {nodes, next:i};
+    if(k==="for"){
+      const m=st.raw.match(/^For\s+([A-Za-z_]\w*)\s*=\s*(.+?)\s+To\s+(.+?)(?:\s+Step\s+(.+))?$/i);
+      const r=parseBody(stmts,i+1,["next"]);
+      nodes.push({type:"for",v:m?m[1]:"i",a:m?m[2]:"0",b:m?m[3]:"0",step:m&&m[4]?m[4]:"1",body:r.nodes,ln:st.ln});
+      i=r.next+1; continue;
+    }
+    if(k==="do"){
+      const pre=st.raw.match(/^Do\s+(While|Until)\s+(.+)$/i);
+      const r=parseBody(stmts,i+1,["loop"]);
+      const loopSt=stmts[r.next];
+      const post=loopSt?loopSt.raw.match(/^Loop\s+(While|Until)\s+(.+)$/i):null;
+      nodes.push({type:"do",pre:pre?{kind:pre[1].toLowerCase(),cond:pre[2]}:null,
+        post:post?{kind:post[1].toLowerCase(),cond:post[2]}:null, body:r.nodes, ln:st.ln});
+      i=r.next+1; continue;
+    }
+    if(k==="if"){
+      // block form ends with Then and nothing after; single-line: If ... Then <stmt>
+      const afterThen=st.raw.match(/\bThen\b(.*)$/i);
+      const cond=st.raw.replace(/^If\s+/i,"").replace(/\s*Then.*$/i,"");
+      if(afterThen && afterThen[1].trim()!==""){
+        // single-line if
+        const inner=afterThen[1].trim();
+        const innerStmts=lexProgram(inner);
+        nodes.push({type:"if",branches:[{cond,body:innerStmts.map(s2=>({type:"stmt",...s2}))}],elseBody:[],ln:st.ln});
+        i++; continue;
+      }
+      // block if
+      const branches=[]; let elseBody=[];
+      let j=i+1; let curCond=cond; 
+      while(true){
+        const r=parseBody(stmts,j,["else","elseif","endif"]);
+        branches.push({cond:curCond,body:r.nodes});
+        const term=stmts[r.next];
+        if(!term){j=r.next;break;}
+        if(term.kwl==="elseif"){curCond=term.raw.replace(/^ElseIf\s+/i,"").replace(/\s*Then.*$/i,"");j=r.next+1;continue;}
+        if(term.kwl==="else"){const re=parseBody(stmts,r.next+1,["endif"]);elseBody=re.nodes;j=re.next;break;}
+        if(term.kwl==="endif"){j=r.next;break;}
+        j=r.next;break;
+      }
+      nodes.push({type:"if",branches,elseBody,ln:st.ln});
+      i=j+1; continue;
+    }
+    if(k==="function"){ // nested/next function -> stop this body
+      return {nodes,next:i};
+    }
+    nodes.push({type:"stmt",...st});
+    i++;
+  }
+  return {nodes,next:i};
+}
+function collectFunctions(stmts){
+  const fns={}; let i=0;
+  while(i<stmts.length){
+    if(stmts[i].kwl==="function"){
+      const name=(stmts[i].rest.match(/^([A-Za-z_]\w*)/)||[])[1]||"main";
+      const params=stmts[i].rest.replace(/^[A-Za-z_]\w*/,"").replace(/^\s*\(?/,"").replace(/\)?\s*$/,"");
+      const r=parseBody(stmts,i+1,["fend"]);
+      fns[name.toLowerCase()]={name,params,body:r.nodes};
+      i=r.next+1;
+    } else i++;
+  }
+  return fns;
+}
+
+function runSimulation(code, points, io){
+  const env={
+    vars:{}, points:{}, outputs:io.outputs.slice(), inputs:io.inputs.slice(),
+    motors:false, power:"Low", speed:10, accel:[10,10], speedS:50, accelS:[200,200],
+    tool:0, limZ:null, weight:0, cur:null, segs:[], console:[], steps:0, undefPts:new Set(),
+  };
+  // seed points from the table
+  Object.keys(points).forEach(k=>{env.points[k]={...points[k]};});
+  const evalE=makeEvaluator(env);
+  const log=(cls,txt)=>env.console.push({cls,txt});
+  const CAP=40000;
+  const stmts=lexProgram(code);
+  const fns=collectFunctions(stmts);
+  if(Object.keys(fns).length===0){ log("c-err","No Function block found. Wrap code in Function main ... Fend."); return env; }
+  const entry=fns["main"]||fns[Object.keys(fns)[0]];
+  log("c-sys","Task "+entry.name+" started");
+
+  function resolvePoint(expr){
+    expr=expr.trim();
+    // strip trailing motion modifiers we don't simulate
+    // base point + offsets
+    // find base token
+    let base=null, rest=expr;
+    let m;
+    if((m=expr.match(/^Here\b/i))){ base=env.cur?{...env.cur}:{x:0,y:0,z:0,u:0,v:0,w:0}; rest=expr.slice(m[0].length); }
+    else if((m=expr.match(/^XY\s*\(([^)]*)\)/i))){
+      const a=m[1].split(",").map(s=>evalE(s.trim()));
+      base={x:a[0]||0,y:a[1]||0,z:a[2]||0,u:a[3]||0,v:a[4]||0,w:a[5]||0}; rest=expr.slice(m[0].length);
+    }
+    else if((m=expr.match(/^JA\s*\(([^)]*)\)/i))){
+      // joint-angle target. This previewer has no forward kinematics, so it holds
+      // XYZ and previews joint 6 as the tool roll (U).
+      const a=splitTopComma(m[1]).map(s=>evalE(s));
+      base=env.cur?{...env.cur}:{x:0,y:0,z:0,u:0,v:90,w:0};
+      base.u=a[5]||0;
+      if(!env.jaNoted){env.jaNoted=true;
+        log("c-sys","(sim) JA() target: joint 6 previewed as tool roll; J1-J5 not modeled.");}
+      rest=expr.slice(m[0].length);
+    }
+    else if((m=expr.match(/^Pulse\s*\(([^)]*)\)/i))){
+      base=env.cur?{...env.cur}:{x:0,y:0,z:0,u:0,v:90,w:0};
+      if(!env.pulseNoted){env.pulseNoted=true;
+        log("c-sys","(sim) Pulse() target is not modeled; position held.");}
+      rest=expr.slice(m[0].length);
+    }
+    else if((m=expr.match(/^P\s*\(([^)]*)\)/i))){
+      const n=Math.trunc(evalE(m[1])); const key="P"+n;
+      base=env.points[key]?{...env.points[key]}:null;
+      if(!base){env.undefPts.add(key);base={x:0,y:0,z:0,u:0,v:0,w:0};}
+      rest=expr.slice(m[0].length);
+    }
+    else if((m=expr.match(/^P(\d+)\b/i))){
+      const key="P"+m[1];
+      base=env.points[key]?{...env.points[key]}:null;
+      if(!base){env.undefPts.add(key);base={x:0,y:0,z:0,u:0,v:0,w:0};}
+      rest=expr.slice(m[0].length);
+    }
+    if(!base) return null;
+    // offsets  +X(..) -Z(..)
+    const off=/([+\-])\s*([XYZUVW])\s*\(([^)]*)\)/gi; let om;
+    while((om=off.exec(rest))){
+      const sign=om[1]==="-"?-1:1; const ax=om[2].toLowerCase(); const val=sign*evalE(om[3]);
+      base[ax]=(base[ax]||0)+val;
+    }
+    return base;
+  }
+  function doMove(kind, targetExpr){
+    if(!env.motors){ log("c-err","Line "+"?"+": motion before Motor On"); }
+    const tgt=resolvePoint(targetExpr);
+    if(!tgt){ log("c-err","Could not resolve target: "+targetExpr); return; }
+    const from=env.cur;
+    const process=env.outputs.some(Boolean);
+    if(from){ env.segs.push({from:{...from},to:{...tgt},kind,process}); }
+    env.cur={...tgt};
+    log("c-mot", kind+" -> ("+Math.round(tgt.x)+", "+Math.round(tgt.y)+", "+Math.round(tgt.z)+")"+(process?"  [process]":""));
+  }
+
+  function execNodes(nodes){
+    for(const n of nodes){
+      if(env.steps++ > CAP){ log("c-err","Step limit reached; possible infinite loop. Stopped."); throw "cap"; }
+      execNode(n);
+    }
+  }
+  function execNode(n){
+    if(n.type==="for"){
+      const a=evalE(n.a), b=evalE(n.b), step=evalE(n.step)||1;
+      try{
+        for(let v=a; (step>0? v<=b : v>=b); v+=step){
+          env.vars[n.v]=v;
+          if(env.steps++ > CAP){log("c-err","Step limit reached in loop.");throw "cap";}
+          execNodes(n.body);
+        }
+      }catch(e){ if(e&&e.__exit==="for") return; throw e; }
+      return;
+    }
+    if(n.type==="do"){
+      let guard=0;
+      const check=(c)=>{if(!c)return true;const val=evalE(c.cond);return c.kind==="while"?!!val:!val;};
+      try{
+        while(true){
+          if(n.pre && !check(n.pre)) break;
+          execNodes(n.body);
+          if(n.post && !check(n.post)) break;
+          if(!n.pre && !n.post){ if(++guard>1){log("c-sys","(sim) Do..Loop with no condition ran once.");break;} }
+          if(env.steps++ > CAP){log("c-err","Step limit reached in Do loop.");throw "cap";}
+        }
+      }catch(e){ if(e&&e.__exit==="do") return; throw e; }
+      return;
+    }
+    if(n.type==="if"){
+      for(const br of n.branches){
+        if(evalE(br.cond)){ execNodes(br.body); return; }
+      }
+      execNodes(n.elseBody);
+      return;
+    }
+    // statement
+    execStmt(n);
+  }
+  function execStmt(s){
+    const kw=s.kwl, rest=s.rest, raw=s.raw;
+    if(!kw) return;
+    // assignment? (not a known command, contains top-level =)  OR point assignment P#=
+    const isPointAssign = /^P\s*(\d+|\()/.test(raw) && /=/.test(raw) && !/^(If|While|Until)/i.test(raw);
+    const looksAssign = !KNOWN.has(kw) && /^[A-Za-z_]\w*(\s*\([^)]*\))?\s*=/.test(raw);
+    if(isPointAssign){
+      const eq=raw.indexOf("="); const lhs=raw.slice(0,eq).trim(); const rhs=raw.slice(eq+1).trim();
+      const pt=resolvePoint(rhs);
+      const keym=lhs.match(/^P\s*(\d+)/i)||lhs.match(/^P\s*\(([^)]*)\)/i);
+      let key=null;
+      if(lhs.match(/^P\s*\(/i)) key="P"+Math.trunc(evalE(lhs.replace(/^P\s*\(/i,"").replace(/\)\s*$/,"")));
+      else if(keym) key="P"+keym[1];
+      if(key&&pt){ env.points[key]=pt; env.undefPts.delete(key); }
+      return;
+    }
+    if(looksAssign){
+      const eq=raw.indexOf("="); const lhs=raw.slice(0,eq).trim(); const rhs=raw.slice(eq+1).trim();
+      env.vars[lhs]=evalE(rhs); return;
+    }
+    switch(kw){
+      case"function": case"fend": return;
+      case"integer": case"long": case"short": case"byte": case"real": case"double":
+      case"boolean":
+        rest.split(",").forEach(v=>{const nm=v.trim().split(/\s+/)[0];if(nm)env.vars[nm]=0;});return;
+      case"string":
+        rest.split(",").forEach(v=>{const nm=v.trim().split(/\s+/)[0];if(nm)env.vars[nm]="";});return;
+      case"global": case"preserve": return; // scope keywords, ignore
+      case"opencom": case"closecom": case"setcom": case"opennet": case"closenet":
+        log("c-io","(sim) "+raw); return;
+      case"print":{
+        if(rest.startsWith("#")){ log("c-io","(sim) serial out: "+raw); return; }
+        const args=[]; let cur=""; let depth=0,inStr=false;
+        for(const c of rest){ if(c==='"')inStr=!inStr;
+          if((c===","||c===";")&&!inStr&&depth===0){args.push(cur);cur="";continue;}
+          if(c==="("&&!inStr)depth++; if(c===")"&&!inStr)depth--; cur+=c;}
+        if(cur.trim())args.push(cur);
+        log("c-out", args.map(a=>{const v=evalE(a.trim());return typeof v==="number"?(Number.isInteger(v)?v:(+v.toFixed(4))):v;}).join(" "));
+        return;
+      }
+      case"motor": env.motors=/on/i.test(rest); log("c-sys","Motor "+(env.motors?"On":"Off")); return;
+      case"power": env.power=/high/i.test(rest)?"High":"Low"; log("c-sys","Power "+env.power); return;
+      case"speed": env.speed=evalE(rest)||env.speed; return;
+      case"accel": {const a=rest.split(",").map(x=>evalE(x));env.accel=[a[0]||env.accel[0],a[1]||a[0]||env.accel[1]];return;}
+      case"speeds": env.speedS=evalE(rest)||env.speedS; return;
+      case"accels": {const a=rest.split(",").map(x=>evalE(x));env.accelS=[a[0]||env.accelS[0],a[1]||a[0]];return;}
+      case"tool": env.tool=Math.trunc(evalE(rest)); return;
+      case"limz": env.limZ=evalE(rest); return;
+      case"weight": env.weight=evalE(rest.split(",")[0]); return;
+      case"base": case"local": case"ecp": case"arm": case"fine": case"inertia":
+      case"hordr": case"hofs": case"tlset": log("c-sys","(sim) "+raw); return;
+      case"go": case"move": case"tgo": case"bgo": case"tmove": case"bmove":
+        doMove(kw.charAt(0).toUpperCase()+kw.slice(1), rest); return;
+      case"jump": case"jump3": case"jump3cp":
+        doMove("Jump", rest); return;
+      case"arc": case"arc3": {
+        // Arc mid, end  -> move to end (draw two segments through mid)
+        const parts=splitTopComma(rest);
+        if(parts.length>=2){ doMove("Arc", parts[0]); doMove("Arc", parts[1]); }
+        else doMove("Arc", rest);
+        return;
+      }
+      case"pass": { splitTopComma(rest).forEach(p=>doMove("Pass",p)); return; }
+      case"on": {const n=Math.trunc(evalE(splitTopComma(rest)[0]));env.outputs[n]=true;log("c-io","On "+n);return;}
+      case"off": {const n=Math.trunc(evalE(splitTopComma(rest)[0]));env.outputs[n]=false;log("c-io","Off "+n);return;}
+      case"wait": {
+        const mm=rest.match(/Sw\s*\(([^)]*)\)\s*=\s*(\d+)/i);
+        if(mm){const bit=Math.trunc(evalE(mm[1]));const want=+mm[2];
+          if((env.inputs[bit]?1:0)!==want) log("c-sys","(sim) Wait Sw("+bit+")="+want+"  input is "+(env.inputs[bit]?1:0)+", continuing");
+          else log("c-sys","Wait Sw("+bit+")="+want+" satisfied");}
+        else log("c-sys","Wait "+rest);
+        return;
+      }
+      case"call": case"xqt": {
+        const mm=rest.match(/^([A-Za-z_]\w*)\s*(?:\(([^)]*)\))?/)||[];
+        const nm=mm[1]; const f=fns[(nm||"").toLowerCase()];
+        if(!f){log("c-err",cap(kw)+" to undefined function: "+nm);return;}
+        callFunction(f, mm[2]||"", kw==="xqt");
+        return;
+      }
+      case"home": doMove("Go","XY(0,0,"+(env.limZ||400)+",0,90,0)"); log("c-sys","Home"); return;
+      case"reset": env.outputs=env.outputs.map(()=>false); log("c-sys","Reset"); return;
+      case"exit": {const w=rest.trim().toLowerCase();
+        if(w.startsWith("do")) throw {__exit:"do"};
+        if(w.startsWith("for")) throw {__exit:"for"};
+        if(w.startsWith("function")){log("c-sys","Exit Function");return;} throw {__exit:"do"};}
+      case"halt": case"quit": case"pause": case"continue": log("c-sys",raw); return;
+      case"goto": case"gosub": case"return": case"select": case"send": case"case": case"trap": case"onerr":
+        log("c-sys","(sim) not fully modeled: "+raw); return;
+      default:
+        log("c-sys","(sim) skipped: "+raw); return;
+    }
+  }
+  function callFunction(f, argStr, isXqt){
+    log("c-sys",(isXqt?"Xqt ":"Call ")+f.name+(isXqt?" (sim: sequential)":""));
+    const args = argStr.trim()? splitTopComma(argStr).map(a=>evalE(a)) : [];
+    const params = (f.params||"").split(",").map(s=>s.trim()).filter(Boolean).map(s=>s.split(/\s+/)[0]);
+    const saved={}; params.forEach((pn,idx)=>{saved[pn]=env.vars[pn]; env.vars[pn]=args[idx];});
+    execNodes(f.body);
+    params.forEach(pn=>{ if(saved[pn]===undefined) delete env.vars[pn]; else env.vars[pn]=saved[pn]; });
+  }
+  function splitTopComma(s){const out=[];let cur="",d=0,inStr=false;
+    for(const c of s){if(c==='"')inStr=!inStr;if(c==="("&&!inStr)d++;if(c===")"&&!inStr)d--;
+      if(c===","&&!inStr&&d===0){out.push(cur.trim());cur="";}else cur+=c;}
+    if(cur.trim())out.push(cur.trim());return out;}
+
+  try{ execNodes(entry.body); }
+  catch(e){ if(e!=="cap") log("c-err","Runtime: "+e); }
+  if(env.undefPts.size) log("c-err","Undefined points used: "+[...env.undefPts].join(", "));
+  log("c-ok","All tasks stopped");
+  return env;
+}
+
+/* ================= LINTER =============================================== */
+function lint(code){
+  const diags=[];
+  const stmts=lexProgram(code);
+  const add=(sev,ln,msg,rule)=>diags.push({sev,ln,msg,rule});
+  // balance stacks
+  const stack=[]; // {kw,ln}
+  const opens={"function":"fend","for":"next","if":"endif","do":"loop","select":"send"};
+  const closes={"fend":"function","next":"for","endif":"if","loop":"do","send":"select"};
+  let hasMain=false, sawMotorOn=false, sawSpeed=false, sawAccel=false, motionBeforeMotor=false;
+  let motionBeforeSpeed=false, sawMotion=false, sawPower=false;
+  const definedPts=new Set(); const usedPts=new Set(); const usedPtLines={};
+  const fnNames=new Set(); const calledFns=[];
+
+  stmts.forEach(s=>{
+    const k=s.kwl, ln=s.ln, raw=s.raw;
+    // single-line if doesn't open a block
+    const singleIf = k==="if" && /\bThen\b\s*\S/i.test(raw);
+    if(k==="function"){const nm=(s.rest.match(/^([A-Za-z_]\w*)/)||[])[1];if(nm){fnNames.add(nm.toLowerCase());if(nm.toLowerCase()==="main")hasMain=true;}}
+    if(k in opens && !singleIf){ stack.push({kw:k,ln}); }
+    if(k in closes){
+      const want=closes[k];
+      if(stack.length===0){ add("err",ln,"<b>"+s.kw+"</b> with no matching <b>"+cap(want)+"</b>.","block-balance"); }
+      else{ const top=stack.pop(); if(top.kw!==want){ add("err",ln,"<b>"+s.kw+"</b> does not match open <b>"+cap(top.kw)+"</b> from line "+top.ln+".","block-balance"); } }
+    }
+    // motion checks
+    if(["go","jump","move","arc","pass","tgo","bgo","tmove","bmove","jump3","curmove","cvmove"].includes(k)){
+      sawMotion=true;
+      if(!sawMotorOn) motionBeforeMotor=true;
+      if(!sawSpeed && !sawAccel) motionBeforeSpeed=true;
+    }
+    if(k==="motor" && /on/i.test(s.rest)) sawMotorOn=true;
+    if(k==="power") sawPower=true;
+    if(k==="speed") sawSpeed=true;
+    if(k==="accel") sawAccel=true;
+    // speed range
+    if(k==="speed"){const v=parseFloat(s.rest);if(!isNaN(v)&&(v<1||v>100))add("warn",ln,"Speed "+v+" is outside the 1&ndash;100 % range for PTP moves.","speed-range");}
+    if(k==="accel"){const parts=s.rest.split(",");if(parts.length<2)add("info",ln,"<b>Accel</b> usually takes two values: acceleration and deceleration.","accel-args");}
+    // point definitions and uses
+    let dm; const defRe=/\bP(\d+)\s*=/g;
+    while((dm=defRe.exec(raw))) definedPts.add("P"+dm[1]);
+    let um; const useRe=/\bP(\d+)\b/g;
+    while((um=useRe.exec(raw))){ if(!new RegExp("\\bP"+um[1]+"\\s*=").test(raw)){ usedPts.add("P"+um[1]); (usedPtLines["P"+um[1]]=usedPtLines["P"+um[1]]||[]).push(ln);} }
+    // calls
+    if(k==="call"||k==="xqt"){const nm=(s.rest.match(/^([A-Za-z_]\w*)/)||[])[1];if(nm)calledFns.push({nm:nm.toLowerCase(),disp:nm,ln});}
+    // stray tabs / smart quotes
+    if(/[\u201c\u201d]/.test(raw)) add("warn",ln,"Curly quotes found &mdash; SPEL+ needs straight double quotes.","quotes");
+  });
+  // leftover open blocks
+  stack.forEach(o=>add("err",o.ln,"<b>"+cap(o.kw)+"</b> is never closed with <b>"+cap(opens[o.kw])+"</b>.","block-balance"));
+  // main
+  if(!hasMain) add("err",1,"No <b>Function main</b> found. The project entry point is required.","no-main");
+  // motion safety
+  if(motionBeforeMotor) add("err",findLine(stmts,["go","jump","move"]),"A motion command runs before <b>Motor On</b>. Energize the servos first.","motor-order");
+  if(sawMotion && !sawPower) add("info",1,"No <b>Power High</b> set. Motion will run at reduced (Low) power.","power");
+  if(motionBeforeSpeed) add("warn",findLine(stmts,["go","jump","move"]),"Motion runs before any <b>Speed</b> / <b>Accel</b> is set. It will use the last controller values.","speed-order");
+  // undefined points
+  usedPts.forEach(p=>{ if(!definedPts.has(p)){ (usedPtLines[p]||[1]).slice(0,1).forEach(ln=>
+    add("warn",ln,p+" is used but never taught in this file. Make sure it exists in the point file.","undef-point")); }});
+  // undefined calls
+  calledFns.forEach(c=>{ if(!fnNames.has(c.nm)) add("err",c.ln,"Call to <b>"+c.disp+"</b>, which is not defined in this file.","undef-fn"); });
+
+  return diags.sort((a,b)=>a.ln-b.ln);
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function findLine(stmts,kws){const f=stmts.find(s=>kws.includes(s.kwl));return f?f.ln:1;}
+
+/* ================= GENERATORS =========================================== */
+const GEN = {
+  pallet:{
+    title:"Palletize",
+    fields:[
+      {id:"rows",label:"Rows (Y)",type:"number",val:3},
+      {id:"cols",label:"Columns (X)",type:"number",val:4},
+      {id:"pitchx",label:"Column pitch X (mm)",type:"number",val:30},
+      {id:"pitchy",label:"Row pitch Y (mm)",type:"number",val:30},
+      {id:"x0",label:"Origin X (mm)",type:"number",val:360},
+      {id:"y0",label:"Origin Y (mm)",type:"number",val:-60},
+      {id:"z",label:"Place Z (mm)",type:"number",val:120},
+      {id:"grip",label:"Gripper output bit",type:"number",val:0},
+    ],
+    gen:v=>`' Palletize into a ${v.cols} x ${v.rows} grid  -  OZ Robot Studio
+Function main
+    Motor On
+    Power High
+    Speed 40 : Accel 50, 50
+    LimZ ${(+v.z)+80}
+
+    Integer r, c
+    Real px, py
+    For r = 0 To ${v.rows-1}
+        For c = 0 To ${v.cols-1}
+            px = ${v.x0} + c * ${v.pitchx}
+            py = ${v.y0} + r * ${v.pitchy}
+
+            Call PickPart
+            Jump XY(px, py, ${(+v.z)+40}, 0, 90, 0)
+            Move XY(px, py, ${v.z}, 0, 90, 0)
+            Off ${v.grip}                ' release
+            Wait 0.3
+            Go XY(px, py, ${(+v.z)+40}, 0, 90, 0)
+        Next c
+    Next r
+    Print "Pallet complete."
+Fend
+
+Function PickPart
+    ' TODO: teach P1 as the infeed pick location
+    Jump P1
+    On ${v.grip}
+    Wait 0.3
+Fend`
+  },
+  probe:{
+    title:"Touch probe",
+    fields:[
+      {id:"x",label:"Probe X (mm)",type:"number",val:400},
+      {id:"y",label:"Probe Y (mm)",type:"number",val:0},
+      {id:"ztop",label:"Start Z (mm)",type:"number",val:200},
+      {id:"zbot",label:"Max descend Z (mm)",type:"number",val:40},
+      {id:"sensor",label:"Contact input bit",type:"number",val:0},
+      {id:"feed",label:"Probe speed (mm/s)",type:"number",val:5},
+    ],
+    gen:v=>`' Downward touch probe until contact input  -  OZ Robot Studio
+Function main
+    Motor On
+    Power High
+    Speed 20
+    SpeedS ${v.feed}
+    AccelS 100, 100
+
+    Go XY(${v.x}, ${v.y}, ${v.ztop}, 0, 90, 0)
+
+    ' descend until the contact sensor trips
+    Do Until Sw(${v.sensor}) = 1
+        Move Here -Z(1)
+        If CZ(Here) < ${v.zbot} Then
+            Print "No contact before Z limit."
+            Exit Do
+        EndIf
+    Loop
+    Print "Contact at Z = ", CZ(Here)
+    Go Here +Z(40)
+Fend`
+  },
+};
+
+/* ================= BIOPRINT MODULE ====================================== */
+const BIOPRINT = {
+  fields:[
+    {g:"Barrel &amp; tool",id:"toolNum",label:"Tool number",type:"number",val:1},
+    {g:"Barrel &amp; tool",id:"tipZ",label:"Tip offset from flange Z (mm)",type:"number",val:185},
+    {g:"Barrel &amp; tool",id:"needle",label:"Needle inner dia (mm)",type:"number",val:0.41},
+    {g:"Barrel &amp; tool",id:"barrel",label:"Barrel size (mL)",type:"number",val:10},
+    {g:"Barrel &amp; tool",id:"weight",label:"Barrel assembly mass (kg)",type:"number",val:0.6},
+    {g:"Pressure",id:"presBit",label:"Pressure output bit",type:"number",val:0},
+    {g:"Pressure",id:"kpa",label:"Setpoint (kPa)",type:"number",val:60},
+    {g:"Pressure",id:"mode",label:"Pressure control",type:"select",val:"trigger",
+      opts:[["trigger","Output bit trigger only"],["rs232","Trigger + RS-232 setpoint"]]},
+    {g:"Pressure",id:"preFlow",label:"Pre-flow delay (s)",type:"number",val:0.15},
+    {g:"Pressure",id:"postFlow",label:"Post-flow / suck-back (s)",type:"number",val:0.1},
+    {g:"Geometry",id:"x0",label:"Origin X (mm)",type:"number",val:380},
+    {g:"Geometry",id:"y0",label:"Origin Y (mm)",type:"number",val:-20},
+    {g:"Geometry",id:"z0",label:"First layer Z (mm)",type:"number",val:60},
+    {g:"Geometry",id:"w",label:"Scaffold size X (mm)",type:"number",val:20},
+    {g:"Geometry",id:"h",label:"Scaffold size Y (mm)",type:"number",val:20},
+    {g:"Geometry",id:"pitch",label:"Strand spacing (mm)",type:"number",val:1.5},
+    {g:"Geometry",id:"layerH",label:"Layer height (mm)",type:"number",val:0.3},
+    {g:"Geometry",id:"layers",label:"Layers",type:"number",val:4},
+    {g:"Motion",id:"pattern",label:"Pattern",type:"select",val:"lattice",
+      opts:[["lattice","0/90 lattice (alternating)"],["serp","Serpentine (single direction)"]]},
+    {g:"Motion",id:"feed",label:"Print speed (mm/s)",type:"number",val:8},
+    {g:"Motion",id:"clear",label:"Travel clearance (mm)",type:"number",val:5},
+  ],
+  gen(v){
+    const limz=(+v.z0)+(+v.layerH)*(+v.layers)+(+v.clear)+20;
+    const rs = v.mode==="rs232";
+    const head=`' ============================================================
+'  Bioprint scaffold  -  generated by OZ Robot Studio
+'  Barrel   : ${v.barrel} mL, ${v.needle} mm ID needle
+'  Tool     : Tool ${v.toolNum}, tip ${v.tipZ} mm below the J6 flange
+'  Pressure : ${v.kpa} kPa, triggered on output ${v.presBit}
+'  Scaffold : ${v.w} x ${v.h} mm, ${v.pitch} mm strands, ${v.layers} layers @ ${v.layerH} mm
+'  Paste into Main.prg in EPSON RC+, then teach/verify the tool before running.
+' ============================================================
+
+Global Real gX0, gY0, gW, gH, gPitch, gClear
+Global Integer gPres
+
+Function main
+    gX0 = ${v.x0} : gY0 = ${v.y0}
+    gW = ${v.w} : gH = ${v.h}
+    gPitch = ${v.pitch} : gClear = ${v.clear}
+    gPres = ${v.presBit}
+
+    Off gPres                      ' pressure closed before anything moves
+
+    Motor On
+    Power High
+    Speed 20 : Accel 30, 30        ' PTP travel, kept slow over the stage
+    SpeedS ${v.feed}                    ' ${v.feed} mm/s extrusion speed
+    AccelS 200, 200
+    Weight ${v.weight}                   ' barrel + holder mass
+    Tool ${v.toolNum}                        ' barrel tip frame (see TLSet below)
+    LimZ ${limz}
+${rs?`
+    Call SetPressure(${v.kpa})
+`:""}
+    Real z
+    Integer layer
+    For layer = 0 To ${v.layers-1}
+        z = ${v.z0} + layer * ${v.layerH}
+        Print "Layer ", layer + 1, " at Z = ", z
+${v.pattern==="lattice"?`        If (layer Mod 2) = 0 Then
+            Call LinesAlongX(z)
+        Else
+            Call LinesAlongY(z)
+        EndIf`:`        Call LinesAlongX(z)`}
+    Next layer
+
+    Off gPres
+    Go XY(gX0, gY0, ${(+v.z0)+(+v.clear)+20}, 0, 90, 0)
+    Print "Scaffold complete."
+Fend
+
+' ---- strands running along X, stepping in Y ----------------
+Function LinesAlongX(z As Real)
+    Integer i, n
+    Real y
+    n = Int(gH / gPitch)
+    For i = 0 To n
+        y = gY0 + i * gPitch
+        If (i Mod 2) = 0 Then
+            Go XY(gX0, y, z + gClear, 0, 90, 0)
+            Move XY(gX0, y, z, 0, 90, 0)
+            Call PressureOn
+            Move XY(gX0 + gW, y, z, 0, 90, 0)
+            Call PressureOff
+            Go XY(gX0 + gW, y, z + gClear, 0, 90, 0)
+        Else
+            Go XY(gX0 + gW, y, z + gClear, 0, 90, 0)
+            Move XY(gX0 + gW, y, z, 0, 90, 0)
+            Call PressureOn
+            Move XY(gX0, y, z, 0, 90, 0)
+            Call PressureOff
+            Go XY(gX0, y, z + gClear, 0, 90, 0)
+        EndIf
+    Next i
+Fend
+
+' ---- strands running along Y, stepping in X ----------------
+Function LinesAlongY(z As Real)
+    Integer i, n
+    Real x
+    n = Int(gW / gPitch)
+    For i = 0 To n
+        x = gX0 + i * gPitch
+        If (i Mod 2) = 0 Then
+            Go XY(x, gY0, z + gClear, 0, 90, 0)
+            Move XY(x, gY0, z, 0, 90, 0)
+            Call PressureOn
+            Move XY(x, gY0 + gH, z, 0, 90, 0)
+            Call PressureOff
+            Go XY(x, gY0 + gH, z + gClear, 0, 90, 0)
+        Else
+            Go XY(x, gY0 + gH, z + gClear, 0, 90, 0)
+            Move XY(x, gY0 + gH, z, 0, 90, 0)
+            Call PressureOn
+            Move XY(x, gY0, z, 0, 90, 0)
+            Call PressureOff
+            Go XY(x, gY0, z + gClear, 0, 90, 0)
+        EndIf
+    Next i
+Fend
+
+' ---- pressure valve ----------------------------------------
+Function PressureOn
+    On gPres
+    Wait ${v.preFlow}                  ' let the bead establish before travelling
+Fend
+
+Function PressureOff
+    Off gPres
+    Wait ${v.postFlow}                   ' settle / suck-back
+Fend
+${rs?`
+' ---- pressure setpoint over RS-232 -------------------------
+' NOTE: the string below is a placeholder. Check your dispenser's
+' protocol (Nordson Ultimus and EFD units use a checksummed frame).
+Function SetPressure(kpa As Real)
+    OpenCom #1
+    Print #1, "PS  ", kpa
+    CloseCom #1
+    Wait 0.2
+Fend
+`:""}
+' ---- tool definition, run once then comment out -------------
+' TLSet ${v.toolNum}, XY(0, 0, ${v.tipZ}, 0, 0, 0)   ' barrel tip offset from the flange
+`;
+    return head;
+  }
+};
+
+/* ================= PICK & PLACE MODULE ================================== */
+const PICKPLACE = {
+  fields:[
+    {g:"Points",id:"src",label:"Point source",type:"select",val:"taught",
+      opts:[["taught","Use taught points (P1 / P2)"],["coord","Define coordinates in code"]]},
+    {g:"Points",id:"px",label:"Pick X (mm)",type:"number",val:400},
+    {g:"Points",id:"py",label:"Pick Y (mm)",type:"number",val:-120},
+    {g:"Points",id:"pz",label:"Pick Z (mm)",type:"number",val:100},
+    {g:"Points",id:"qx",label:"Place X (mm)",type:"number",val:400},
+    {g:"Points",id:"qy",label:"Place Y (mm)",type:"number",val:120},
+    {g:"Points",id:"qz",label:"Place Z (mm)",type:"number",val:100},
+    {g:"Rotation",id:"angle",label:"Rotation angle (deg)",type:"number",val:90},
+    {g:"Rotation",id:"method",label:"Rotation method",type:"select",val:"u",
+      opts:[["u","Tool U offset (roll about tool Z)"],["j6","Joint 6 direct (JA / Agl)"]]},
+    {g:"Rotation",id:"when",label:"Rotate",type:"select",val:"travel",
+      opts:[["pick","At the pick, after grasping"],["travel","At clearance height, in transit"],["place","At the place approach"]]},
+    {g:"End effector",id:"vac",label:"Vacuum / gripper output bit",type:"number",val:0},
+    {g:"End effector",id:"conf",label:"Vacuum confirm input bit (-1 = none)",type:"number",val:1},
+    {g:"End effector",id:"weight",label:"Payload mass (kg)",type:"number",val:0.05},
+    {g:"End effector",id:"tool",label:"Tool number",type:"number",val:1},
+    {g:"Motion",id:"count",label:"Cycles",type:"number",val:5},
+    {g:"Motion",id:"appr",label:"Approach height (mm)",type:"number",val:30},
+    {g:"Motion",id:"limz",label:"LimZ ceiling (mm)",type:"number",val:400},
+    {g:"Motion",id:"speed",label:"Travel speed (%)",type:"number",val:30},
+    {g:"Motion",id:"touch",label:"Final descent speed (mm/s)",type:"number",val:10},
+    {g:"Motion",id:"settle",label:"Grip settle (s)",type:"number",val:0.3},
+  ],
+  gen(v){
+    const coord = v.src==="coord";
+    const conf = (+v.conf)>=0;
+    const rotU = v.method==="u";
+    const flagNote = Math.abs(+v.angle)>180
+      ? `\n'  !! ${v.angle} deg exceeds 180. Add a J6Flag attribute (/J6F0, /J6F1 ...) to the\n'     target point so the controller knows which turn of joint 6 you mean.`
+      : "";
+    const rotBody = rotU
+      ? `    ' roll the part about the tool Z axis
+    Go Here +U(${v.angle})`
+      : `    ' rotate joint 6 only, holding the current XYZ pose
+    Go JA(Agl(1), Agl(2), Agl(3), Agl(4), Agl(5), Agl(6) + ${v.angle})`;
+    return `' ============================================================
+'  Pick & place with part rotation  -  OZ Robot Studio
+'  Part rotated ${v.angle} deg via ${rotU?"tool U (roll about tool Z)":"joint 6 (JA / Agl)"}
+'  Vacuum on output ${v.vac}${conf?`, confirmed on input ${v.conf}`:""}${flagNote}
+'  Paste into Main.prg in EPSON RC+ and verify points before running.
+' ============================================================
+
+Function main
+    Motor On
+    Power High
+    Speed ${v.speed} : Accel 40, 40
+    SpeedS ${v.touch} : AccelS 150, 150   ' gentle linear descent onto the part
+    Weight ${v.weight}
+    Tool ${v.tool}
+    LimZ ${v.limz}
+
+    Off ${v.vac}
+${coord?`
+    P1 = XY(${v.px}, ${v.py}, ${v.pz}, 0, 90, 0)     ' pick
+    P2 = XY(${v.qx}, ${v.qy}, ${v.qz}, 0, 90, 0)     ' place
+`:`
+    ' P1 = pick, P2 = place  (teach both in Robot Manager - Jog & Teach)
+`}
+    Integer i
+    For i = 1 To ${v.count}
+        Print "Cycle ", i
+        Call PickPart
+${v.when==="pick"?"        Call RotatePart\n":""}        Call TransitToPlace
+${v.when==="travel"?"        Call RotatePart\n":""}        Call PlacePart
+    Next i
+
+    Go P1 +Z(${v.appr})
+    Print "Done: ${v.count} parts."
+Fend
+
+' ---- pick --------------------------------------------------
+Function PickPart
+    Jump P1 +Z(${v.appr})            ' arch over, stop above the part
+    Move P1                     ' straight-line descent
+    On ${v.vac}                        ' vacuum on
+    Wait ${v.settle}
+${conf?`    Wait Sw(${v.conf}) = 1              ' confirm the cell is held
+`:""}    Go P1 +Z(${v.appr})
+Fend
+
+' ---- transit -----------------------------------------------
+Function TransitToPlace
+    Go P2 +Z(${v.appr})
+Fend
+
+' ---- rotate ------------------------------------------------
+Function RotatePart
+${rotBody}
+    Wait 0.2                    ' let the part settle on the nozzle / pads
+Fend
+
+' ---- place -------------------------------------------------
+Function PlacePart
+${v.when==="place"?`    Call RotatePart\n`:""}    Move P2${rotU?` +U(${v.angle})`:""}
+    Off ${v.vac}                       ' release
+    Wait ${v.settle}
+    Go P2 +Z(${v.appr})
+Fend
+`;
+  }
+};
+
+/* ---------- export a .prg file ---------- */
+function downloadPrg(code, name){
+  const blob=new Blob([code.replace(/\n/g,"\r\n")],{type:"text/plain"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name||"Main.prg";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+
+/* ---------- C8 limit checks ------------------------------------------ */
+function checkPayload(kg){
+  if(kg > C8.payloadMax) return {sev:"err",
+    msg:"Payload "+kg+" kg is over the C8 maximum of "+C8.payloadMax+" kg."};
+  if(kg > C8.payloadRated) return {sev:"warn",
+    msg:"Payload "+kg+" kg is above the "+C8.payloadRated+" kg rated load. Allowed, up to "+C8.payloadMax+
+    " kg, but acceleration must come down and Weight/Inertia must be set correctly."};
+  return null;
+}
+function checkReach(x,y){
+  const d=Math.sqrt(x*x+y*y);
+  if(d > C8.reach) return {sev:"err", d, msg:"Point at "+d.toFixed(0)+" mm is outside the C8 "+C8.reach+" mm reach."};
+  if(d > C8.reach*0.92) return {sev:"warn", d, msg:"Point at "+d.toFixed(0)+" mm is near the edge of the "+C8.reach+" mm envelope."};
+  if(d < 180) return {sev:"warn", d, msg:"Point at "+d.toFixed(0)+" mm is close to the base; the arm may not reach inward this far."};
+  return {sev:"ok", d, msg:"Within the envelope."};
+}
+function checkJoint(n, deg){
+  const j=C8.joints[n-1];
+  if(deg < j.min || deg > j.max) return {sev:"err",
+    msg:"Joint "+n+" at "+deg+"\u00b0 is outside its "+j.min+"\u00b0 to "+j.max+"\u00b0 range."};
+  return null;
+}
+
+/* expose to window for the inline bootstrap */
+window.OZR = {C8,checkPayload,checkReach,checkJoint,LESSONS,REFERENCE,GEN,BIOPRINT,PICKPLACE,downloadPrg,highlightAll,snippet,highlightLine,
+  runSimulation,lint,DEFAULT_PROG,esc};
+
+
+/* ================= UI ================= */
+/* =========================================================================
+   OZ Robot Studio  ·  UI bootstrap
+   ========================================================================= */
+(function(){
+const R = window.OZR;
+const $ = s=>document.querySelector(s);
+const $$ = s=>[...document.querySelectorAll(s)];
+
+/* ---------- state ---------- */
+let points = {
+  P0:{x:300,y:0,z:400,u:0,v:90,w:0},
+  P1:{x:420,y:-120,z:200,u:0,v:90,w:0},
+  P2:{x:420,y:120,z:200,u:0,v:90,w:0},
+};
+let io = { inputs:new Array(16).fill(false), outputs:new Array(16).fill(false) };
+let lastSegs = [];
+
+/* ---------- C8 spec strip + limits ---------- */
+const M = R.C8;   // one robot in this lab
+function renderSpecs(){
+  $("#specstrip").innerHTML =
+    `<span class="chip">Reach <b>${M.reach} mm</b></span>`+
+    `<span class="chip">Payload <b>${M.payloadRated} kg</b> rated &middot; <b>${M.payloadMax} kg</b> max</span>`+
+    `<span class="chip">Repeatability <b>&plusmn;${M.rep} mm</b></span>`+
+    `<span class="chip">Mass <b>${M.mass} kg</b></span>`+
+    `<span class="chip">J6 <b>&plusmn;360&deg;</b> @ <b>720&deg;/s</b></span>`+
+    `<span class="chip">${M.controller} &middot; RC+ 7.1.4+</span>`;
+}
+function renderJoints(){
+  const t=$("#jointTable"); if(!t) return;
+  let html="<tr><th>Joint</th><th>Range</th><th>Max speed</th><th>Motor</th><th>Resolution</th></tr>";
+  M.joints.forEach(j=>{
+    html+=`<tr><td class="pl">J${j.n}</td><td>${j.min}&deg; to +${j.max}&deg;</td>`+
+      `<td>${j.speed}&deg;/s</td><td>${j.watt} W</td><td>${j.res}&deg;/pulse</td></tr>`;
+  });
+  t.innerHTML=html;
+  $("#c8Extra").innerHTML=
+    statRow("Model",M.model)+
+    statRow("Max synthetic speed",M.synthetic+" mm/s")+
+    statRow("Allowable moment J4 / J5 / J6",M.moment.j4+" / "+M.moment.j5+" / "+M.moment.j6+" N&middot;m")+
+    statRow("Allowable inertia J4 / J5 / J6",M.inertia.j4+" / "+M.inertia.j5+" / "+M.inertia.j6+" kg&middot;m&sup2;")+
+    statRow("Mass (protection spec)",M.massProtect+" kg")+
+    statRow("Software",M.software);
+}
+
+/* ---------- tabs ---------- */
+$$("#tabs button").forEach(b=>b.addEventListener("click",()=>{
+  $$("#tabs button").forEach(x=>x.classList.remove("active"));
+  $$(".panel").forEach(p=>p.classList.remove("active"));
+  b.classList.add("active"); $("#"+b.dataset.tab).classList.add("active");
+}));
+
+/* ---------- editor with live highlight ---------- */
+const editor=$("#editor"), hi=$("#highlight");
+function syncHi(){ hi.innerHTML = R.highlightAll(editor.value)+"\n"; }
+editor.addEventListener("input",syncHi);
+editor.addEventListener("scroll",()=>{hi.scrollTop=editor.scrollTop;hi.scrollLeft=editor.scrollLeft;});
+editor.addEventListener("keydown",e=>{
+  if(e.key==="Tab"){e.preventDefault();
+    const s=editor.selectionStart,en=editor.selectionEnd;
+    editor.value=editor.value.slice(0,s)+"    "+editor.value.slice(en);
+    editor.selectionStart=editor.selectionEnd=s+4; syncHi();}
+});
+editor.value = R.DEFAULT_PROG; syncHi();
+
+$("#btnClear").onclick=()=>{editor.value="";syncHi();};
+$("#btnCopy").onclick=()=>{navigator.clipboard.writeText(editor.value);flash($("#btnCopy"),"Copied");};
+$("#btnPrg").onclick=()=>R.downloadPrg(editor.value,"Main.prg");
+$("#btnClearCon").onclick=()=>{$("#console").innerHTML="";};
+$("#btnFormat").onclick=()=>{editor.value=tidy(editor.value);syncHi();};
+$("#btnRun").onclick=run;
+
+function flash(btn,txt){const o=btn.textContent;btn.textContent=txt;setTimeout(()=>btn.textContent=o,900);}
+
+/* auto-indent tidy: re-indent by block depth */
+function tidy(code){
+  const opens=/^(function|for|do|select)\b/i, ifOpen=/^if\b.*\bthen\s*$/i;
+  const closes=/^(fend|next|loop|send)\b/i, endif=/^endif\b/i;
+  const mids=/^(else|elseif|case|default)\b/i;
+  let depth=0; const out=[];
+  code.split("\n").forEach(raw=>{
+    const t=raw.trim();
+    if(t===""){out.push("");return;}
+    let d=depth;
+    if(closes.test(t)||endif.test(t)||mids.test(t)) d=Math.max(0,depth-1);
+    out.push("    ".repeat(d)+t);
+    if(opens.test(t)||ifOpen.test(t)){depth++;}
+    else if(closes.test(t)||endif.test(t)){depth=Math.max(0,depth-1);}
+    // mids keep depth (they were dedented for display only)
+  });
+  return out.join("\n");
+}
+
+/* ---------- points table ---------- */
+function renderPts(){
+  const t=$("#ptTable");
+  let html="<tr><th>Pt</th><th>X</th><th>Y</th><th>Z</th><th>U</th><th>V</th><th>W</th><th></th></tr>";
+  Object.keys(points).sort(byPt).forEach(k=>{
+    const p=points[k];
+    html+=`<tr data-pt="${k}"><td class="pl">${k}</td>`+
+      ["x","y","z","u","v","w"].map(a=>`<td><input data-a="${a}" value="${p[a]}"></td>`).join("")+
+      `<td><button class="mini" data-del="${k}" style="background:#3a352e;color:#e8e2d4;padding:3px 7px">&times;</button></td></tr>`;
+  });
+  t.innerHTML=html;
+  t.querySelectorAll("input").forEach(inp=>inp.addEventListener("change",e=>{
+    const tr=e.target.closest("tr");const k=tr.dataset.pt;points[k][e.target.dataset.a]=parseFloat(e.target.value)||0;drawViz();}));
+  t.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{delete points[b.dataset.del];renderPts();drawViz();}));
+}
+function byPt(a,b){return (+a.slice(1))-(+b.slice(1));}
+$("#btnAddPt").onclick=()=>{
+  let n=0;while(("P"+n) in points)n++;points["P"+n]={x:350,y:0,z:200,u:0,v:90,w:0};renderPts();drawViz();};
+$("#btnPtsFromCode").onclick=()=>{
+  const re=/\bP(\d+)\s*=\s*XY\s*\(([^)]*)\)/gi;let m,found=0;
+  while((m=re.exec(editor.value))){const a=m[2].split(",").map(s=>parseFloat(s)||0);
+    points["P"+m[1]]={x:a[0]||0,y:a[1]||0,z:a[2]||0,u:a[3]||0,v:a[4]||0,w:a[5]||0};found++;}
+  renderPts();drawViz();flash($("#btnPtsFromCode"),found+" read");
+};
+
+/* ---------- I/O board ---------- */
+function renderIO(){
+  const ig=$("#inGrid"),og=$("#outGrid");
+  ig.innerHTML="";og.innerHTML="";
+  for(let i=0;i<8;i++){
+    const d=document.createElement("div");d.className="io-bit"+(io.inputs[i]?" on":"");
+    d.innerHTML=`<div>IN</div><div class="n">${i}</div>`;
+    d.onclick=()=>{io.inputs[i]=!io.inputs[i];renderIO();};ig.appendChild(d);
+  }
+  for(let i=0;i<8;i++){
+    const d=document.createElement("div");d.className="io-bit"+(io.outputs[i]?" on":"");
+    d.innerHTML=`<div>OUT</div><div class="n">${i}</div>`;og.appendChild(d);
+  }
+}
+
+/* ---------- run ---------- */
+function run(){
+  const con=$("#console");con.innerHTML="";
+  // sync points from table already in `points`
+  const env=R.runSimulation(editor.value, points, io);
+  env.console.forEach(l=>{const s=document.createElement("div");s.className=l.cls;s.textContent=l.txt;con.appendChild(s);});
+  con.scrollTop=con.scrollHeight;
+  // reflect output states
+  io.outputs = env.outputs.slice(0,16); renderIO();
+  // merge any points defined in code into the table
+  Object.keys(env.points).forEach(k=>{if(!(k in points))points[k]=env.points[k];});
+  renderPts();
+  lastSegs=env.segs; drawViz(env);
+}
+
+/* ---------- canvas: top-down XY ---------- */
+const cv=$("#viz");
+/* generic renderer: any canvas, any segment list, any point set */
+function drawScene(canvas, segs, pts, opts){
+  opts=opts||{};
+  const ctx=canvas.getContext("2d");
+  const R0=M.reach;
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#fbf9f4";ctx.fillRect(0,0,W,H);
+  const list=Object.values(pts||{});
+  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+  const take=(x,y)=>{minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);};
+  list.forEach(p=>take(p.x,p.y));
+  (segs||[]).forEach(s=>{take(s.from.x,s.from.y);take(s.to.x,s.to.y);});
+  if(opts.envelope!==false){take(-R0,-R0);take(R0,R0);take(0,0);}
+  if(minX>maxX){take(-100,-100);take(100,100);}
+  const spanX=Math.max(maxX-minX,1),spanY=Math.max(maxY-minY,1);
+  const pad=opts.pad||46;
+  const s=Math.min((W-2*pad)/spanX,(H-2*pad)/spanY);
+  const ox=(W-spanX*s)/2, oy=(H-spanY*s)/2;
+  const cx=x=>ox+(x-minX)*s, cy=y=>H-oy-(y-minY)*s;
+  // grid
+  const gstep=spanX>400?100:(spanX>80?10:5);
+  ctx.strokeStyle="#ece6d9";ctx.lineWidth=1;
+  for(let g=Math.ceil(minX/gstep)*gstep;g<=maxX;g+=gstep){ctx.beginPath();ctx.moveTo(cx(g),0);ctx.lineTo(cx(g),H);ctx.stroke();}
+  for(let g=Math.ceil(minY/gstep)*gstep;g<=maxY;g+=gstep){ctx.beginPath();ctx.moveTo(0,cy(g));ctx.lineTo(W,cy(g));ctx.stroke();}
+  // envelope + base
+  if(opts.envelope!==false){
+    ctx.beginPath();ctx.arc(cx(0),cy(0),R0*s,0,Math.PI*2);
+    ctx.strokeStyle="#c9bfa8";ctx.setLineDash([6,5]);ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle="#1c1a17";ctx.beginPath();ctx.arc(cx(0),cy(0),5,0,Math.PI*2);ctx.fill();
+    ctx.font="11px 'DM Mono',monospace";ctx.fillStyle="#6b6559";ctx.fillText("base",cx(0)+8,cy(0)-6);
+  }
+  // segments
+  (segs||[]).forEach(seg=>{
+    const dx=Math.abs(seg.from.x-seg.to.x),dy=Math.abs(seg.from.y-seg.to.y);
+    if(dx<1e-6&&dy<1e-6)return; // pure Z move, nothing to draw in top view
+    ctx.beginPath();ctx.moveTo(cx(seg.from.x),cy(seg.from.y));ctx.lineTo(cx(seg.to.x),cy(seg.to.y));
+    if(seg.process){ctx.strokeStyle="#d8541f";ctx.lineWidth=opts.thin?2:3;ctx.setLineDash([]);}
+    else{ctx.strokeStyle="#b8b0a0";ctx.lineWidth=1.5;ctx.setLineDash([4,4]);}
+    ctx.stroke();ctx.setLineDash([]);
+    if(!opts.noArrows) arrowOn(ctx,cx(seg.from.x),cy(seg.from.y),cx(seg.to.x),cy(seg.to.y),seg.process?"#d8541f":"#b8b0a0");
+  });
+  // points with orientation ticks
+  Object.keys(pts||{}).sort(byPt).forEach(k=>{
+    const p=pts[k];const X=cx(p.x),Y=cy(p.y);
+    if(p.u){ // U = roll about tool Z: show as an orientation tick
+      const a=-p.u*Math.PI/180;
+      ctx.beginPath();ctx.moveTo(X,Y);ctx.lineTo(X+14*Math.cos(a),Y+14*Math.sin(a));
+      ctx.strokeStyle="#d8541f";ctx.lineWidth=2;ctx.stroke();
+    }
+    ctx.beginPath();ctx.arc(X,Y,5,0,Math.PI*2);
+    ctx.fillStyle="#7fc4e0";ctx.fill();ctx.strokeStyle="#1c1a17";ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle="#1c1a17";ctx.font="11px 'DM Mono',monospace";ctx.fillText(k,X+7,Y-6);
+  });
+  ctx.fillStyle="#6b6559";ctx.font="10px 'DM Mono',monospace";
+  ctx.fillText(opts.caption||"top view · X right, Y up · mm",10,H-8);
+}
+function arrowOn(ctx,x1,y1,x2,y2,color){
+  const mx=(x1+x2)/2,my=(y1+y2)/2,ang=Math.atan2(y2-y1,x2-x1),a=6;
+  ctx.fillStyle=color;ctx.beginPath();
+  ctx.moveTo(mx,my);ctx.lineTo(mx-a*Math.cos(ang-0.4),my-a*Math.sin(ang-0.4));
+  ctx.lineTo(mx-a*Math.cos(ang+0.4),my-a*Math.sin(ang+0.4));ctx.closePath();ctx.fill();
+}
+/* path length helpers */
+function segLen(s){const dx=s.to.x-s.from.x,dy=s.to.y-s.from.y,dz=s.to.z-s.from.z;return Math.sqrt(dx*dx+dy*dy+dz*dz);}
+function pathStats(segs){
+  let ext=0,tr=0;
+  segs.forEach(s=>{const L=segLen(s); if(s.process)ext+=L; else tr+=L;});
+  return {ext,tr,total:ext+tr};
+}
+function drawViz(env){
+  drawScene(cv, lastSegs, points, {caption:"top view · X right, Y up · mm"});
+}
+
+/* ---------- lessons ---------- */
+const lessonList=$("#lessonList"),lessonBody=$("#lessonBody");
+R.LESSONS.forEach((L,i)=>{
+  const d=document.createElement("div");d.className="lesson-item"+(i===0?" active":"");
+  d.innerHTML=`<div class="num">${String(i+1).padStart(2,"0")}</div><div><h4>${L.t}</h4><p>${L.d}</p></div>`;
+  d.onclick=()=>{$$(".lesson-item").forEach(x=>x.classList.remove("active"));d.classList.add("active");showLesson(i);};
+  lessonList.appendChild(d);
+});
+function showLesson(i){
+  const L=R.LESSONS[i];
+  lessonBody.innerHTML=L.body+
+    `<div class="snippet" style="margin-top:12px">${R.snippet(L.code)}</div>`+
+    `<button class="btn sm loadbtn">Load into Playground &#9654;</button>`+
+    `<p class="warnnote">The simulator runs an offline subset of SPEL+ for previewing motion and I/O. Always dry-run on the real controller at low speed.</p>`;
+  lessonBody.querySelector(".loadbtn").onclick=()=>{
+    editor.value=L.code;syncHi();
+    $$("#tabs button").forEach(x=>x.classList.remove("active"));
+    $$(".panel").forEach(p=>p.classList.remove("active"));
+    $('[data-tab="playground"]').classList.add("active");$("#playground").classList.add("active");
+    $("#btnPtsFromCode").click();
+  };
+}
+showLesson(0);
+
+/* ---------- generator ---------- */
+let curGen="pallet";
+$$("#genTabs button").forEach(b=>b.addEventListener("click",()=>{
+  $$("#genTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+  curGen=b.dataset.gen;buildGenForm();
+}));
+function buildGenForm(){
+  const g=R.GEN[curGen];
+  let html='<div class="form-grid">';
+  g.fields.forEach(f=>{
+    html+=`<div class="field"><label>${f.label}</label>`+
+      `<input type="${f.type}" id="g_${f.id}" value="${f.val}" ${f.type==="number"?'step="any"':''}></div>`;
+  });
+  html+="</div>";
+  $("#genForm").innerHTML=html;
+  $("#genForm").querySelectorAll("input").forEach(inp=>inp.addEventListener("input",emitGen));
+  emitGen();
+}
+function emitGen(){
+  const g=R.GEN[curGen];const v={};
+  g.fields.forEach(f=>{const el=$("#g_"+f.id);v[f.id]=f.type==="number"?parseFloat(el.value):el.value;});
+  const code=g.gen(v);
+  $("#genOut").innerHTML=R.snippet(code);
+  $("#genOut").dataset.code=code;
+}
+$("#genCopy").onclick=()=>{navigator.clipboard.writeText($("#genOut").dataset.code||"");flash($("#genCopy"),"Copied");};
+$("#genToPlay").onclick=()=>{
+  editor.value=$("#genOut").dataset.code||"";syncHi();
+  $$("#tabs button").forEach(x=>x.classList.remove("active"));
+  $$(".panel").forEach(p=>p.classList.remove("active"));
+  $('[data-tab="playground"]').classList.add("active");$("#playground").classList.add("active");
+  $("#btnPtsFromCode").click();
+};
+buildGenForm();
+
+/* ---------- shared: grouped form builder ---------- */
+function buildGroupedForm(container, fields, prefix, onChange, hint){
+  const groups={};
+  fields.forEach(f=>{(groups[f.g]=groups[f.g]||[]).push(f);});
+  let html = hint? `<p class="pastehint">${hint}</p>` : "";
+  Object.keys(groups).forEach(g=>{
+    html+=`<div class="fgroup"><h5>${g}</h5><div class="form-grid">`;
+    groups[g].forEach(f=>{
+      html+=`<div class="field"><label>${f.label}</label>`;
+      if(f.type==="select"){
+        html+=`<select id="${prefix}_${f.id}">`+
+          f.opts.map(o=>`<option value="${o[0]}"${o[0]===f.val?" selected":""}>${o[1]}</option>`).join("")+
+          `</select>`;
+      } else {
+        html+=`<input type="${f.type}" id="${prefix}_${f.id}" value="${f.val}"${f.type==="number"?' step="any"':''}>`;
+      }
+      html+=`</div>`;
+    });
+    html+=`</div></div>`;
+  });
+  container.innerHTML=html;
+  container.querySelectorAll("input,select").forEach(el=>{
+    el.addEventListener("input",onChange); el.addEventListener("change",onChange);
+  });
+}
+function readForm(fields,prefix){
+  const v={};
+  fields.forEach(f=>{const el=$("#"+prefix+"_"+f.id);
+    v[f.id]= f.type==="number" ? (parseFloat(el.value)||0) : el.value;});
+  return v;
+}
+function statRow(label,val){return `<div><span>${label}</span><span>${val}</span></div>`;}
+function rank(sev){return sev==="err"?3:sev==="warn"?2:sev==="ok"?1:0;}
+function sevTag(sev,txt){
+  const col= sev==="err"?"var(--err)": sev==="warn"?"var(--warn)":"var(--ok)";
+  return `<span style="color:${col}">${txt}</span>`;
+}
+function simFor(code){
+  return R.runSimulation(code,{},{inputs:new Array(16).fill(true),outputs:new Array(16).fill(false)});
+}
+function toPlayground(code){
+  editor.value=code;syncHi();
+  $$("#tabs button").forEach(x=>x.classList.remove("active"));
+  $$(".panel").forEach(p=>p.classList.remove("active"));
+  $('[data-tab="playground"]').classList.add("active");$("#playground").classList.add("active");
+  $("#btnPtsFromCode").click(); run();
+}
+
+/* ---------- BIOPRINT tab ---------- */
+const BIO_HINT='In EPSON RC+: <b>Project &rarr; New</b>, open <b>Main.prg</b>, paste, then <b>F5</b> to build and run. Teach the barrel tip with TLSet before the first print.';
+function emitBio(){
+  const v=readForm(R.BIOPRINT.fields,"bio");
+  const code=R.BIOPRINT.gen(v);
+  $("#bioOut").innerHTML=R.snippet(code); $("#bioOut").dataset.code=code;
+  const env=simFor(code);
+  const st=pathStats(env.segs);
+  const strandsX=Math.floor(v.h/v.pitch)+1, strandsY=Math.floor(v.w/v.pitch)+1;
+  const secs=st.ext/Math.max(v.feed,0.001);
+  drawScene($("#bioViz"),env.segs,{},{envelope:false,thin:true,noArrows:true,pad:30,
+    caption:"scaffold footprint · mm"});
+  // check every scaffold corner against the C8 envelope
+  const corners=[[v.x0,v.y0],[v.x0+v.w,v.y0],[v.x0,v.y0+v.h],[v.x0+v.w,v.y0+v.h]];
+  let worst=null;
+  corners.forEach(c=>{const r=R.checkReach(c[0],c[1]);
+    if(!worst || rank(r.sev)>rank(worst.sev)) worst=r;});
+  const pay=R.checkPayload(v.weight);
+  $("#bioStats").innerHTML=
+    statRow("Strands / layer",v.pattern==="lattice"?(strandsX+" &times; / "+strandsY+" &divide;"):strandsX)+
+    statRow("Total layers",v.layers)+
+    statRow("Build height",(v.layers*v.layerH).toFixed(2)+" mm")+
+    statRow("Extruded path",st.ext.toFixed(0)+" mm")+
+    statRow("Travel path",st.tr.toFixed(0)+" mm")+
+    statRow("Extrusion time (rough)",fmtTime(secs))+
+    statRow("Strand / needle ratio",(v.pitch/Math.max(v.needle,0.001)).toFixed(1)+" &times;")+
+    statRow("Scaffold in envelope",sevTag(worst.sev,worst.sev==="ok"?"all 4 corners ok":worst.msg))+
+    statRow("Barrel payload",pay?sevTag(pay.sev,v.weight+" kg, over rated"):sevTag("ok",v.weight+" kg ok"));
+}
+function fmtTime(s){if(!isFinite(s))return "--";const m=Math.floor(s/60);return m?(m+" min "+Math.round(s%60)+" s"):(Math.round(s)+" s");}
+buildGroupedForm($("#bioForm"),R.BIOPRINT.fields,"bio",emitBio,BIO_HINT);
+emitBio();
+$("#bioCopy").onclick=()=>{navigator.clipboard.writeText($("#bioOut").dataset.code||"");flash($("#bioCopy"),"Copied");};
+$("#bioPrg").onclick=()=>R.downloadPrg($("#bioOut").dataset.code||"","Main.prg");
+$("#bioToPlay").onclick=()=>toPlayground($("#bioOut").dataset.code||"");
+
+/* ---------- PICK & PLACE tab ---------- */
+const PNP_HINT='In EPSON RC+: paste into <b>Main.prg</b>, teach P1 / P2 in <b>Robot Manager &rarr; Jog &amp; Teach</b>, then run at low speed once.';
+function emitPnp(){
+  const v=readForm(R.PICKPLACE.fields,"pnp");
+  const code=R.PICKPLACE.gen(v);
+  $("#pnpOut").innerHTML=R.snippet(code); $("#pnpOut").dataset.code=code;
+  // preview always uses coordinates so the path is drawable
+  const pts={P1:{x:v.px,y:v.py,z:v.pz,u:0,v:90,w:0},P2:{x:v.qx,y:v.qy,z:v.qz,u:v.angle,v:90,w:0}};
+  const env=R.runSimulation(code,pts,{inputs:new Array(16).fill(true),outputs:new Array(16).fill(false)});
+  const st=pathStats(env.segs);
+  drawScene($("#pnpViz"),env.segs,pts,{pad:34,caption:"top view · orientation tick = U · mm"});
+  const rp=R.checkReach(v.px,v.py), rq=R.checkReach(v.qx,v.qy);
+  const worst = rank(rp.sev)>=rank(rq.sev)?rp:rq;
+  const pay=R.checkPayload(v.weight);
+  const j6=R.checkJoint(6, v.angle);
+  $("#pnpStats").innerHTML=
+    statRow("Cycles",v.count)+
+    statRow("Rotation",v.angle+"&deg; via "+(v.method==="u"?"tool U":"joint 6"))+
+    statRow("Carrying path",st.ext.toFixed(0)+" mm")+
+    statRow("Empty travel",st.tr.toFixed(0)+" mm")+
+    statRow("Pick radius",rp.d.toFixed(0)+" mm of "+M.reach+" mm")+
+    statRow("Place radius",rq.d.toFixed(0)+" mm of "+M.reach+" mm")+
+    statRow("Envelope",sevTag(worst.sev,worst.sev==="ok"?"both points ok":worst.msg))+
+    statRow("Payload",pay?sevTag(pay.sev,v.weight+" kg, over rated"):sevTag("ok",v.weight+" kg ok"))+
+    (j6? statRow("J6 range",sevTag("err","outside &plusmn;360&deg;")) :
+      (Math.abs(v.angle)>180? statRow("J6Flag",sevTag("warn","required past 180&deg;")) :
+        statRow("J6 range",sevTag("ok",v.angle+"&deg; within &plusmn;360&deg;"))));
+}
+buildGroupedForm($("#pnpForm"),R.PICKPLACE.fields,"pnp",emitPnp,PNP_HINT);
+emitPnp();
+$("#pnpCopy").onclick=()=>{navigator.clipboard.writeText($("#pnpOut").dataset.code||"");flash($("#pnpCopy"),"Copied");};
+$("#pnpPrg").onclick=()=>R.downloadPrg($("#pnpOut").dataset.code||"","Main.prg");
+$("#pnpToPlay").onclick=()=>toPlayground($("#pnpOut").dataset.code||"");
+
+/* ---------- linter ---------- */
+const lintEd=$("#lintEditor"),lintHi=$("#lintHi");
+function syncLint(){lintHi.innerHTML=R.highlightAll(lintEd.value)+"\n";}
+lintEd.addEventListener("input",syncLint);
+lintEd.addEventListener("scroll",()=>{lintHi.scrollTop=lintEd.scrollTop;lintHi.scrollLeft=lintEd.scrollLeft;});
+lintEd.value=`Function main
+    Speed 120
+    Go P1
+    Jump P5
+    If Sw(0) = 1 Then
+        On 0
+    Go P2
+Fend`;
+syncLint();
+$("#lintFromPlay").onclick=()=>{lintEd.value=editor.value;syncLint();};
+$("#lintRun").onclick=runLint;
+function runLint(){
+  const diags=R.lint(lintEd.value);const out=$("#diagOut");
+  if(diags.length===0){out.innerHTML='<div class="clean">&#10003; No issues found.</div>';return;}
+  out.innerHTML=diags.map(d=>
+    `<div class="diag ${d.sev}"><span class="sev">${d.sev.toUpperCase()}</span>`+
+    `<div class="msg">${d.msg}<div class="rule">${d.rule}</div></div>`+
+    `<span class="lnk" data-ln="${d.ln}">line ${d.ln}</span></div>`).join("");
+  out.querySelectorAll(".lnk").forEach(a=>a.onclick=()=>jumpTo(lintEd,+a.dataset.ln));
+}
+function jumpTo(ta,ln){
+  const lines=ta.value.split("\n");let pos=0;for(let i=0;i<ln-1&&i<lines.length;i++)pos+=lines[i].length+1;
+  ta.focus();ta.selectionStart=pos;ta.selectionEnd=pos+(lines[ln-1]||"").length;
+  const lh=parseFloat(getComputedStyle(ta).lineHeight)||18;ta.scrollTop=(ln-3)*lh;lintHi.scrollTop=ta.scrollTop;
+}
+runLint();
+
+/* ---------- reference ---------- */
+function renderRef(filter){
+  filter=(filter||"").toLowerCase();
+  const cats={};
+  R.REFERENCE.forEach(([cat,sig,desc])=>{
+    const hay=(sig+" "+desc+" "+cat).toLowerCase();
+    if(filter&&!hay.includes(filter))return;
+    (cats[cat]=cats[cat]||[]).push([sig,desc]);
+  });
+  let html="";
+  Object.keys(cats).forEach(cat=>{
+    html+=`<div class="ref-cat"><h4>${cat}</h4>`;
+    cats[cat].forEach(([sig,desc])=>{
+      const s=sig.replace(/^(\w+)/,'<b>$1</b>');
+      html+=`<div class="ref-item"><div class="sig">${s}</div><div class="desc">${desc}</div></div>`;
+    });
+    html+="</div>";
+  });
+  $("#refOut").innerHTML=html||'<p class="sub">No commands match that search.</p>';
+}
+$("#refSearch").addEventListener("input",e=>renderRef(e.target.value));
+renderRef("");
+
+/* ---------- init ---------- */
+renderSpecs();renderJoints();renderPts();renderIO();drawViz();
+})();
+
+</script>
+</body>
+</html>
