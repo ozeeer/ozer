@@ -17,7 +17,7 @@
 <!-- social preview -->
 <meta property="og:title" content="O23R · Ozer Yilmaz · Research Engineer">
 <meta property="og:description" content="I design the printers, reactors, and software that turn living cells into structure.">
-<meta property="og:url" content="https://O23R.com/">
+<meta property="og:url" content="https://o23r.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="O23R">
 <meta name="twitter:card" content="summary">
@@ -27,7 +27,7 @@
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "o23r",
+  "name": "O23R",
   "alternateName": "Ozer Yilmaz",
   "url": "https://o23r.com/"
 }
@@ -35,7 +35,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#060607;
@@ -54,6 +54,7 @@
   --glow-a:rgba(150,160,255,.16);
   --glow-b:rgba(120,200,255,.12);
   --glow-c:rgba(255,255,255,.05);
+  --accent:#06bdfe;
   --nav-bg:rgba(8,8,10,.6);
   --card-grad:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.01));
 }
@@ -74,6 +75,7 @@
   --glow-a:rgba(120,140,255,.14);
   --glow-b:rgba(80,180,255,.10);
   --glow-c:rgba(0,0,0,.03);
+  --accent:#0a9fe0;
   --nav-bg:rgba(251,251,253,.66);
   --card-grad:linear-gradient(160deg,rgba(0,0,0,.04),rgba(0,0,0,.01));
 }
@@ -98,8 +100,8 @@ a{color:inherit}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
   padding:16px clamp(18px,5vw,56px);transition:background .45s,border-color .45s,backdrop-filter .45s;border-bottom:1px solid transparent}
 nav.scrolled{background:var(--nav-bg);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-bottom:1px solid var(--line)}
-.brand{font-weight:700;font-size:18px;letter-spacing:-.04em;display:flex;align-items:center;gap:9px}
-.brand .mk{width:22px;height:22px}
+.brand{font-family:"Orbitron",-apple-system,system-ui,sans-serif;font-weight:700;font-size:16px;letter-spacing:.04em;text-transform:uppercase}
+.brand .wm-accent{color:var(--accent)}
 .nav-links{display:flex;gap:clamp(12px,1.8vw,26px);align-items:center}
 .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:-.01em;transition:color .25s;position:relative}
 .nav-links a:hover{color:var(--text)}
@@ -121,10 +123,10 @@ section{padding:clamp(80px,13vh,170px) clamp(18px,5vw,56px);position:relative}
 .hero{min-height:100svh;display:grid;grid-template-rows:1fr auto;padding-top:120px;position:relative;overflow:hidden}
 .hero-core{display:flex;flex-direction:column;justify-content:center;position:relative;z-index:4}
 .hero-eyebrow{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--silver-3);margin-bottom:24px;opacity:0;animation:fade .9s .1s forwards}
-.wordmark{font-weight:900;font-size:clamp(88px,23vw,320px);line-height:.82;letter-spacing:-.06em;
-  background:linear-gradient(178deg,var(--silver-1) 18%,var(--silver-2) 60%,var(--silver-3) 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
+.wordmark{font-family:"Orbitron",-apple-system,system-ui,sans-serif;font-weight:800;text-transform:uppercase;
+  font-size:clamp(58px,15vw,188px);line-height:1;letter-spacing:.01em;color:var(--text);
   opacity:0;animation:rise 1.1s .2s cubic-bezier(.2,.7,.2,1) forwards;transform:translateY(34px)}
+.wordmark .wm-accent{color:var(--accent)}
 .role-line{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-top:14px;opacity:0;animation:rise 1.1s .38s cubic-bezier(.2,.7,.2,1) forwards;transform:translateY(28px)}
 .role-line .role{font-weight:300;font-size:clamp(26px,5.4vw,64px);letter-spacing:-.04em;color:var(--text)}
 .role-line .role b{font-weight:600}
@@ -292,10 +294,7 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
 <div class="grain"></div>
 
 <nav id="nav">
-  <div class="brand">
-    <svg class="mk" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.4"/><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="1" opacity=".4"/><circle cx="12" cy="12" r="3.4" fill="currentColor"/></svg>
-    Ozer
-  </div>
+  <div class="brand">O<span class="wm-accent">z</span>er</div>
   <div class="nav-links">
     <a href="#work">Work</a>
     <a href="#about">About</a>
@@ -327,7 +326,7 @@ footer{padding:30px clamp(18px,5vw,56px);border-top:1px solid var(--line);displa
     <g id="nodes" fill="var(--silver-1)"></g>
   </svg>
   <div class="hero-core">
-    <div class="wordmark">Ozer</div>
+    <div class="wordmark">O<span class="wm-accent">z</span>er</div>
     <div class="role-line">
       <div class="role"><b>Research</b> Engineer</div>
       <div class="deg">PhD Candidate</div>
