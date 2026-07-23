@@ -448,28 +448,26 @@ body.theme-glitch::before{
     <div class="welcome-manifesto">
       <h2 class="h2">Welcome to my digital space</h2>
       <p class="body-large">
-        I work where living material meets machines that were never designed to hold it.
-        Cells behave like a fluid with opinions, and most of my week is a negotiation with them
-        through pressure lines, stepper motors and code written far too late at night. This site
-        is the unedited log of that negotiation: builds, failures, and the rare thing that worked
-        on the first try.
+        I build the machines that biology gets printed with, and the software that runs them.
+        Most of my week goes to pressure lines, stepper motors, cell culture, and code that has to
+        keep working overnight. This page is where I keep notes on that: what I am building,
+        what broke, and what it taught me.
       </p>
 
       <h3 class="h3">About me</h3>
       <p class="body-large">
-        Born in Turkey, trained as a chemical engineer, printer mechanic by practice.<br>
-        Living in State College, PA, usually somewhere between a biosafety cabinet and an oscilloscope.
+        Born in Turkey, trained as a chemical engineer, now working on bioprinting hardware.<br>
+        Living in State College, PA. Outside the lab, mostly hiking.
       </p>
 
       <div class="manifesto-grid">
         <div class="manifesto-item">
           <h3 class="h3">I believe in...</h3>
           <ul>
-            <li>A tool you build in one afternoon beats a workflow you tolerate for a year</li>
-            <li>If the protocol only works when you run it, it is not a protocol yet</li>
-            <li>Everything the lab needs should be one URL and zero installs away</li>
-            <li>Hardware tells you the truth that simulation was being polite about</li>
-            <li>Ship the whole file, snippets are somebody else's homework</li>
+            <li>A small tool built in an afternoon is often worth more than a workflow everyone puts up with</li>
+            <li>A protocol is finished when someone else can run it and get the same result</li>
+            <li>Lab software should open in a browser, with nothing to install</li>
+            <li>Building the hardware surfaces problems that simulation does not</li>
           </ul>
         </div>
         <div class="manifesto-item">
@@ -477,7 +475,7 @@ body.theme-glitch::before{
           <ul>
             <li>A printhead that changes its own cross section mid print, six bladders on a pneumatic rail <span style="color:var(--neon-pink)">// SHAPE_SHIFTING_NOZZLE // IN_PROGRESS //</span></li>
             <li>Path planning and SPEL+ generation for a six axis arm, in one file <span style="color:var(--neon-pink)">// OZ_ROBOT_STUDIO // IN_PROGRESS //</span></li>
-            <li>Browser control for the bioprinter over Web Serial, no install, no license <span style="color:var(--neon-pink)">// OZ_BIOPRINTER // RUNNING //</span></li>
+            <li>Browser based control for the bioprinter over Web Serial <span style="color:var(--neon-pink)">// OZ_BIOPRINTER // RUNNING //</span></li>
             <li>Raw optical coherence scans turned into corrected organoid volumes <span style="color:var(--neon-pink)">// OCT_PIPELINE // IN_PROGRESS //</span></li>
             <li>Printing a whole construct in one rotation instead of layer by layer <span style="color:var(--neon-pink)">// CAL_VOLUMETRIC // PLANNING //</span></li>
             <li>A round display with cartoon robot eyes that blink while experiments run <span style="color:var(--neon-pink)">// DESK_BUDDY // HIBERNATING //</span></li>
@@ -502,12 +500,12 @@ body.theme-glitch::before{
         </div>
         <div class="fragment-body collapsible-content" style="display:none">
           <div class="fragment-divider">─────────────────────────</div>
-          <p>Five relays, two power rails, and one confident assumption that the sensors I ordered covered the range I needed. They did not. The bladders were happy between 0.15 and 0.8 MPa, the sensors gave up well below that, and for two weeks every reading was a flat line that looked exactly like failure.</p>
-          <p><span class="highlight-pink">When the data is suspiciously boring, suspect the instrument before the physics.</span></p>
-          <p>Correct sensors arrived. First inflation, all six lobes even, and the extruded filament changed width without pausing the print. That one second of video is the entire thesis.</p>
+          <p>Five relays, two power rails, and one assumption I did not check: that the sensors I ordered covered the range I needed. They did not. The bladders operate between 0.15 and 0.8 MPa and the sensors topped out well below that, so for two weeks every reading was a flat line that looked like a failed design.</p>
+          <p><span class="highlight-pink">When the data looks flat, check the instrument before doubting the design.</span></p>
+          <p>With the correct sensors, the first inflation was even across all six lobes, and the extruded filament changed width without pausing the print. That is the behaviour the whole design was aiming for.</p>
           <div class="fragment-reflection">
             <span class="fragment-tag">// reflection</span>
-            <p>Two weeks lost to a number I never questioned. The instrument is part of the experiment.</p>
+            <p>Two weeks lost to a spec I never verified. The instrument is part of the experiment.</p>
           </div>
         </div>
       </article>
@@ -520,9 +518,9 @@ body.theme-glitch::before{
         </div>
         <div class="fragment-body collapsible-content" style="display:none">
           <div class="fragment-divider">─────────────────────────</div>
-          <p>A lab tool gets about ninety seconds to prove itself. If someone has to install a runtime, make an account, or read a README, the tool is dead and the shared spreadsheet wins by default.</p>
-          <p>So: one file, opens in any browser, works offline, syncs when it can reach the network. Booking the biosafety cabinet, counting cells on a hemocytometer, tracking packages, scheduling duties, generating scaffold paths. <em>Same recipe, different internals.</em></p>
-          <p>The surprise is that the constraint makes them better. No build step means nothing to rot. Two years later they still open.</p>
+          <p>A lab tool has a short window to prove itself. If a colleague has to install a runtime, create an account, or read a README first, most people go back to the shared spreadsheet.</p>
+          <p>So: one file, opens in any browser, works offline, syncs when it can reach the network. Booking the biosafety cabinet, counting cells on a hemocytometer, tracking packages, scheduling duties, generating scaffold paths. <em>Same approach, different internals.</em></p>
+          <p>The constraint turns out to help. With no build step there is nothing to maintain, and the tools still open two years later.</p>
         </div>
       </article>
 
@@ -534,8 +532,8 @@ body.theme-glitch::before{
         </div>
         <div class="fragment-body collapsible-content" style="display:none">
           <div class="fragment-divider">─────────────────────────</div>
-          <p>Changed one firmware setting, rebooted, and met a recovery key prompt for a key I had filed somewhere responsible and immediately forgotten. An entire evening vanished into EFI partitions.</p>
-          <p>For the next person, and for future me: <code>suspend BitLocker before touching Secure Boot</code>. One command, one minute, saves the whole night.</p>
+          <p>Changed one firmware setting, rebooted, and got a recovery key prompt for a key I had saved somewhere sensible and then forgotten. The rest of the evening went into EFI partitions.</p>
+          <p>Noting it for next time: <code>suspend BitLocker before changing Secure Boot</code>. One command, one minute.</p>
         </div>
       </article>
 
@@ -547,7 +545,7 @@ body.theme-glitch::before{
         </div>
         <div class="fragment-body collapsible-content" style="display:none">
           <div class="fragment-divider">─────────────────────────</div>
-          <p>Every print starts the same way. Arm the heads, watch the rail, wait for the number to settle.</p>
+          <p>Every print starts the same way: arm the heads, watch the rail, wait for the pressure to settle.</p>
           <div class="gate-entrance">
             <button class="gate-knock" onclick="armHeads(this)">
               <span class="gate-text">ARM BOTH PRINTHEADS</span>
@@ -565,7 +563,7 @@ body.theme-glitch::before{
   </section>
 
   <footer class="footer content-section">
-    <p>// BUILT WITH SOLENOIDS, GELATIN AND STUBBORNNESS //</p>
+    <p>// BUILT WITH SOLENOIDS, GELATIN AND A LOT OF FAILED PRINTS //</p>
     <p class="small">SYSTEM.MOOD: <span id="currentMood">EXTRUDING</span></p>
     <p class="small">EXIT_PORTAL: // <a href="home.html">o23r.com/home</a> //</p>
   </footer>
@@ -596,7 +594,7 @@ function armHeads(btn){
   headsArmed=true;
   document.getElementById('s1').textContent='ARMED';
   document.getElementById('s2').textContent='ARMED';
-  document.getElementById('gateOut').textContent='M760 / M762 sent.\nRail holding at 0.42 MPa. Ready when you are.';
+  document.getElementById('gateOut').textContent='M760 / M762 sent.\nRail holding at 0.42 MPa.';
   btn.querySelector('.gate-text').textContent='VENT AND STAND DOWN';
 }
 
