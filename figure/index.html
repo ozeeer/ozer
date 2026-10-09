@@ -1,0 +1,781 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>O2 Figure Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: three-pane studio — icon library | white artboard on a stage | inspector. Palette borrows H&E stain: eosin pink accent, hematoxylin violet neutrals. */
+:root{
+  --bg:#f3f1f7; --panel:#ffffff; --ink:#231d33; --muted:#6c6582; --line:#e1dcea; --hover:#f1edf8;
+  --accent:#c8366e; --accent-soft:#fbe6ee; --accent-ink:#ffffff; --hema:#4b3f8f; --stage:#e7e3ee; --o2:#06bdfe; --o2-o:#15131c; --shadow:rgba(35,29,51,.14);
+  --f-ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#16131d; --panel:#1f1b29; --ink:#ece8f4; --muted:#a49eb7; --line:#332d42; --hover:#2a2537;
+  --accent:#ef6a9b; --accent-soft:#3a2130; --accent-ink:#1a0f15; --hema:#a596ef; --stage:#100e15; --o2:#06bdfe; --o2-o:#ffffff; --shadow:rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16131d; --panel:#1f1b29; --ink:#ece8f4; --muted:#a49eb7; --line:#332d42; --hover:#2a2537;
+  --accent:#ef6a9b; --accent-soft:#3a2130; --accent-ink:#1a0f15; --hema:#a596ef; --stage:#100e15; --o2:#06bdfe; --o2-o:#ffffff; --shadow:rgba(0,0,0,.5); color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{height:100%;display:grid;grid-template-columns:248px minmax(0,1fr) 272px;grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"top top top" "lib stage insp" "foot foot foot"}
+.top{grid-area:top;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
+.brand{display:flex;align-items:center;gap:8px;margin-right:6px}
+.brand b{font-family:var(--f-display);font-size:18px;letter-spacing:-.01em;white-space:nowrap}
+.brand b span{color:var(--accent)}
+.o2{font-family:"Orbitron","Bricolage Grotesque",system-ui,sans-serif;font-weight:900;font-size:20px;letter-spacing:.04em;line-height:1}
+.o2-o{color:var(--o2-o)}.o2-2{color:var(--o2)}
+.grp{display:flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--line);border-radius:9px}
+.tb{display:inline-flex;align-items:center;gap:6px;height:32px;min-width:32px;justify-content:center;padding:0 8px;border:0;background:transparent;border-radius:7px;font-weight:500}
+.tb:hover{background:var(--hover)}
+.tb[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.tb svg{width:17px;height:17px;flex:none}
+.tb:disabled{opacity:.35;cursor:default;background:transparent}
+.zoom{font-family:var(--f-mono);font-size:12px;min-width:48px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+.primary{background:var(--accent);color:var(--accent-ink);font-weight:600;padding:0 12px}
+.primary:hover{background:var(--accent);filter:brightness(1.07)}
+.pop{position:absolute;top:calc(100% + 6px);right:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px var(--shadow);padding:8px;display:grid;gap:2px;min-width:230px;z-index:20}
+.pop .tb{justify-content:flex-start;width:100%;height:auto;padding:8px 10px;text-align:left;flex-direction:column;align-items:flex-start;gap:1px}
+.pop .tb small{color:var(--muted);font-weight:400;font-size:12px}
+.pop .row{display:flex;gap:6px;align-items:center;padding:6px 10px;color:var(--muted);font-size:12px}
+.pop select{padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.confirm{display:flex;gap:8px;align-items:center;padding:6px 10px}
+
+/* library */
+.lib{grid-area:lib;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.lib-head{padding:12px 14px 8px;display:grid;gap:8px}
+.lib-head h2,.insp h2{font-family:var(--f-display);font-size:15px;margin:0;letter-spacing:-.005em}
+.search{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.lib-body{overflow:auto;padding:0 10px 16px;min-height:0}
+.cat{margin:12px 4px 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.items{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.item{border:1px solid transparent;background:transparent;border-radius:10px;padding:6px 2px 5px;display:grid;justify-items:center;gap:3px;min-width:0}
+.item:hover{background:var(--hover);border-color:var(--line)}
+.item svg{width:48px;height:48px}
+.item span{font-size:11px;line-height:1.2;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.empty-lib{color:var(--muted);padding:12px 4px;font-size:13px}
+
+/* stage */
+.stage{grid-area:stage;background:var(--stage);overflow:auto;display:flex;padding:24px;min-height:0;position:relative}
+#svg{margin:auto;flex:none;background:#fff;box-shadow:0 1px 2px var(--shadow),0 10px 40px var(--shadow);touch-action:none;display:block;user-select:none;-webkit-user-select:none}
+#svg.transparent{background:repeating-conic-gradient(#e8e8ee 0 25%,#fff 0 50%) 0 0/20px 20px}
+#svg.tool-arrow,#svg.tool-text,#svg.tool-brush{cursor:crosshair}
+.item.on{background:var(--accent-soft);border-color:var(--accent)}
+.item.on span{color:var(--accent);font-weight:600}
+#svg [data-id]{cursor:move}
+.ov-box{fill:none;stroke:var(--accent);stroke-dasharray:5 4}
+.ov-line{stroke:var(--accent)}
+.hd{fill:var(--panel);stroke:var(--accent);cursor:pointer}
+.hd.res{cursor:nwse-resize}.hd.rot{cursor:grab}
+.hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;pointer-events:none;white-space:nowrap}
+
+/* inspector */
+.insp{grid-area:insp;background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:14px 16px 24px;min-height:0;display:grid;align-content:start;gap:14px}
+.insp-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.kind{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.field{display:grid;gap:6px}
+.lab{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sw{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.swatch{width:22px;height:22px;border-radius:6px;border:1px solid rgba(0,0,0,.12);padding:0}
+.swatch.on{outline:2px solid var(--ink);outline-offset:1px}
+input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.num{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.num span{font-family:var(--f-mono);font-size:11px;color:var(--muted);padding:0 7px}
+.num input{border:0;background:transparent;padding:6px 6px 6px 0;width:100%;min-width:0;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.insp textarea{width:100%;min-height:72px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);line-height:1.4}
+.insp select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.range{display:flex;align-items:center;gap:8px}
+.range input{flex:1;accent-color:var(--accent)}
+.range output{font-family:var(--f-mono);font-size:12px;width:38px;text-align:right;color:var(--muted)}
+.check{display:flex;align-items:center;gap:8px;font-size:13px}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.btnrow{display:flex;flex-wrap:wrap;gap:6px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500}
+.btn:hover{background:var(--hover)}
+.btn.danger{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:transparent;padding:6px 4px;font-size:12px}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:12.5px;color:var(--muted);margin:0}
+.keys kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:var(--ink);background:var(--bg);white-space:nowrap}
+.note{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0}
+hr.sep{border:0;border-top:1px solid var(--line);margin:0}
+
+/* modal + toast */
+.modal{position:fixed;inset:0;background:rgba(15,12,22,.5);display:grid;place-items:center;padding:16px;z-index:50}
+.sheet{background:var(--panel);border-radius:14px;max-width:min(720px,100%);width:100%;max-height:90%;overflow:auto;padding:18px;display:grid;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.sheet h3{margin:0;font-family:var(--f-display);font-size:17px}
+.sheet img{max-width:100%;border:1px solid var(--line);border-radius:8px;background:repeating-conic-gradient(#ececf1 0 25%,#fff 0 50%) 0 0/16px 16px}
+.sheet textarea{width:100%;height:220px;font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg)}
+.tb.ai{color:var(--hema);font-weight:600;background:color-mix(in srgb,var(--hema) 10%,transparent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:5px 11px;font-size:12.5px;text-align:left}
+.chip:hover{border-color:var(--hema)}
+.status{font-size:13px;color:var(--hema);min-height:1.4em;font-variant-numeric:tabular-nums}
+.btn.primary-btn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn:disabled,.seg button:disabled{opacity:.5;cursor:default}
+.sheet #aiprompt{height:96px;font-family:var(--f-ui);font-size:14px;line-height:1.45}
+.gen{display:grid;gap:6px;padding:10px;border-radius:10px;background:color-mix(in srgb,var(--hema) 8%,var(--panel));border:1px solid color-mix(in srgb,var(--hema) 22%,var(--line))}
+.gen-lab{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--hema)}
+.gen-lab svg{width:15px;height:15px}
+.gen-row{display:flex;gap:6px}
+.gen-row input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.gen-row button{border:0;border-radius:8px;padding:0 11px;background:var(--hema);color:var(--panel);font-weight:600;font-size:13px}
+.gen-status{font-size:12px;color:var(--muted);line-height:1.35}
+.gen-status:empty{display:none}
+.gen-status.err{color:var(--accent)}
+.foot{grid-area:foot;text-align:center;padding:7px 16px calc(7px + env(safe-area-inset-bottom,0px));font-size:11px;letter-spacing:.04em;color:var(--muted);background:var(--panel);border-top:1px solid var(--line)}
+.footer-link{position:relative;display:inline-block;color:var(--muted);text-decoration:none;font-weight:500;padding-bottom:2px;transition:color .25s ease,letter-spacing .25s ease}
+.footer-link::after{content:"";position:absolute;left:0;bottom:0;width:100%;height:1.5px;background:linear-gradient(90deg,var(--o2),var(--accent));transform:scaleX(0);transform-origin:right center;transition:transform .32s cubic-bezier(.65,0,.35,1)}
+.footer-link:hover,.footer-link:focus-visible{color:var(--o2);letter-spacing:.07em}
+.footer-link:hover::after,.footer-link:focus-visible::after{transform:scaleX(1);transform-origin:left center}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:9px 16px;border-radius:999px;font-size:13px;z-index:60;box-shadow:0 8px 24px var(--shadow)}
+
+@media (max-width:900px){
+  html,body{height:auto}
+  .app{display:flex;flex-direction:column;height:auto}
+  .top{position:sticky;top:env(safe-area-inset-top,0px);padding:8px 12px}
+  .brand b{font-size:16px}
+  .stage{height:56vh;padding:14px}
+  .lib{border-right:0;border-top:1px solid var(--line)}
+  .lib-body{max-height:300px}
+  .items{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
+  .insp{border-left:0;border-top:1px solid var(--line);padding-inline:16px}
+  .hint{display:none}
+  .pop{right:12px;left:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="o2" aria-label="O2"><span class="o2-o">O</span><span class="o2-2">2</span></span>
+      <b>Figure Studio</b>
+    </div>
+    <div class="grp" role="group" aria-label="Tools">
+      <button class="tb" id="t-select" data-tool="select" title="Select and move (V)" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 3l14 8-6 1.5L10 19z"/></svg></button>
+      <button class="tb" id="t-arrow" data-tool="arrow" title="Draw arrow (A)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20L19 5M11 5h8v8"/></svg></button>
+      <button class="tb" id="t-brush" data-tool="brush" title="Brush (B)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3L10 13"/><path d="M10 13c-3 0-5 2-5 4.5S3 21 3 21s5 .5 7-1.5 2-4.5 0-6.5z"/></svg></button>
+      <button class="tb" id="t-text" data-tool="text" title="Add text (T)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></button>
+    </div>
+    <div class="grp">
+      <button class="tb" id="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+      <button class="tb" id="redo" title="Redo (Ctrl+Shift+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
+    </div>
+    <div class="grp">
+      <button class="tb" id="zout" title="Zoom out">−</button>
+      <span class="zoom" id="zlabel">100%</span>
+      <button class="tb" id="zin" title="Zoom in">+</button>
+      <button class="tb" id="zfit" title="Fit to window">Fit</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="tb" id="addimg" title="Place a micrograph or photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>Image</button>
+    <button class="tb" id="newbtn">New</button>
+    <button class="tb" id="filebtn">Project</button>
+    <button class="tb primary" id="exportbtn">Export</button>
+    <div class="pop" id="exportpop" hidden>
+      <button class="tb" data-export="png">PNG image<small>For slides and posters</small></button>
+      <div class="row">Scale <select id="pngscale"><option value="1">1×</option><option value="2">2×</option><option value="3" selected>3×</option><option value="4">4×</option></select> <span id="pngpx"></span></div>
+      <button class="tb" data-export="svg">SVG vector<small>Editable in Illustrator or Inkscape</small></button>
+    </div>
+    <div class="pop" id="filepop" hidden>
+      <button class="tb" id="savejson">Save project<small>.json you can reopen here later</small></button>
+      <button class="tb" id="openjson">Open project<small>Load a saved .json</small></button>
+      <button class="tb" id="loadsample">Load example figure<small>Bioprinting workflow</small></button>
+    </div>
+    <div class="pop" id="newpop" hidden>
+      <div class="confirm"><span>Clear the canvas?</span></div>
+      <div class="confirm"><button class="btn danger" id="newyes">Clear canvas</button><button class="btn" id="newno">Cancel</button></div>
+      <p class="note" style="padding:0 10px 6px">Undo brings it back.</p>
+    </div>
+    <input type="file" id="imgfile" accept="image/*" hidden>
+    <input type="file" id="jsonfile" accept=".json,application/json" hidden>
+  </header>
+
+  <aside class="lib" aria-label="Icon library">
+    <div class="lib-head">
+      <h2>Library</h2>
+      <div class="gen" id="genbox" hidden>
+        <label class="gen-lab" for="genin"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 2l1.9 5.6L18.5 9.5l-5.6 1.9L11 17l-1.9-5.6L3.5 9.5l5.6-1.9z"/><path d="M19 13l.9 2.6 2.6.9-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9z"/></svg>Generate an icon</label>
+        <div class="gen-row"><input id="genin" type="text" placeholder="e.g. peristaltic pump" autocomplete="off"><button id="gengo">Generate</button></div>
+        <div class="gen-status" id="genstatus" aria-live="polite"></div>
+      </div>
+      <input class="search" id="search" type="search" placeholder="Search icons — nozzle, organoid…" autocomplete="off">
+    </div>
+    <div class="lib-body" id="libbody"></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg">
+      <g id="bggrid"></g>
+      <g id="content"></g>
+      <g id="overlay"></g>
+    </svg>
+    <div class="hint" id="hint">Click an icon to add it, or drag it onto the canvas</div>
+  </main>
+
+  <aside class="insp" id="insp" aria-label="Inspector"></aside>
+  <footer class="foot">2026 &nbsp;·&nbsp;<a class="footer-link" href="https://o23r.com" target="_blank" rel="noopener">Made by Ozer</a></footer>
+</div>
+<div class="modal" id="modal" hidden><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const f=n=>+(+n).toFixed(1);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const clone=o=>JSON.parse(JSON.stringify(o));
+function shade(hex,t){let c=String(hex).replace('#','');if(c.length===3)c=c.split('').map(x=>x+x).join('');const n=parseInt(c,16)||0;const ch=[n>>16,n>>8&255,n&255].map(v=>Math.round(t<0?v*(1+t):v+(255-v)*t));return '#'+ch.map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('')}
+const D=c=>shade(c,-.38), L=c=>shade(c,.62);
+const GL=(x,y,rx,ry,r=-35)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#fff" opacity=".5" transform="rotate(${r} ${x} ${y})"/>`;
+const STEEL='#9aa0b0', GLASS_ST='#7f8698';
+const FIG_FONT='Helvetica, Arial, sans-serif';
+const SW=['#231d33','#6b7280','#ffffff','#e8618c','#c8366e','#f6a5c0','#7c5cbf','#4b3f8f','#3a86c8','#5fb7d4','#2bb3a3','#7cc36b','#f2a541','#e4573d','#d9474b'];
+
+/* ---------- icon set (original artwork, 100×100 units) ---------- */
+const ICONS={
+ cell:{cat:'Cells & tissue',name:'Cell',a:'#f6a5c0',b:'#6a4fb3',draw:(a,b)=>`<circle cx="50" cy="50" r="42" fill="${L(a)}" stroke="${D(a)}" stroke-width="3"/><circle cx="50" cy="50" r="38" fill="${a}" opacity=".3"/><circle cx="54" cy="54" r="17" fill="${b}" stroke="${D(b)}" stroke-width="2.5"/><circle cx="58" cy="50" r="5" fill="${D(b)}"/><circle cx="27" cy="62" r="3.5" fill="${D(a)}" opacity=".55"/><circle cx="35" cy="76" r="2.5" fill="${D(a)}" opacity=".55"/><circle cx="73" cy="30" r="3" fill="${D(a)}" opacity=".55"/><ellipse cx="68" cy="76" rx="6" ry="3" fill="${D(a)}" opacity=".4" transform="rotate(30 68 76)"/>${GL(33,29,12,6.5)}`},
+ spindle:{cat:'Cells & tissue',name:'Fibroblast',a:'#f2a541',b:'#6a4fb3',draw:(a,b)=>`<path d="M4 54C22 32 40 36 50 39C62 35 78 30 96 44C80 60 63 66 50 64C37 69 21 72 4 54Z" fill="${L(a)}" stroke="${D(a)}" stroke-width="2.8"/><ellipse cx="51" cy="52" rx="13" ry="7.5" fill="${b}" stroke="${D(b)}" stroke-width="2"/><circle cx="54" cy="51" r="2.6" fill="${D(b)}"/>${GL(34,46,9,3,-12)}`},
+ cuboidal:{cat:'Cells & tissue',name:'Epithelial cell',a:'#5fb7d4',b:'#6a4fb3',draw:(a,b)=>`<rect x="12" y="12" width="76" height="76" rx="14" fill="${L(a)}" stroke="${D(a)}" stroke-width="3"/><path d="M20 12v-6M32 12v-6M44 12v-6M56 12v-6M68 12v-6M80 12v-6" stroke="${D(a)}" stroke-width="2.5" stroke-linecap="round"/><circle cx="50" cy="56" r="16" fill="${b}" stroke="${D(b)}" stroke-width="2.5"/><circle cx="54" cy="52" r="4.5" fill="${D(b)}"/>${GL(30,28,10,5)}`},
+ rbc:{cat:'Cells & tissue',name:'Red blood cell',a:'#d9474b',b:'#f08a8d',draw:(a,b)=>`<ellipse cx="50" cy="50" rx="44" ry="40" fill="${a}" stroke="${D(a)}" stroke-width="3"/><ellipse cx="50" cy="52" rx="20" ry="17" fill="${b}" opacity=".9"/>${GL(30,30,12,6)}`},
+ spheroid:{cat:'Cells & tissue',name:'Spheroid',a:'#f6a5c0',b:'#6a4fb3',draw:(a,b)=>{const c=(x,y,r)=>`<circle cx="${f(x)}" cy="${f(y)}" r="${r}" fill="${L(a)}" stroke="${D(a)}" stroke-width="2"/><circle cx="${f(x+r*.15)}" cy="${f(y+r*.12)}" r="${f(r*.42)}" fill="${b}"/>`;let s='';for(let i=0;i<11;i++){const t=i/11*Math.PI*2;s+=c(50+37*Math.cos(t),50+37*Math.sin(t),11)}for(let i=0;i<6;i++){const t=i/6*Math.PI*2+.4;s+=c(50+19*Math.cos(t),50+19*Math.sin(t),11.5)}return s+c(50,50,11.5)+GL(32,24,10,4.5)}},
+ organoid:{cat:'Cells & tissue',name:'Organoid',a:'#f6a5c0',b:'#6a4fb3',draw:(a,b)=>{let s=`<circle cx="50" cy="50" r="46" fill="none" stroke="${D(a)}" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="50" cy="50" r="20" fill="${L(b)}" opacity=".55"/>`;for(let i=0;i<14;i++){s+=`<g transform="rotate(${f(i/14*360)} 50 50)"><rect x="42.5" y="8" width="15" height="25" rx="6" fill="${L(a)}" stroke="${D(a)}" stroke-width="1.8"/><circle cx="50" cy="15.5" r="4" fill="${b}"/></g>`}return s}},
+ alveoli:{cat:'Cells & tissue',name:'Alveolar sac',a:'#f39ab5',b:'#d9474b',draw:(a,b)=>`<path d="M2 45H36V57H2Z" fill="${L(a)}" stroke="${D(a)}" stroke-width="2.5"/>`+[[46,38,15],[66,25,14],[83,45,14],[71,70,15],[48,67,14],[63,48,12]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${L(a)}" stroke="${D(a)}" stroke-width="2.5"/><circle cx="${x+2}" cy="${y+2}" r="${f(r*.6)}" fill="#fff" opacity=".55"/>`).join('')+`<path d="M34 30C46 20 56 56 72 40S88 64 97 60M40 82C52 70 64 92 82 74" fill="none" stroke="${b}" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>`},
+ vessel:{cat:'Cells & tissue',name:'Blood vessel',a:'#e8618c',b:'#7c5cbf',draw:(a,b)=>{let s=`<circle cx="50" cy="50" r="46" fill="${a}" stroke="${D(a)}" stroke-width="2.5"/><circle cx="50" cy="50" r="36" fill="${L(a)}"/>`;for(let i=0;i<16;i++){s+=`<ellipse cx="50" cy="9" rx="5.5" ry="2.4" fill="${D(a)}" opacity=".45" transform="rotate(${f(i*22.5)} 50 50)"/>`}return s+`<circle cx="50" cy="50" r="25" fill="#fff" stroke="${b}" stroke-width="5"/><ellipse cx="43" cy="45" rx="7" ry="6" fill="#d9474b"/><ellipse cx="43" cy="45" rx="3" ry="2.5" fill="#f08a8d"/><ellipse cx="57" cy="57" rx="7" ry="6" fill="#d9474b"/><ellipse cx="57" cy="57" rx="3" ry="2.5" fill="#f08a8d"/>`}},
+ bilayer:{cat:'Cells & tissue',name:'Lipid bilayer',a:'#3a86c8',b:'#f2a541',draw:(a,b)=>{let s='';for(let i=0;i<9;i++){const x=f(8+i*10.5);s+=`<path d="M${x-2} 31v13M${x+2} 31v13M${x-2} 69v-13M${x+2} 69v-13" stroke="${D(b)}" stroke-width="1.6" stroke-linecap="round"/><circle cx="${x}" cy="27" r="5" fill="${a}" stroke="${D(a)}" stroke-width="1.5"/><circle cx="${x}" cy="73" r="5" fill="${a}" stroke="${D(a)}" stroke-width="1.5"/>`}return s}},
+
+ droplet:{cat:'Biomaterials',name:'Hydrogel + cells',a:'#5fb7d4',b:'#e8618c',draw:(a,b)=>`<path d="M50 6C50 6 84 46 84 64A34 34 0 0 1 16 64C16 46 50 6 50 6Z" fill="${a}" fill-opacity=".5" stroke="${D(a)}" stroke-width="2.8"/>`+[[40,62,6],[61,68,5.5],[53,47,5],[45,80,4.5],[67,52,4]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${b}" stroke="${D(b)}" stroke-width="1.5"/>`).join('')+GL(34,52,4,10,15)},
+ network:{cat:'Biomaterials',name:'Crosslinked network',a:'#3a86c8',b:'#e8618c',draw:(a,b)=>{const P=[[12,18],[38,10],[70,16],[90,36],[22,44],[50,38],[78,58],[32,72],[60,72],[88,86],[12,88],[48,92]];const E=[[0,1],[1,2],[2,3],[0,4],[1,5],[2,5],[3,6],[4,5],[5,6],[4,7],[5,8],[6,8],[6,9],[7,8],[7,10],[8,11],[9,11],[10,11],[8,9]];return E.map(([i,j])=>`<line x1="${P[i][0]}" y1="${P[i][1]}" x2="${P[j][0]}" y2="${P[j][1]}" stroke="${a}" stroke-width="3" stroke-linecap="round"/>`).join('')+P.map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4.5" fill="${b}" stroke="${D(b)}" stroke-width="1.5"/>`).join('')}},
+ filament:{cat:'Biomaterials',name:'Printed filament',a:'#7cc36b',b:'#e8618c',draw:(a,b)=>`<rect x="4" y="32" width="92" height="36" rx="18" fill="${a}" fill-opacity=".6" stroke="${D(a)}" stroke-width="2.6"/><path d="M18 40H82" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/>`+[[22,54,5],[38,48,4.5],[52,57,5],[68,50,4.5],[80,58,4]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${b}" stroke="${D(b)}" stroke-width="1.3"/>`).join('')},
+ scaffold:{cat:'Biomaterials',name:'0/90° lattice',a:'#7cc36b',b:'#5fb7d4',draw:(a,b)=>[16,36,56,76].map(y=>`<rect x="6" y="${y-2}" width="88" height="12" rx="6" fill="${a}" stroke="${D(a)}" stroke-width="1.8"/>`).join('')+[16,36,56,76].map(x=>`<rect x="${x-2}" y="6" width="12" height="88" rx="6" fill="${b}" stroke="${D(b)}" stroke-width="1.8"/>`).join('')},
+ beads:{cat:'Biomaterials',name:'Microbeads',a:'#f2a541',b:'#ffffff',draw:(a,b)=>[[30,30,18],[68,26,14],[72,62,20],[34,72,16],[52,50,9],[88,90,7],[12,52,7]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${a}" stroke="${D(a)}" stroke-width="2"/><ellipse cx="${f(x-r*.35)}" cy="${f(y-r*.38)}" rx="${f(r*.35)}" ry="${f(r*.2)}" fill="${b}" opacity=".7" transform="rotate(-35 ${f(x-r*.35)} ${f(y-r*.38)})"/>`).join('')},
+
+ syringe:{cat:'Bioprinting',name:'Bioink syringe',a:'#e8618c',b:'#4b3f8f',draw:(a,b)=>`<rect x="31" y="2" width="38" height="6" rx="3" fill="${STEEL}"/><rect x="45" y="7" width="10" height="20" fill="#c9ccd6"/><rect x="24" y="14" width="52" height="5" rx="2.5" fill="${STEEL}"/><rect x="33" y="19" width="34" height="51" rx="4" fill="#fff" fill-opacity=".75" stroke="${GLASS_ST}" stroke-width="2.4"/><rect x="35" y="27" width="30" height="5" rx="1.5" fill="#5b6070"/><rect x="35.5" y="34" width="29" height="34" rx="2" fill="${a}" opacity=".85"/><path d="M60 40h5M60 48h5M60 56h5M60 64h5" stroke="${GLASS_ST}" stroke-width="1.5"/><path d="M40 70H60L56 82H44Z" fill="${b}"/><rect x="48.4" y="82" width="3.2" height="12" fill="${STEEL}"/><circle cx="50" cy="96.5" r="2.6" fill="${a}"/>${GL(40,40,2,9,0)}`},
+ coaxial:{cat:'Bioprinting',name:'Coaxial nozzle',a:'#5fb7d4',b:'#e8618c',draw:(a,b)=>`<path d="M14 4H86L61 66H39Z" fill="${a}" fill-opacity=".35" stroke="${D(a)}" stroke-width="2.4"/><path d="M33 4H67L54.5 62H45.5Z" fill="${b}" fill-opacity=".6" stroke="${D(b)}" stroke-width="2"/><rect x="39" y="66" width="22" height="31" rx="3" fill="${a}" fill-opacity=".55" stroke="${D(a)}" stroke-width="2"/><rect x="45.5" y="66" width="9" height="31" fill="${b}" opacity=".85"/><path d="M28 20l6 0M66 20l6 0" stroke="${D(a)}" stroke-width="2" stroke-linecap="round"/>`},
+ inkjet:{cat:'Bioprinting',name:'Droplet printhead',a:'#4b3f8f',b:'#e8618c',draw:(a,b)=>`<rect x="20" y="4" width="60" height="36" rx="6" fill="${a}" stroke="${D(a)}" stroke-width="2.4"/><rect x="28" y="12" width="44" height="7" rx="2" fill="${L(a)}"/><path d="M28 24h44" stroke="${L(a)}" stroke-width="2" stroke-dasharray="3 3"/><path d="M41 40H59L53 50H47Z" fill="${STEEL}"/><circle cx="50" cy="58" r="4" fill="${b}"/><circle cx="50" cy="70" r="4" fill="${b}" opacity=".85"/><circle cx="50" cy="81" r="3.6" fill="${b}" opacity=".7"/><rect x="8" y="89" width="84" height="7" rx="3.5" fill="#cfd3dc"/><ellipse cx="32" cy="89" rx="5" ry="2" fill="${b}"/><ellipse cx="68" cy="89" rx="5" ry="2" fill="${b}"/><ellipse cx="44" cy="89" rx="4" ry="1.8" fill="${b}"/>`},
+ printer:{cat:'Bioprinting',name:'Extrusion bioprinter',a:'#4b3f8f',b:'#e8618c',draw:(a,b)=>`<rect x="8" y="8" width="8" height="82" rx="2" fill="${a}"/><rect x="84" y="8" width="8" height="82" rx="2" fill="${a}"/><rect x="8" y="8" width="84" height="9" rx="2" fill="${a}"/><rect x="38" y="15" width="24" height="12" rx="2" fill="${D(a)}"/><rect x="44" y="27" width="12" height="28" rx="2" fill="#fff" stroke="${GLASS_ST}" stroke-width="1.8"/><rect x="45.5" y="36" width="9" height="17.5" fill="${b}" opacity=".85"/><path d="M45 55H55L51.5 63H48.5Z" fill="${STEEL}"/><ellipse cx="50" cy="76" rx="20" ry="4.5" fill="${L(b)}" stroke="${D(b)}" stroke-width="1.5"/><path d="M38 75h24M41 77h18" stroke="${b}" stroke-width="1.6"/><rect x="18" y="79" width="64" height="6" rx="2" fill="${STEEL}"/><rect x="4" y="88" width="92" height="9" rx="3" fill="${D(a)}"/>`},
+ uv:{cat:'Bioprinting',name:'UV/blue-light curing',a:'#5b6478',b:'#8a5cf6',draw:(a,b)=>`<path d="M8 36H92L82 88H18Z" fill="${b}" opacity=".16"/><path d="M28 38L20 82M42 38L38 82M58 38L62 82M72 38L80 82" stroke="${b}" stroke-width="2.2" stroke-dasharray="5 4" stroke-linecap="round"/><path d="M22 6H78L86 28H14Z" fill="${a}" stroke="${D(a)}" stroke-width="2.4"/><rect x="18" y="28" width="64" height="7" rx="2" fill="${L(b)}" stroke="${b}" stroke-width="1.5"/><rect x="24" y="84" width="52" height="10" rx="3" fill="#cfd3dc"/><ellipse cx="50" cy="84" rx="18" ry="4" fill="${b}" opacity=".55"/>`},
+ robot:{cat:'Bioprinting',name:'Robot arm',a:'#e4573d',b:'#5b6478',draw:(a,b)=>`<rect x="20" y="84" width="40" height="12" rx="3" fill="${b}"/><path d="M40 84V58" stroke="${a}" stroke-width="13" stroke-linecap="round"/><path d="M40 58L70 32" stroke="${a}" stroke-width="11" stroke-linecap="round"/><path d="M70 32L86 46" stroke="${a}" stroke-width="7" stroke-linecap="round"/><circle cx="40" cy="58" r="8.5" fill="${b}"/><circle cx="40" cy="58" r="3" fill="${L(b)}"/><circle cx="70" cy="32" r="7" fill="${b}"/><circle cx="70" cy="32" r="2.5" fill="${L(b)}"/><path d="M86 46l-6 10M86 46l8 8" stroke="${b}" stroke-width="3.5" stroke-linecap="round"/>`},
+
+ plate:{cat:'Labware & imaging',name:'24-well plate',a:'#f6a5c0',b:'#5fb7d4',draw:(a,b)=>{let s=`<rect x="3" y="18" width="94" height="64" rx="6" fill="#f4f5f8" stroke="${GLASS_ST}" stroke-width="2.2"/><path d="M3 26h94" stroke="${GLASS_ST}" stroke-width="1" opacity=".5"/>`;for(let j=0;j<4;j++)for(let i=0;i<6;i++){const cx=f(16+i*13.6),cy=f(35+j*13),c=i<2?b:a;s+=`<circle cx="${cx}" cy="${cy}" r="5.3" fill="${c}" fill-opacity=".7" stroke="${D(c)}" stroke-width="1.2"/>`}return s}},
+ petri:{cat:'Labware & imaging',name:'Petri dish',a:'#f6a5c0',b:'#7cc36b',draw:(a,b)=>`<circle cx="50" cy="50" r="45" fill="#fff" fill-opacity=".65" stroke="${GLASS_ST}" stroke-width="2.6"/><circle cx="50" cy="50" r="39" fill="${a}" fill-opacity=".35" stroke="${GLASS_ST}" stroke-width="1"/><g stroke="${b}" stroke-width="4" stroke-linecap="round"><path d="M34 38h32M34 50h32M34 62h32"/><path d="M38 34v32M50 34v32M62 34v32" stroke="${D(b)}"/></g><path d="M20 30A36 36 0 0 1 40 14" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>`},
+ pipette:{cat:'Labware & imaging',name:'Micropipette',a:'#3a86c8',b:'#e8618c',draw:(a,b)=>`<rect x="40" y="2" width="16" height="8" rx="3" fill="${b}"/><rect x="45.5" y="10" width="5" height="8" fill="${STEEL}"/><path d="M36 18H62Q67 18 65 26L59 62H39L33 26Q31 18 36 18Z" fill="${a}" stroke="${D(a)}" stroke-width="2.2"/><path d="M62 22Q74 22 72 34" stroke="${D(a)}" stroke-width="4" fill="none" stroke-linecap="round"/><rect x="41" y="29" width="15" height="8" rx="1.5" fill="#fff" opacity=".8"/><path d="M41 62H57L53.5 78H44.5Z" fill="${L(a)}" stroke="${D(a)}" stroke-width="2"/><path d="M44.5 78H53.5L50.6 98H47.4Z" fill="#f2f3f7" stroke="${STEEL}" stroke-width="1.4"/><path d="M47.6 92H50.4L50 97H48Z" fill="${b}"/>`},
+ falcon:{cat:'Labware & imaging',name:'Conical tube',a:'#f2a541',b:'#3a86c8',draw:(a,b)=>`<rect x="33" y="3" width="34" height="13" rx="2.5" fill="${b}" stroke="${D(b)}" stroke-width="2"/><path d="M36 9h28" stroke="${L(b)}" stroke-width="1.5"/><path d="M36 16H64V74L53 96H47L36 74Z" fill="#fff" fill-opacity=".6" stroke="${GLASS_ST}" stroke-width="2.2"/><path d="M37.2 46H62.8V73.7L52.3 94.8H47.7L37.2 73.7Z" fill="${a}" opacity=".7"/><path d="M56 28h6M58 36h4M56 44h6M58 52h4M56 60h6" stroke="${GLASS_ST}" stroke-width="1.4"/>${GL(42,40,2,12,0)}`},
+ tube:{cat:'Labware & imaging',name:'Microtube',a:'#e8618c',b:'#5fb7d4',draw:(a,b)=>`<path d="M66 20Q84 14 86 6" stroke="${b}" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="29" y="14" width="42" height="9" rx="3" fill="${b}" stroke="${D(b)}" stroke-width="1.8"/><path d="M33 23H67L61 72Q55 96 50 96Q45 96 39 72Z" fill="#fff" fill-opacity=".6" stroke="${GLASS_ST}" stroke-width="2.2"/><path d="M35.6 50H64.4L60.2 72Q54.8 94.6 50 94.6Q45.2 94.6 39.8 72Z" fill="${a}" opacity=".7"/>${GL(40,40,2,8,0)}`},
+ flask:{cat:'Labware & imaging',name:'Culture flask',a:'#e8618c',b:'#3a86c8',draw:(a,b)=>`<path d="M68 40L82 26L90 34L74 50Z" fill="#fff" fill-opacity=".6" stroke="${GLASS_ST}" stroke-width="2"/><rect x="80" y="14" width="13" height="16" rx="2" fill="${b}" stroke="${D(b)}" stroke-width="1.8" transform="rotate(45 86.5 22)"/><rect x="6" y="30" width="66" height="54" rx="6" fill="#fff" fill-opacity=".6" stroke="${GLASS_ST}" stroke-width="2.4"/><rect x="8" y="58" width="62" height="24.5" rx="4" fill="${a}" opacity=".6"/><path d="M14 40h20" stroke="${GLASS_ST}" stroke-width="1.5"/>`},
+ beaker:{cat:'Labware & imaging',name:'Beaker',a:'#5fb7d4',b:'#ffffff',draw:(a,b)=>`<path d="M16 10H84L80 14V86Q80 94 72 94H28Q20 94 20 86V14Z" fill="#fff" fill-opacity=".55" stroke="${GLASS_ST}" stroke-width="2.4" stroke-linejoin="round"/><path d="M21.2 46H78.8V86Q78.8 92.8 72 92.8H28Q21.2 92.8 21.2 86Z" fill="${a}" opacity=".65"/><path d="M60 26h12M64 36h8M60 46h12M64 56h8M60 66h12" stroke="${GLASS_ST}" stroke-width="1.5"/><circle cx="38" cy="70" r="3" fill="${b}" opacity=".8"/><circle cx="46" cy="80" r="2" fill="${b}" opacity=".8"/>${GL(28,34,2,12,0)}`},
+ microscope:{cat:'Labware & imaging',name:'Microscope',a:'#5b6478',b:'#e8618c',draw:(a,b)=>`<rect x="16" y="86" width="64" height="10" rx="4" fill="${D(a)}"/><path d="M58 86V42Q58 24 42 20L38 28Q50 32 50 44V86Z" fill="${a}"/><path d="M24 10L40 2L50 18L34 26Z" fill="${a}"/><rect x="21" y="2" width="9" height="14" rx="2" fill="${D(a)}" transform="rotate(-28 25.5 9)"/><rect x="24" y="28" width="22" height="8" rx="2" fill="${D(a)}"/><rect x="30" y="36" width="9" height="13" rx="1.5" fill="${STEEL}"/><rect x="20" y="58" width="44" height="6" rx="2" fill="${D(a)}"/><rect x="25" y="54" width="28" height="4" rx="1" fill="${L(b)}" stroke="${b}" stroke-width="1"/><circle cx="35" cy="56" r="2" fill="${b}"/><circle cx="60" cy="70" r="7" fill="${b}"/><circle cx="60" cy="70" r="2.5" fill="${D(b)}"/>`},
+ incubator:{cat:'Labware & imaging',name:'CO₂ incubator',a:'#9aa6bd',b:'#e8618c',draw:(a,b)=>`<rect x="8" y="5" width="84" height="90" rx="6" fill="${L(a)}" stroke="${D(a)}" stroke-width="2.4"/><rect x="15" y="16" width="54" height="70" rx="4" fill="#fff" fill-opacity=".75" stroke="${D(a)}" stroke-width="2"/><path d="M15 40H69M15 63H69" stroke="${D(a)}" stroke-width="1.8"/><rect x="21" y="29" width="16" height="10" rx="2" fill="${b}" opacity=".7"/><rect x="41" y="31" width="14" height="8" rx="2" fill="${b}" opacity=".5"/><rect x="24" y="53" width="20" height="9" rx="2" fill="${b}" opacity=".6"/><rect x="74" y="16" width="13" height="9" rx="1.5" fill="#2a2f3a"/><path d="M77 20.5h7" stroke="#7cc36b" stroke-width="2"/><rect x="77" y="36" width="5" height="26" rx="2.5" fill="${D(a)}"/>`},
+ chip:{cat:'Labware & imaging',name:'Microfluidic chip',a:'#e8618c',b:'#3a86c8',draw:(a,b)=>`<rect x="4" y="18" width="92" height="64" rx="7" fill="#eef3fb" fill-opacity=".9" stroke="${GLASS_ST}" stroke-width="2.2"/><g fill="none" stroke="${a}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 32C34 32 38 50 48 50M16 68C34 68 38 50 48 50"/><path d="M48 50H56V34H64V66H72V34H80V50H84"/></g><circle cx="16" cy="32" r="6" fill="${b}" stroke="${D(b)}" stroke-width="1.6"/><circle cx="16" cy="68" r="6" fill="${b}" stroke="${D(b)}" stroke-width="1.6"/><circle cx="86" cy="50" r="6" fill="#fff" stroke="${D(b)}" stroke-width="1.8"/>`},
+ bioreactor:{cat:'Labware & imaging',name:'Bioreactor',a:'#e8618c',b:'#4b3f8f',draw:(a,b)=>`<rect x="30" y="2" width="7" height="14" fill="${STEEL}"/><rect x="62" y="2" width="7" height="14" fill="${STEEL}"/><path d="M22 22H78V82Q78 94 66 94H34Q22 94 22 82Z" fill="#fff" fill-opacity=".55" stroke="${GLASS_ST}" stroke-width="2.4"/><path d="M23.2 42H76.8V82Q76.8 92.8 66 92.8H34Q23.2 92.8 23.2 82Z" fill="${a}" opacity=".55"/><rect x="18" y="14" width="64" height="10" rx="3" fill="${b}"/><path d="M33.5 24V64" stroke="${STEEL}" stroke-width="2.5"/><g stroke="${b}" stroke-width="3" stroke-linecap="round"><path d="M46 56h14M46 62h14M46 68h14"/><path d="M49 52v20M56 52v20" stroke="${D(b)}"/></g><rect x="40" y="84" width="20" height="5" rx="2.5" fill="${b}"/><circle cx="66" cy="60" r="2.4" fill="#fff"/><circle cx="70" cy="52" r="1.6" fill="#fff"/>`},
+ oct:{cat:'Labware & imaging',name:'OCT probe',a:'#5b6478',b:'#e4573d',draw:(a,b)=>`<path d="M38 2H62V34L56 44H44L38 34Z" fill="${a}" stroke="${D(a)}" stroke-width="2.2"/><rect x="43" y="8" width="14" height="5" rx="1.5" fill="${L(a)}"/><rect x="44" y="44" width="12" height="4" rx="1" fill="#bcd4f2"/><path d="M45 48H55L64 82H36Z" fill="${b}" opacity=".22"/><path d="M50 48V82" stroke="${b}" stroke-width="1.6" stroke-dasharray="3 3"/><rect x="10" y="82" width="80" height="6" fill="#f6c3cf"/><rect x="10" y="88" width="80" height="8" fill="#ee9fb3"/><circle cx="50" cy="85" r="6" fill="none" stroke="${D(b)}" stroke-width="1.6"/>`},
+};
+const SHAPES={
+ rect:{name:'Rectangle',kind:'rect'},round:{name:'Panel',kind:'round'},ellipse:{name:'Ellipse',kind:'ellipse'},textlbl:{name:'Text',kind:'text'},arrowlbl:{name:'Arrow',kind:'arrow'}
+};
+const shapePreview={rect:`<rect x="10" y="22" width="80" height="56" fill="#eef0f6" stroke="#7f8698" stroke-width="3"/>`,round:`<rect x="8" y="20" width="84" height="60" rx="14" fill="#f5f1fa" stroke="#c9bde0" stroke-width="3"/>`,ellipse:`<ellipse cx="50" cy="50" rx="40" ry="30" fill="#fbe6ee" stroke="#c8366e" stroke-width="3"/>`,textlbl:`<text x="50" y="66" text-anchor="middle" font-family="${FIG_FONT}" font-size="48" font-weight="700" fill="#4b3f8f">Aa</text>`,arrowlbl:`<path d="M12 70Q50 20 82 40" fill="none" stroke="#231d33" stroke-width="5" stroke-linecap="round"/><path d="M90 46L74 46L84 32Z" fill="#231d33"/>`};
+
+
+/* ---------- brushes ---------- */
+const BRUSHES={
+ membrane:{name:'Cell membrane',a:'#f2a541',b:'#b9842f',w:24},
+ dna:{name:'DNA helix',a:'#3a86c8',b:'#e8618c',w:22},
+ filament:{name:'Bioink filament',a:'#7cc36b',b:'#e8618c',w:26},
+ vessel:{name:'Blood vessel',a:'#e8618c',b:'#d9474b',w:34},
+ fiber:{name:'Collagen fiber',a:'#eaa3b8',b:'#c8366e',w:12},
+ beads:{name:'Protein chain',a:'#7c5cbf',b:'#5fb7d4',w:12},
+ pen:{name:'Pen',a:'#231d33',b:'#231d33',w:3},
+ dashed:{name:'Dashed line',a:'#6b7280',b:'#6b7280',w:3},
+};
+let brushStyle='membrane'; const brushPrefs={};
+function smoothPts(pts){
+  if(pts.length<3) return pts.map(p=>[p[0],p[1]]);
+  const out=[];
+  for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    for(let t=0;t<1;t+=.25){const t2=t*t,t3=t2*t;out.push([0,1].map(k=>.5*(2*p1[k]+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3)))}}
+  out.push(pts[pts.length-1]); return out;
+}
+function resample(pts,step){
+  const P=smoothPts(pts),out=[];let need=0,s=0;step=Math.max(1,step);
+  for(let i=0;i<P.length-1;i++){const [ax,ay]=P[i],[bx,by]=P[i+1],Ln=Math.hypot(bx-ax,by-ay);if(!Ln)continue;const tx=(bx-ax)/Ln,ty=(by-ay)/Ln;let d=need;
+    while(d<=Ln){out.push({x:ax+tx*d,y:ay+ty*d,nx:-ty,ny:tx,tx,ty,s:s+d});d+=step}need=d-Ln;s+=Ln}
+  return out;
+}
+function brushMarkup(o){
+  const a=o.a,b=o.b,w=o.width,P=smoothPts(o.pts);
+  if(P.length<2) return '';
+  const d='M'+P.map(p=>f(p[0])+' '+f(p[1])).join('L');
+  const line=(st,sw,x='')=>`<path d="${d}" fill="none" stroke="${st}" stroke-width="${f(sw)}" stroke-linecap="round" stroke-linejoin="round"${x}/>`;
+  switch(o.style){
+    case 'pen': return line(a,w);
+    case 'dashed': return line(a,w,` stroke-dasharray="${f(w*3)} ${f(w*2.2)}" stroke-linecap="butt"`);
+    case 'fiber': return line(D(a),w+2)+line(a,w)+line(b,w*.92,` stroke-dasharray="1.6 ${f(Math.max(3,w*.55))}" stroke-linecap="butt" opacity=".45"`)+line('#fff',w*.18,' opacity=".55"');
+    case 'filament':{let s=line(D(a),w+2.5,' opacity=".7"')+line(a,w,' opacity=".8"')+line('#fff',w*.16,' opacity=".55"');
+      resample(o.pts,w*1.15).forEach((p,i)=>{const off=(i%2?1:-1)*w*.17;s+=`<circle cx="${f(p.x+p.nx*off)}" cy="${f(p.y+p.ny*off)}" r="${f(w*.16)}" fill="${b}" stroke="${D(b)}" stroke-width="1"/>`});return s}
+    case 'vessel':{let s=line(D(a),w)+line(a,w*.82)+line('#fff6f8',w*.46);
+      resample(o.pts,w*1.05).forEach(p=>{const ang=Math.atan2(p.ty,p.tx)*180/Math.PI;s+=`<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(w*.09)}" ry="${f(w*.17)}" fill="${b}" transform="rotate(${f(ang)} ${f(p.x)} ${f(p.y)})"/>`});return s}
+    case 'beads':{let s='';resample(o.pts,w*.9).forEach((p,i)=>{const c=i%4===3?b:a;s+=`<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(w*.5)}" fill="${c}" stroke="${D(c)}" stroke-width="1.2"/>`});return s}
+    case 'membrane':{const R=resample(o.pts,w*.36),hr=w*.17,off=w/2-hr,tw=f(Math.max(1,w*.055));let t='',h='';
+      R.forEach(p=>{for(const g of [1,-1]){const hx=p.x+p.nx*off*g,hy=p.y+p.ny*off*g,ex=p.x+p.nx*w*.04*g,ey=p.y+p.ny*w*.04*g;
+        for(const q of [-.45,.45]) t+=`<line x1="${f(hx+p.tx*hr*q)}" y1="${f(hy+p.ty*hr*q)}" x2="${f(ex+p.tx*hr*q)}" y2="${f(ey+p.ty*hr*q)}"/>`;
+        h+=`<circle cx="${f(hx)}" cy="${f(hy)}" r="${f(hr)}"/>`}});
+      return `<g stroke="${b}" stroke-width="${tw}" stroke-linecap="round">${t}</g><g fill="${a}" stroke="${D(a)}" stroke-width="${f(Math.max(.8,w*.04))}">${h}</g>`}
+    case 'dna':{const R=resample(o.pts,2.5),per=w*2.4,amp=w/2,sw2=f(Math.max(2,w*.15));const s1=[],s2=[];let r='',last=-1;
+      R.forEach(p=>{const ph=Math.sin(p.s/per*2*Math.PI)*amp,x1=p.x+p.nx*ph,y1=p.y+p.ny*ph,x2=p.x-p.nx*ph,y2=p.y-p.ny*ph;s1.push(f(x1)+' '+f(y1));s2.push(f(x2)+' '+f(y2));
+        const k=Math.floor(p.s/(per/7));if(k!==last){last=k;if(Math.abs(ph)>amp*.15)r+=`<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${k%2?b:shade(b,.4)}" stroke-width="${f(Math.max(1.5,w*.11))}"/>`}});
+      if(s1.length<2) return '';
+      return r+`<path d="M${s1.join('L')}" fill="none" stroke="${a}" stroke-width="${sw2}" stroke-linecap="round"/><path d="M${s2.join('L')}" fill="none" stroke="${D(a)}" stroke-width="${sw2}" stroke-linecap="round"/>`}
+  }
+  return line(a,w);
+}
+const BRUSH_DEMO=[[6,72],[26,44],[50,62],[74,34],[94,48]];
+function brushPreview(k){const v=BRUSHES[k];return brushMarkup({style:k,pts:BRUSH_DEMO,a:v.a,b:v.b,width:Math.min(22,Math.max(4,v.w*.72))})}
+function shiftItem(o,dx,dy){if(o.type==='arrow'){o.x1+=dx;o.x2+=dx;o.y1+=dy;o.y2+=dy}else if(o.type==='brush'){o.pts=o.pts.map(([x,y])=>[f(x+dx),f(y+dy)])}else{o.x+=dx;o.y+=dy;delete o.bb}}
+function pickBrush(k){brushStyle=k;setTool('brush');if(window.innerWidth<=900)stage.scrollIntoView({behavior:'smooth',block:'center'})}
+function markBrush(){document.querySelectorAll('.item[data-key^="brush:"]').forEach(b=>b.classList.toggle('on',tool==='brush'&&b.dataset.key==='brush:'+brushStyle))}
+
+/* ---------- state ---------- */
+function customDraw(src){return (a,b)=>src.replace(/\b(MAIN_DARK|MAIN_LIGHT|MAIN|DETAIL_DARK|DETAIL_LIGHT|DETAIL|WHITE)\b/g,t=>t==='WHITE'?'#ffffff':t==='MAIN'?a:t==='MAIN_DARK'?D(a):t==='MAIN_LIGHT'?L(a):t==='DETAIL'?b:t==='DETAIL_DARK'?D(b):L(b))}
+function iconDef(k){if(ICONS[k])return ICONS[k];const c=doc&&doc.custom&&doc.custom[k];if(!c)return null;if(!c._d)Object.defineProperty(c,'_d',{value:{cat:'Generated',name:c.name,a:c.a,b:c.b,draw:customDraw(c.svg)},enumerable:false});return c._d}
+const KEY='oz-figure-studio-v1';
+let doc, sel=null, tool='select', zoom=1, fitMode=true, drag=null, clip=null, hist=[], hi=-1;
+const svg=$('#svg'), content=$('#content'), overlay=$('#overlay'), bggrid=$('#bggrid'), stage=$('#stage');
+const get=id=>doc.items.find(o=>o.id===id);
+const snapv=v=>doc.snap?Math.round(v/10)*10:Math.round(v*10)/10;
+
+function sample(){
+  const T=(x,y,text,o={})=>({id:uid(),type:'text',x,y,text,size:o.size||15,color:o.color||'#231d33',weight:o.weight||600,anchor:o.anchor||'middle',rot:0});
+  const I=(icon,cx,y,w,h,a,b)=>({id:uid(),type:'icon',icon,x:cx-w/2,y,w,h,rot:0,flip:false,lock:true,op:1,a:a||ICONS[icon].a,b:b||ICONS[icon].b});
+  const A=(x1,y1,x2,y2,curve=0)=>({id:uid(),type:'arrow',x1,y1,x2,y2,curve,color:'#4b3f8f',width:3.5,head:'end',dash:false});
+  const P=(x,y,w,h,a,b)=>({id:uid(),type:'shape',kind:'round',x,y,w,h,r:18,rot:0,a,b,sw:1.5,dash:false,op:1});
+  return {w:1200,h:740,bg:'#ffffff',snap:false,items:[
+    P(24,96,1152,300,'#f6f2fb','#e2d8ef'), P(24,416,1152,300,'#eef6f8','#d3e6ea'),
+    T(40,28,'Extrusion bioprinting of lung organoid constructs',{size:28,weight:700,anchor:'start'}),
+    T(44,112,'FABRICATION',{size:13,weight:700,color:'#7a6a99',anchor:'start'}),
+    T(44,432,'MATURATION & ANALYSIS',{size:13,weight:700,color:'#4f8793',anchor:'start'}),
+    I('cell',120,148,130,130), I('droplet',355,142,120,140), I('printer',600,140,150,150), I('uv',845,146,140,140), I('incubator',1080,148,128,130),
+    A(195,215,282,215), A(430,215,515,215), A(685,215,766,215), A(925,215,1006,215),
+    T(120,300,'Isolate & expand\nprimary lung cells'), T(355,300,'Resuspend in GelMA\n10⁷ cells/mL'), T(600,300,'Print 0/90° lattice\n22G nozzle, 15 kPa'), T(845,300,'Crosslink\n405 nm, 30 s'), T(1080,300,'Culture\n37 °C, 5% CO₂'),
+    A(1080,352,1080,462),
+    I('organoid',1080,470,130,130), I('oct',845,466,140,140), I('chip',600,470,150,130),
+    A(1005,535,925,535), A(765,535,685,535),
+    T(1080,620,'Day 14 organoids'), T(845,620,'OCT volumetric\nimaging'), T(600,620,'Perfusion &\nendpoint assays'),
+    {id:uid(),type:'shape',kind:'round',x:64,y:466,w:380,h:178,r:14,rot:0,a:'#ffffff',b:'#bcd9df',sw:1.5,dash:true,op:1},
+    T(88,488,'Readouts\n• Organoid volume (mm³)\n• Live/dead viability (%)\n• Lumen formation rate\n• Airway marker expression',{anchor:'start',weight:400,size:16}),
+    A(522,535,454,535)
+  ]};
+}
+
+/* ---------- render ---------- */
+function bounds(o){
+  if(o.type==='text') return o.bb||{x:o.anchor==='middle'?o.x-60:o.x,y:o.y,w:120,h:o.size*1.3};
+  if(o.type==='brush'){const xs=o.pts.map(p=>p[0]),ys=o.pts.map(p=>p[1]),h=o.width/2;const x=Math.min(...xs)-h,y=Math.min(...ys)-h;return {x,y,w:Math.max(...xs)+h-x,h:Math.max(...ys)+h-y}}
+  if(o.type==='arrow'){const x=Math.min(o.x1,o.x2),y=Math.min(o.y1,o.y2);return {x,y,w:Math.abs(o.x2-o.x1),h:Math.abs(o.y2-o.y1)}}
+  return {x:o.x,y:o.y,w:o.w,h:o.h};
+}
+function arrowGeom(o){
+  const dx=o.x2-o.x1,dy=o.y2-o.y1,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len,c=o.curve||0;
+  const cx=(o.x1+o.x2)/2+nx*c, cy=(o.y1+o.y2)/2+ny*c;
+  return {cx,cy,mx:(o.x1+2*cx+o.x2)/4,my:(o.y1+2*cy+o.y2)/4,nx,ny,len};
+}
+function head(tx,ty,fx,fy,size,color){
+  const ang=Math.atan2(ty-fy,tx-fx),ca=Math.cos(ang),sa=Math.sin(ang);
+  const bx=tx-ca*size,by=ty-sa*size,w=size*.62;
+  return {poly:`<path d="M${f(tx)} ${f(ty)}L${f(bx-sa*w)} ${f(by+ca*w)}L${f(bx+sa*w)} ${f(by-ca*w)}Z" fill="${color}"/>`,bx:tx-ca*size*.7,by:ty-sa*size*.7};
+}
+function renderItem(o,exp){
+  const op=o.op!=null&&o.op<1?` opacity="${o.op}"`:'';
+  if(o.type==='arrow'){
+    const g=arrowGeom(o), size=6+o.width*2.6; let x1=o.x1,y1=o.y1,x2=o.x2,y2=o.y2,heads='';
+    if(o.head==='end'||o.head==='both'){const h=head(o.x2,o.y2,g.cx,g.cy,size,o.color);heads+=h.poly;x2=h.bx;y2=h.by}
+    if(o.head==='both'){const h=head(o.x1,o.y1,g.cx,g.cy,size,o.color);heads+=h.poly;x1=h.bx;y1=h.by}
+    const d=`M${f(x1)} ${f(y1)}Q${f(g.cx)} ${f(g.cy)} ${f(x2)} ${f(y2)}`;
+    const hit=exp?'':`<path d="${d}" fill="none" stroke="transparent" stroke-width="${Math.max(16,o.width+12)}"/>`;
+    return `<g${exp?'':` data-id="${o.id}"`}${op}>${hit}<path d="${d}" fill="none" stroke="${o.color}" stroke-width="${o.width}" stroke-linecap="${o.dash?'butt':'round'}"${o.dash?` stroke-dasharray="${o.width*2.4} ${o.width*1.8}"`:''}/>${heads}</g>`;
+  }
+  if(o.type==='brush'){const hit=exp?'':`<path d="M${o.pts.map(p=>p.join(' ')).join('L')}" fill="none" stroke="transparent" stroke-width="${o.width+14}" stroke-linecap="round" stroke-linejoin="round"/>`;return `<g${exp?'':` data-id="${o.id}"`}${op}>${brushMarkup(o)}${hit}</g>`}
+  if(o.type==='text'){
+    const lines=String(o.text).split('\n'), lh=f(o.size*1.25);
+    const t=`<text x="${f(o.x)}" y="${f(o.y+o.size*.92)}" font-family="${FIG_FONT}" font-size="${o.size}" font-weight="${o.weight}" fill="${o.color}" text-anchor="${o.anchor}">${lines.map((l,i)=>`<tspan x="${f(o.x)}"${i?` dy="${lh}"`:''}>${esc(l)||' '}</tspan>`).join('')}</text>`;
+    const b=bounds(o), tr=o.rot?` transform="rotate(${o.rot} ${f(b.x+b.w/2)} ${f(b.y+b.h/2)})"`:'';
+    return `<g${exp?'':` data-id="${o.id}"`}${tr}${op}>${t}</g>`;
+  }
+  const tr=`translate(${f(o.x)} ${f(o.y)})${o.rot?` rotate(${o.rot} ${f(o.w/2)} ${f(o.h/2)})`:''}`;
+  const hit=exp?'':`<rect width="${f(o.w)}" height="${f(o.h)}" fill="transparent"/>`;
+  let inner='';
+  if(o.type==='icon'){
+    const ic=iconDef(o.icon); if(!ic) return '';
+    inner=`<svg width="${f(o.w)}" height="${f(o.h)}" viewBox="0 0 100 100" preserveAspectRatio="none" overflow="visible">${o.flip?`<g transform="translate(100 0) scale(-1 1)">${ic.draw(o.a,o.b)}</g>`:ic.draw(o.a,o.b)}</svg>`;
+  } else if(o.type==='shape'){
+    const st=o.sw>0?` stroke="${o.b}" stroke-width="${o.sw}"${o.dash?` stroke-dasharray="${o.sw*4} ${o.sw*3}"`:''}`:'';
+    inner=o.kind==='ellipse'?`<ellipse cx="${f(o.w/2)}" cy="${f(o.h/2)}" rx="${f(o.w/2)}" ry="${f(o.h/2)}" fill="${o.a}"${st}/>`:`<rect width="${f(o.w)}" height="${f(o.h)}" rx="${o.kind==='round'?o.r:0}" fill="${o.a}"${st}/>`;
+  } else if(o.type==='image'){
+    inner=`<image href="${o.href}" xlink:href="${o.href}" width="${f(o.w)}" height="${f(o.h)}" preserveAspectRatio="none"${o.flip?` transform="translate(${f(o.w)} 0) scale(-1 1)"`:''}/>`;
+  }
+  return `<g${exp?'':` data-id="${o.id}"`} transform="${tr}"${op}>${inner}${hit}</g>`;
+}
+function measureTexts(){
+  let changed=false;
+  content.querySelectorAll('g[data-id]').forEach(g=>{
+    const o=get(g.dataset.id); if(!o||o.type!=='text') return;
+    const t=g.querySelector('text'); let b; try{b=t.getBBox()}catch(e){return}
+    const nb={x:f(b.x),y:f(b.y),w:f(b.width),h:f(b.height)};
+    if(!o.bb||o.bb.x!==nb.x||o.bb.y!==nb.y||o.bb.w!==nb.w||o.bb.h!==nb.h){o.bb=nb;changed=true;
+      if(o.rot) g.setAttribute('transform',`rotate(${o.rot} ${f(nb.x+nb.w/2)} ${f(nb.y+nb.h/2)})`);}
+  });
+  return changed;
+}
+function render(){
+  svg.setAttribute('viewBox',`0 0 ${doc.w} ${doc.h}`);
+  svg.setAttribute('width',f(doc.w*zoom)); svg.setAttribute('height',f(doc.h*zoom));
+  svg.classList.toggle('transparent',doc.bg==='transparent');
+  svg.classList.toggle('tool-arrow',tool==='arrow'); svg.classList.toggle('tool-text',tool==='text'); svg.classList.toggle('tool-brush',tool==='brush');
+  bggrid.innerHTML=`<rect width="${doc.w}" height="${doc.h}" fill="${doc.bg==='transparent'?'transparent':doc.bg}"/>`+(doc.snap?`<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1.1" fill="#c9c3d6"/></pattern></defs><rect width="${doc.w}" height="${doc.h}" fill="url(#dots)"/>`:'');
+  content.innerHTML=doc.items.map(o=>renderItem(o,false)).join('');
+  measureTexts();
+  drawOverlay();
+  $('#zlabel').textContent=Math.round(zoom*100)+'%';
+  $('#undo').disabled=hi<=0; $('#redo').disabled=hi>=hist.length-1;
+  $('#hint').textContent=tool==='brush'?BRUSHES[brushStyle].name+' brush · draw on the canvas · V to stop':tool==='arrow'?'Drag on the canvas to draw an arrow':tool==='text'?'Click where the label should go':sel?'Drag to move · corner to resize · top dot to rotate':'Click an icon to add it, or drag it onto the canvas';
+}
+function drawOverlay(){
+  const o=sel&&get(sel); if(!o){overlay.innerHTML='';return}
+  const k=doc.w/(svg.getBoundingClientRect().width||doc.w), r=f(6.5*k), sw=f(1.5*k);
+  if(o.type==='arrow'){
+    const g=arrowGeom(o);
+    overlay.innerHTML=`<line class="ov-line" x1="${o.x1}" y1="${o.y1}" x2="${f(g.mx)}" y2="${f(g.my)}" stroke-width="${f(k)}" stroke-dasharray="${f(3*k)} ${f(3*k)}"/><line class="ov-line" x1="${f(g.mx)}" y1="${f(g.my)}" x2="${o.x2}" y2="${o.y2}" stroke-width="${f(k)}" stroke-dasharray="${f(3*k)} ${f(3*k)}"/>`+
+      [['p1',o.x1,o.y1],['p2',o.x2,o.y2],['curve',g.mx,g.my]].map(([h,x,y])=>`<circle class="hd${h==='curve'?' rot':''}" data-h="${h}" cx="${f(x)}" cy="${f(y)}" r="${h==='curve'?f(r*.8):r}" stroke-width="${sw}"/>`).join('');
+    return;
+  }
+  const b=bounds(o), cx=b.x+b.w/2, cy=b.y+b.h/2, pad=4*k, ry=b.y-pad-26*k;
+  overlay.innerHTML=`<g transform="rotate(${o.rot||0} ${f(cx)} ${f(cy)})"><rect class="ov-box" x="${f(b.x-pad)}" y="${f(b.y-pad)}" width="${f(b.w+pad*2)}" height="${f(b.h+pad*2)}" stroke-width="${sw}"/>${o.type==='brush'?'':`<line class="ov-line" x1="${f(cx)}" y1="${f(b.y-pad)}" x2="${f(cx)}" y2="${f(ry)}" stroke-width="${sw}"/><circle class="hd rot" data-h="rotate" cx="${f(cx)}" cy="${f(ry)}" r="${r}" stroke-width="${sw}"/>`}<rect class="hd res" data-h="resize" x="${f(b.x+b.w+pad-r)}" y="${f(b.y+b.h+pad-r)}" width="${f(r*2)}" height="${f(r*2)}" rx="${f(2*k)}" stroke-width="${sw}"/></g>`;
+}
+
+/* ---------- history & storage ---------- */
+function commit(){
+  const s=JSON.stringify(doc); if(hist[hi]===s) return;
+  hist=hist.slice(0,hi+1); hist.push(s); if(hist.length>120) hist.shift(); hi=hist.length-1;
+  try{localStorage.setItem(KEY,s)}catch(e){}
+  $('#undo').disabled=hi<=0; $('#redo').disabled=true;
+}
+function restore(i){hi=i;doc=JSON.parse(hist[hi]);if(sel&&!get(sel))sel=null;buildLib($('#search').value);try{localStorage.setItem(KEY,hist[hi])}catch(e){}render();renderInspector()}
+const undo=()=>{if(hi>0)restore(hi-1)}, redo=()=>{if(hi<hist.length-1)restore(hi+1)};
+
+/* ---------- zoom ---------- */
+function fit(){const r=stage.getBoundingClientRect();const pad=window.innerWidth<=900?28:48;zoom=Math.max(.1,Math.min((r.width-pad)/doc.w,(r.height-pad)/doc.h,2));fitMode=true;render()}
+function setZoom(z){zoom=Math.max(.1,Math.min(4,z));fitMode=false;render()}
+window.addEventListener('resize',()=>{if(fitMode)fit();else drawOverlay()});
+
+/* ---------- pointer ---------- */
+function pt(e){const r=svg.getBoundingClientRect();return {x:(e.clientX-r.left)*doc.w/r.width,y:(e.clientY-r.top)*doc.h/r.height}}
+function setTool(t){tool=t;document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));markBrush();render()}
+let lastArrowColor='#4b3f8f';
+svg.addEventListener('pointerdown',e=>{
+  if(e.button>0) return;
+  const p=pt(e), h=e.target.closest('[data-h]'), it=e.target.closest('[data-id]');
+  if(h&&sel){drag={mode:h.dataset.h,p0:p,o0:clone(get(sel))}}
+  else if(tool==='brush'){const st={...BRUSHES[brushStyle],...(brushPrefs[brushStyle]||{})};const br={id:uid(),type:'brush',style:brushStyle,pts:[[f(p.x),f(p.y)]],a:st.a,b:st.b,width:st.w,op:1};doc.items.push(br);sel=br.id;drag={mode:'draw',p0:p,o0:null,created:true}}
+  else if(tool==='arrow'){const a={id:uid(),type:'arrow',x1:snapv(p.x),y1:snapv(p.y),x2:snapv(p.x),y2:snapv(p.y),curve:0,color:lastArrowColor,width:3.5,head:'end',dash:false};doc.items.push(a);sel=a.id;drag={mode:'p2',p0:p,o0:clone(a),created:true}}
+  else if(tool==='text'){const t={id:uid(),type:'text',x:snapv(p.x),y:snapv(p.y),text:'Label',size:18,color:'#231d33',weight:600,anchor:'start',rot:0};doc.items.push(t);sel=t.id;setTool('select');commit();renderInspector();const ta=$('#p-text');if(ta){ta.focus();ta.select()}e.preventDefault();return}
+  else if(it){sel=it.dataset.id;drag={mode:'move',p0:p,o0:clone(get(sel))}}
+  else {sel=null;drag=null}
+  if(drag){try{svg.setPointerCapture(e.pointerId)}catch(_){}drag.moved=false}
+  render(); renderInspector(); e.preventDefault();
+});
+svg.addEventListener('pointermove',e=>{
+  if(!drag) return; const o=get(sel); if(!o) return;
+  const p=pt(e), o0=drag.o0, dx=p.x-drag.p0.x, dy=p.y-drag.p0.y; drag.moved=true;
+  switch(drag.mode){
+    case 'draw':{const l=o.pts[o.pts.length-1];if(Math.hypot(p.x-l[0],p.y-l[1])>=2.5)o.pts.push([f(p.x),f(p.y)]);break}
+    case 'move':
+      if(o.type==='arrow'){const sx=snapv(o0.x1+dx)-o0.x1,sy=snapv(o0.y1+dy)-o0.y1;o.x1=o0.x1+sx;o.y1=o0.y1+sy;o.x2=o0.x2+sx;o.y2=o0.y2+sy}
+      else if(o.type==='brush'){o.pts=o0.pts.map(([x,y])=>[f(x+dx),f(y+dy)])}
+      else if(o.type==='text'){o.x=snapv(o0.x+dx);o.y=snapv(o0.y+dy);delete o.bb}
+      else {o.x=snapv(o0.x+dx);o.y=snapv(o0.y+dy)}
+      break;
+    case 'p1': o.x1=snapv(p.x);o.y1=snapv(p.y);if(e.shiftKey)axisLock(o,'1');break;
+    case 'p2': o.x2=snapv(p.x);o.y2=snapv(p.y);if(e.shiftKey)axisLock(o,'2');break;
+    case 'curve':{const dx2=o.x2-o.x1,dy2=o.y2-o.y1,len=Math.hypot(dx2,dy2)||1;const qx=p.x-(o.x1+o.x2)/2,qy=p.y-(o.y1+o.y2)/2;o.curve=Math.round(2*(qx*(-dy2/len)+qy*(dx2/len)));if(Math.abs(o.curve)<6)o.curve=0;break}
+    case 'resize':{
+      const a=(o0.rot||0)*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a);
+      const lx=dx*ca+dy*sa, ly=-dx*sa+dy*ca;
+      if(o.type==='brush'){const xs=o0.pts.map(q=>q[0]),ys=o0.pts.map(q=>q[1]),x0=Math.min(...xs),y0=Math.min(...ys),w0=Math.max(...xs)-x0,h0=Math.max(...ys)-y0;let sx=w0>1?Math.max(.05,(w0+dx)/w0):1,sy=h0>1?Math.max(.05,(h0+dy)/h0):1;if(e.shiftKey){const m=Math.max(sx,sy);sx=sy=m}o.pts=o0.pts.map(([x,y])=>[f(x0+(x-x0)*sx),f(y0+(y-y0)*sy)]);break}
+      if(o.type==='text'){const b0=o0.bb||bounds(o0);o.size=Math.max(6,Math.round(o0.size*Math.max(.1,(b0.w+lx)/b0.w)));delete o.bb;break}
+      let nw=Math.max(8,o0.w+lx), nh=Math.max(8,o0.h+ly);
+      const lock=(o.type==='icon'||o.type==='image')?o.lock!==false:e.shiftKey;
+      if(lock){const s=Math.max(nw/o0.w,nh/o0.h);nw=o0.w*s;nh=o0.h*s}
+      if(doc.snap&&!o0.rot){nw=Math.max(10,Math.round((o0.x+nw)/10)*10-o0.x);if(!lock)nh=Math.max(10,Math.round((o0.y+nh)/10)*10-o0.y);else nh=o0.h*nw/o0.w}
+      const c0x=o0.x+o0.w/2,c0y=o0.y+o0.h/2, tlx=c0x+(-o0.w/2)*ca-(-o0.h/2)*sa, tly=c0y+(-o0.w/2)*sa+(-o0.h/2)*ca;
+      const ncx=tlx-((-nw/2)*ca-(-nh/2)*sa), ncy=tly-((-nw/2)*sa+(-nh/2)*ca);
+      o.w=f(nw);o.h=f(nh);o.x=f(ncx-nw/2);o.y=f(ncy-nh/2);break}
+    case 'rotate':{const b=bounds(o0);let ang=Math.atan2(p.y-(b.y+b.h/2),p.x-(b.x+b.w/2))*180/Math.PI+90;ang=e.shiftKey?Math.round(ang/15)*15:Math.round(ang);for(const s of [0,90,180,270,360,-90]) if(Math.abs(ang-s)<4) ang=s;o.rot=((ang%360)+360)%360;break}
+  }
+  render();
+});
+function axisLock(o,w){const ax=w==='1'?o.x2:o.x1,ay=w==='1'?o.y2:o.y1,px=o['x'+w],py=o['y'+w];if(Math.abs(px-ax)>Math.abs(py-ay))o['y'+w]=ay;else o['x'+w]=ax}
+function endDrag(){
+  if(!drag) return; const o=get(sel);
+  if(drag.created&&o&&o.type==='brush'){const P=[o.pts[0]];for(const q of o.pts.slice(1)){const l=P[P.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>=5)P.push(q)}const last=o.pts[o.pts.length-1];if(P[P.length-1]!==last&&o.pts.length>1)P.push(last);o.pts=P;if(P.length<2){doc.items=doc.items.filter(x=>x!==o);sel=null}else commit()}
+  else if(drag.created&&o&&Math.hypot(o.x2-o.x1,o.y2-o.y1)<10){doc.items=doc.items.filter(x=>x!==o);sel=null;toast('Drag further to draw an arrow')}
+  else if(drag.moved||drag.created) commit();
+  drag=null; render(); renderInspector();
+}
+svg.addEventListener('pointerup',endDrag); svg.addEventListener('pointercancel',endDrag);
+
+/* ---------- actions ---------- */
+function addItem(o){doc.items.push(o);sel=o.id;setTool('select');commit();render();renderInspector()}
+function addFromLib(key,p){
+  const c=p||{x:doc.w/2,y:doc.h/2};
+  const idf=iconDef(key); if(idf){const s=120;addItem({id:uid(),type:'icon',icon:key,x:snapv(c.x-s/2),y:snapv(c.y-s/2),w:s,h:s,rot:0,flip:false,lock:true,op:1,a:idf.a,b:idf.b});return}
+  if(!SHAPES[key]) return;
+  const k=SHAPES[key].kind;
+  if(k==='text') addItem({id:uid(),type:'text',x:snapv(c.x),y:snapv(c.y-12),text:'Label',size:18,color:'#231d33',weight:600,anchor:'middle',rot:0});
+  else if(k==='arrow') addItem({id:uid(),type:'arrow',x1:snapv(c.x-80),y1:snapv(c.y),x2:snapv(c.x+80),y2:snapv(c.y),curve:0,color:lastArrowColor,width:3.5,head:'end',dash:false});
+  else addItem({id:uid(),type:'shape',kind:k,x:snapv(c.x-130),y:snapv(c.y-80),w:260,h:160,r:18,rot:0,a:k==='round'?'#f6f2fb':k==='ellipse'?'#fbe6ee':'#eef0f6',b:k==='round'?'#c9bde0':k==='ellipse'?'#c8366e':'#7f8698',sw:k==='round'?1.5:2,dash:false,op:1});
+}
+function dup(){const o=sel&&get(sel);if(!o)return;const n=clone(o);n.id=uid();shiftItem(n,20,20);doc.items.push(n);sel=n.id;commit();render();renderInspector()}
+function del(){if(!sel)return;doc.items=doc.items.filter(o=>o.id!==sel);sel=null;commit();render();renderInspector()}
+function arrange(how){const i=doc.items.findIndex(o=>o.id===sel);if(i<0)return;const [o]=doc.items.splice(i,1);const j=how==='front'?doc.items.length:how==='back'?0:how==='fwd'?Math.min(doc.items.length,i+1):Math.max(0,i-1);doc.items.splice(j,0,o);commit();render()}
+function nudge(dx,dy){const o=sel&&get(sel);if(!o)return;shiftItem(o,dx,dy);render();clearTimeout(nudge.t);nudge.t=setTimeout(()=>{commit();renderInspector()},350)}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea,select')) return;
+  const m=e.ctrlKey||e.metaKey, k=e.key.toLowerCase();
+  if(m&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}
+  else if(m&&k==='y'){e.preventDefault();redo()}
+  else if(m&&k==='d'){e.preventDefault();dup()}
+  else if(m&&k==='c'){if(sel)clip=clone(get(sel))}
+  else if(m&&k==='v'){if(clip){const n=clone(clip);n.id=uid();shiftItem(n,24,24);clip=clone(n);addItem(n)}}
+  else if(k==='delete'||k==='backspace'){if(sel){e.preventDefault();del()}}
+  else if(k.startsWith('arrow')&&sel){e.preventDefault();const s=e.shiftKey?10:1;nudge(k==='arrowleft'?-s:k==='arrowright'?s:0,k==='arrowup'?-s:k==='arrowdown'?s:0)}
+  else if(!m&&k==='v') setTool('select');
+  else if(!m&&k==='a') setTool('arrow');
+  else if(!m&&k==='t') setTool('text');
+  else if(!m&&k==='b') setTool('brush');
+  else if(k==='escape'){sel=null;setTool('select');renderInspector()}
+});
+
+/* ---------- library ---------- */
+function buildLib(q=''){
+  q=q.trim().toLowerCase(); const cats={};
+  for(const k of Object.keys(doc.custom||{})){const v=iconDef(k);if(!v||(q&&!(v.name+' generated ai').toLowerCase().includes(q)))continue;(cats['Generated']=cats['Generated']||[]).push([k,v.name,`<svg viewBox="0 0 100 100" aria-hidden="true">${v.draw(v.a,v.b)}</svg>`])}
+  for(const [k,v] of Object.entries(ICONS)){if(q&&!(v.name+' '+k+' '+v.cat).toLowerCase().includes(q))continue;(cats[v.cat]=cats[v.cat]||[]).push([k,v.name,`<svg viewBox="0 0 100 100" aria-hidden="true">${v.draw(v.a,v.b)}</svg>`])}
+  for(const [k,v] of Object.entries(BRUSHES)){if(q&&!(v.name+' brush '+k).toLowerCase().includes(q))continue;(cats['Brushes']=cats['Brushes']||[]).push(['brush:'+k,v.name,`<svg viewBox="0 0 100 100" aria-hidden="true">${brushPreview(k)}</svg>`])}
+  for(const [k,v] of Object.entries(SHAPES)){if(q&&!(v.name+' shape').toLowerCase().includes(q))continue;(cats['Shapes & labels']=cats['Shapes & labels']||[]).push([k,v.name,`<svg viewBox="0 0 100 100" aria-hidden="true">${shapePreview[k]}</svg>`])}
+  const html=Object.entries(cats).map(([c,list])=>`<div class="cat">${c}</div><div class="items">${list.map(([k,n,s])=>`<button class="item" data-key="${k}" draggable="${!k.startsWith('brush:')}" title="${k.startsWith('brush:')?'Draw with '+esc(n):'Add '+esc(n)}">${s}<span>${esc(n)}</span></button>`).join('')}</div>`).join('');
+  setTimeout(markBrush);
+  $('#libbody').innerHTML=html||`<p class="empty-lib">No icons match “${esc(q)}”.</p>`;
+}
+$('#search').addEventListener('input',e=>buildLib(e.target.value));
+$('#libbody').addEventListener('click',e=>{const b=e.target.closest('.item');if(b&&b.dataset.key.startsWith('brush:')){pickBrush(b.dataset.key.slice(6));return}if(b){addFromLib(b.dataset.key);if(window.innerWidth<=900)stage.scrollIntoView({behavior:'smooth',block:'center'})}});
+$('#libbody').addEventListener('dragstart',e=>{const b=e.target.closest('.item');if(b){e.dataTransfer.setData('text/plain','oz:'+b.dataset.key);e.dataTransfer.effectAllowed='copy'}});
+stage.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy'});
+stage.addEventListener('drop',e=>{e.preventDefault();const d=e.dataTransfer.getData('text/plain');if(d&&d.startsWith('oz:'))addFromLib(d.slice(3),pt(e));else if(e.dataTransfer.files[0]&&e.dataTransfer.files[0].type.startsWith('image/'))placeImage(e.dataTransfer.files[0],pt(e))});
+
+/* ---------- inspector ---------- */
+const num=(lab,prop,val,step=1)=>`<label class="num"><span>${lab}</span><input type="number" id="p-${prop}" data-prop="${prop}" data-num step="${step}" value="${f(val)}"></label>`;
+const colorField=(label,prop,val)=>`<div class="field"><span class="lab">${label}</span><div class="sw">${SW.map(c=>`<button class="swatch${String(val).toLowerCase()===c?' on':''}" style="background:${c}" data-swatch="${prop}" data-color="${c}" aria-label="${label} ${c}"></button>`).join('')}<input type="color" id="p-${prop}" data-prop="${prop}" value="${/^#[0-9a-f]{6}$/i.test(val)?val:'#ffffff'}" aria-label="Custom ${label.toLowerCase()}"></div></div>`;
+const range=(label,prop,val,min,max,step,fmt=v=>v)=>`<div class="field"><span class="lab">${label}</span><div class="range"><input type="range" id="p-${prop}" data-prop="${prop}" data-num min="${min}" max="${max}" step="${step}" value="${val}"><output>${fmt(val)}</output></div></div>`;
+const check=(label,prop,val)=>`<label class="check"><input type="checkbox" id="p-${prop}" data-prop="${prop}" data-bool${val?' checked':''}>${label}</label>`;
+const seg=(prop,val,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button data-seg="${prop}" data-val="${v}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
+const arrangeRow=`<div class="field"><span class="lab">Arrange</span><div class="btnrow"><button class="btn" data-act="front">To front</button><button class="btn" data-act="fwd">Forward</button><button class="btn" data-act="bwd">Backward</button><button class="btn" data-act="back">To back</button></div></div><div class="btnrow"><button class="btn" data-act="dup">Duplicate</button><button class="btn danger" data-act="del">Delete</button></div>`;
+const geo=o=>`<div class="field"><span class="lab">Position & size</span><div class="grid2">${num('X','x',o.x)}${num('Y','y',o.y)}${num('W','w',o.w)}${num('H','h',o.h)}${num('°','rot',o.rot||0)}</div></div>`;
+
+function renderInspector(){
+  const o=sel&&get(sel), I=$('#insp');
+  if(!o){
+    const sizes=[['1200x740','Figure 1200 × 740'],['1600x900','Slide 16:9'],['1000x1000','Square'],['1123x794','A4 landscape'],['794x1123','A4 portrait'],['1500x600','Graphical abstract']];
+    const cur=doc.w+'x'+doc.h;
+    I.innerHTML=`<div class="insp-head"><h2>Canvas</h2><span class="kind">${doc.items.length} objects</span></div>
+    <div class="field"><span class="lab">Artboard</span><select id="p-size">${sizes.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('')}${sizes.some(s=>s[0]===cur)?'':`<option selected>${doc.w} × ${doc.h}</option>`}</select></div>
+    <div class="field"><span class="lab">Background</span>${seg('bg',doc.bg==='transparent'?'transparent':'#ffffff',[['#ffffff','White'],['transparent','Transparent']])}</div>
+    ${check('Snap to 10 px grid','snap',doc.snap)}
+    <hr class="sep">
+    <div class="field"><span class="lab">Shortcuts</span><dl class="keys"><dt><kbd>V</kbd> <kbd>A</kbd> <kbd>B</kbd> <kbd>T</kbd></dt><dd style="margin:0">Select, arrow, brush, text</dd><dt><kbd>Ctrl</kbd>+<kbd>D</kbd></dt><dd style="margin:0">Duplicate</dd><dt><kbd>Ctrl</kbd>+<kbd>Z</kbd></dt><dd style="margin:0">Undo</dd><dt><kbd>Shift</kbd>+drag</dt><dd style="margin:0">Snap rotation to 15°</dd><dt><kbd>←↑→↓</kbd></dt><dd style="margin:0">Nudge 1 px, Shift for 10</dd><dt><kbd>Del</kbd></dt><dd style="margin:0">Remove selected</dd></dl></div>
+    <p class="note">Your figure saves in this browser as you work. Use Project → Save project to keep a copy you can reopen anywhere.</p>`;
+    return;
+  }
+  let h='';
+  if(o.type==='icon'){
+    h=`<div class="insp-head"><h2>${esc(iconDef(o.icon)?.name||'Icon')}</h2><span class="kind">icon</span></div>${colorField('Main color','a',o.a)}${colorField('Detail color','b',o.b)}${range('Opacity','op',o.op??1,.1,1,.05,v=>Math.round(v*100)+'%')}${geo(o)}<div class="btnrow">${check('Lock ratio','lock',o.lock!==false)}${check('Flip horizontal','flip',o.flip)}</div><button class="btn" data-act="resetcol">Reset colors</button>${arrangeRow}`;
+  } else if(o.type==='shape'){
+    h=`<div class="insp-head"><h2>${o.kind==='ellipse'?'Ellipse':o.kind==='round'?'Panel':'Rectangle'}</h2><span class="kind">shape</span></div>${colorField('Fill','a',o.a)}${colorField('Outline','b',o.b)}${range('Outline width','sw',o.sw,0,12,.5,v=>v+' px')}${o.kind==='round'?range('Corner radius','r',o.r,0,80,1,v=>v+' px'):''}${check('Dashed outline','dash',o.dash)}${range('Opacity','op',o.op??1,.1,1,.05,v=>Math.round(v*100)+'%')}${geo(o)}${arrangeRow}`;
+  } else if(o.type==='text'){
+    h=`<div class="insp-head"><h2>Text</h2><span class="kind">label</span></div><div class="field"><label class="lab" for="p-text">Content</label><textarea id="p-text" data-prop="text">${esc(o.text)}</textarea></div><div class="grid2">${num('pt','size',o.size)}${num('°','rot',o.rot||0)}</div><div class="field"><span class="lab">Weight</span>${seg('weight',o.weight,[[400,'Regular'],[600,'Semibold'],[700,'Bold']])}</div><div class="field"><span class="lab">Align</span>${seg('anchor',o.anchor,[['start','Left'],['middle','Center'],['end','Right']])}</div>${colorField('Color','color',o.color)}${arrangeRow}`;
+  } else if(o.type==='arrow'){
+    h=`<div class="insp-head"><h2>Arrow</h2><span class="kind">connector</span></div>${colorField('Color','color',o.color)}${range('Line width','width',o.width,1,12,.5,v=>v+' px')}${range('Curve','curve',o.curve||0,-300,300,1,v=>v)}<div class="field"><span class="lab">Heads</span>${seg('head',o.head,[['none','None'],['end','End'],['both','Both']])}</div>${check('Dashed line','dash',o.dash)}<div class="btnrow"><button class="btn" data-act="reverse">Reverse direction</button></div><p class="note">Drag the middle dot to bend. Hold Shift on an end to keep it straight.</p>${arrangeRow}`;
+  } else if(o.type==='brush'){
+    h=`<div class="insp-head"><h2>${esc(BRUSHES[o.style]?.name||'Brush')}</h2><span class="kind">brush</span></div><div class="field"><label class="lab" for="p-style">Brush</label><select id="p-style" data-prop="style">${Object.entries(BRUSHES).map(([k,v])=>`<option value="${k}"${k===o.style?' selected':''}>${v.name}</option>`).join('')}</select></div>${colorField('Main color','a',o.a)}${o.style==='pen'||o.style==='dashed'?'':colorField('Detail color','b',o.b)}${range('Width','width',o.width,1,80,1,v=>v+' px')}${range('Opacity','op',o.op??1,.1,1,.05,v=>Math.round(v*100)+'%')}${arrangeRow}`;
+  } else if(o.type==='image'){
+    h=`<div class="insp-head"><h2>Image</h2><span class="kind">placed</span></div>${range('Opacity','op',o.op??1,.1,1,.05,v=>Math.round(v*100)+'%')}${geo(o)}<div class="btnrow">${check('Lock ratio','lock',o.lock!==false)}${check('Flip horizontal','flip',o.flip)}</div>${arrangeRow}`;
+  }
+  I.innerHTML=h;
+}
+function setProp(prop,val){
+  const o=sel&&get(sel); if(!o) return;
+  if(prop==='w'&&(o.type==='icon'||o.type==='image')&&o.lock!==false&&o.w){o.h=f(o.h*val/o.w)}
+  if(prop==='h'&&(o.type==='icon'||o.type==='image')&&o.lock!==false&&o.h){o.w=f(o.w*val/o.h)}
+  if(o.type==='arrow'&&prop==='color') lastArrowColor=val;
+  if(o.type==='brush'){if(prop==='style'){const d=BRUSHES[val];o.a=d.a;o.b=d.b;o.width=d.w}else if(['a','b','width'].includes(prop)){brushPrefs[o.style]={...(brushPrefs[o.style]||{}),[prop==='width'?'w':prop]:val}}}
+  o[prop]=val; if(o.type==='text') delete o.bb; render();
+}
+const insp=$('#insp');
+insp.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='p-size'){return}
+  if(t.id==='p-snap'){doc.snap=t.checked;render();commit();return}
+  const prop=t.dataset.prop; if(!prop) return;
+  let v=t.dataset.bool!==undefined?t.checked:t.dataset.num!==undefined?parseFloat(t.value):t.value;
+  if(t.dataset.num!==undefined&&isNaN(v)) return;
+  if(prop==='size') v=Math.max(4,v);
+  if((prop==='w'||prop==='h')) v=Math.max(4,v);
+  setProp(prop,v);
+  const out=t.parentElement.querySelector('output'); if(out) out.textContent=prop==='op'?Math.round(v*100)+'%':(prop==='sw'||prop==='r'||prop==='width')?v+' px':v;
+});
+insp.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='p-size'){const [w,h]=t.value.split('x').map(Number);if(w&&h){doc.w=w;doc.h=h;commit();fit();renderInspector()}return}
+  if(t.dataset.prop||t.id==='p-snap'){commit();if(t.type==='color'||t.tagName==='SELECT'){renderInspector();render()}}
+});
+insp.addEventListener('click',e=>{
+  const s=e.target.closest('[data-swatch]'); if(s){setProp(s.dataset.swatch,s.dataset.color);commit();renderInspector();return}
+  const g=e.target.closest('[data-seg]'); if(g){
+    if(g.dataset.seg==='bg'){doc.bg=g.dataset.val;render();commit();renderInspector();return}
+    let v=g.dataset.val; if(g.dataset.seg==='weight') v=+v; setProp(g.dataset.seg,v);commit();renderInspector();return}
+  const a=e.target.closest('[data-act]'); if(!a) return; const o=get(sel);
+  switch(a.dataset.act){
+    case 'dup':dup();break; case 'del':del();break;
+    case 'front':case 'back':case 'fwd':case 'bwd':arrange(a.dataset.act);break;
+    case 'resetcol':{const d=iconDef(o.icon);if(d){o.a=d.a;o.b=d.b}}commit();render();renderInspector();break;
+    case 'reverse':[o.x1,o.y1,o.x2,o.y2]=[o.x2,o.y2,o.x1,o.y1];o.curve=-(o.curve||0);commit();render();break;
+  }
+});
+
+/* ---------- images & files ---------- */
+function placeImage(file,p){
+  if(file.size>6e6){toast('That image is over 6 MB. Use a smaller export of it.');return}
+  const r=new FileReader(); r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,320/Math.max(im.width,im.height));const w=f(im.width*s),h=f(im.height*s);const c=p||{x:doc.w/2,y:doc.h/2};addItem({id:uid(),type:'image',href:r.result,x:f(c.x-w/2),y:f(c.y-h/2),w,h,rot:0,flip:false,lock:true,op:1})};im.onerror=()=>toast('That file could not be read as an image.');im.src=r.result};r.readAsDataURL(file);
+}
+$('#addimg').onclick=()=>$('#imgfile').click();
+$('#imgfile').onchange=e=>{const fl=e.target.files[0];if(fl)placeImage(fl);e.target.value=''};
+$('#jsonfile').onchange=e=>{const fl=e.target.files[0];e.target.value='';if(!fl)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.items)||!d.w||!d.h)throw 0;doc=d;sel=null;buildLib();commit();fit();renderInspector();toast('Opened '+fl.name)}catch(_){toast('That file is not an O2 Figure Studio project.')}};r.readAsText(fl)};
+
+/* ---------- export ---------- */
+const dlP=(window.claude&&window.claude.use)?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);
+function figureSVG(){
+  const tr=doc.bg==='transparent';
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${doc.w}" height="${doc.h}" viewBox="0 0 ${doc.w} ${doc.h}">${tr?'':`<rect width="${doc.w}" height="${doc.h}" fill="${doc.bg}"/>`}${doc.items.map(o=>renderItem(o,true)).join('')}</svg>`;
+}
+async function pngBlob(scale){
+  const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(figureSVG());
+  await img.decode();
+  const c=document.createElement('canvas'); c.width=Math.round(doc.w*scale); c.height=Math.round(doc.h*scale);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('Canvas export failed')),'image/png'));
+}
+async function offer(filename,data,fallback){
+  const dl=await dlP; if(!dl){fallback();return}
+  try{await dl.save({filename,data});toast('Saved '+filename)}
+  catch(err){const c=err&&err.code;if(c==='declined')toast('Export cancelled');else if(c==='rate_limited')toast('A save prompt is already open');else if(['unavailable','not_granted','capability_disabled','capability_removed'].includes(c))fallback();else toast('Export failed: '+(err&&err.message||'unknown error'))}
+}
+function showModal(html){$('#sheet').innerHTML=html;$('#modal').hidden=false}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'||e.target.closest('[data-close]'))$('#modal').hidden=true;const cp=e.target.closest('[data-copy]');if(cp){const ta=$('#sheet textarea');const done=()=>toast('Copied');navigator.clipboard?.writeText(ta.value).then(done,()=>{ta.select()})||ta.select()}});
+function textFallback(title,text,note){showModal(`<h3>${title}</h3><p class="note">${note}</p><textarea readonly>${esc(text)}</textarea><div class="btnrow"><button class="btn" data-copy>Copy</button><button class="btn" data-close>Close</button></div>`)}
+function fname(ext){const t=doc.items.find(o=>o.type==='text'&&o.size>=22);const base=(t?t.text.split('\n')[0]:'figure').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,48)||'figure';return base+'.'+ext}
+async function doExport(kind){
+  $('#exportpop').hidden=true; sel=null; render(); renderInspector();
+  if(kind==='svg'){const s=figureSVG();offer(fname('svg'),s,()=>textFallback('SVG code','' + s,'Copy this into a file named figure.svg, or paste it into Illustrator or Inkscape.'));return}
+  try{const sc=+$('#pngscale').value;const b=await pngBlob(sc);offer(fname('png'),b,()=>{const u=URL.createObjectURL(b);showModal(`<h3>PNG ready · ${doc.w*sc} × ${doc.h*sc} px</h3><p class="note">Right-click or long-press the image to save it.</p><img src="${u}" alt="Exported figure"><div class="btnrow"><button class="btn" data-close>Close</button></div>`)})}
+  catch(err){toast('PNG export failed. Try SVG instead.')}
+}
+document.querySelectorAll('[data-export]').forEach(b=>b.onclick=()=>doExport(b.dataset.export));
+const updPx=()=>{const s=+$('#pngscale').value;$('#pngpx').textContent=`${doc.w*s} × ${doc.h*s} px`};
+$('#pngscale').onchange=updPx;
+
+/* ---------- toolbar ---------- */
+const pops=['exportpop','filepop','newpop'];
+function togglePop(id){pops.forEach(p=>{if(p!==id)$('#'+p).hidden=true});$('#'+id).hidden=!$('#'+id).hidden;if(id==='exportpop')updPx()}
+$('#exportbtn').onclick=e=>{e.stopPropagation();togglePop('exportpop')};
+$('#filebtn').onclick=e=>{e.stopPropagation();togglePop('filepop')};
+$('#newbtn').onclick=e=>{e.stopPropagation();togglePop('newpop')};
+document.addEventListener('click',e=>{if(!e.target.closest('.pop')&&!e.target.closest('#exportbtn,#filebtn,#newbtn'))pops.forEach(p=>$('#'+p).hidden=true)});
+$('#newyes').onclick=()=>{doc={w:doc.w,h:doc.h,bg:doc.bg,snap:doc.snap,custom:doc.custom,items:[]};sel=null;commit();render();renderInspector();$('#newpop').hidden=true;toast('Canvas cleared · Ctrl+Z to undo')};
+$('#newno').onclick=()=>$('#newpop').hidden=true;
+$('#savejson').onclick=()=>{$('#filepop').hidden=true;const s=JSON.stringify(doc);offer(fname('json'),s,()=>textFallback('Project file',s,'Copy this into a .json file to reopen it later with Open project.'))};
+$('#openjson').onclick=()=>{$('#filepop').hidden=true;$('#jsonfile').click()};
+$('#loadsample').onclick=()=>{$('#filepop').hidden=true;doc=Object.assign(sample(),{custom:doc.custom});sel=null;buildLib();commit();fit();renderInspector()};
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+$('#undo').onclick=undo; $('#redo').onclick=redo;
+$('#zin').onclick=()=>setZoom(zoom*1.25); $('#zout').onclick=()=>setZoom(zoom/1.25); $('#zfit').onclick=fit;
+
+
+/* ---------- generate with AI ---------- */
+const sampleP=(window.claude&&window.claude.use)?window.claude.use('sample').catch(()=>null):Promise.resolve(null);
+let sampleFn=null; sampleP.then(s=>{sampleFn=s;$('#genbox').hidden=!s});
+const hexOr=(v,d)=>/^#[0-9a-f]{6}$/i.test(v)?v:d;
+const OK_TAGS=new Set(['g','path','circle','ellipse','rect','line','polyline','polygon']);
+const OK_ATTR=new Set(['d','cx','cy','r','rx','ry','x','y','x1','y1','x2','y2','width','height','points','fill','stroke','stroke-width','stroke-linecap','stroke-linejoin','stroke-dasharray','stroke-miterlimit','opacity','fill-opacity','stroke-opacity','fill-rule','transform']);
+const COLOR_RE=/^(none|MAIN|MAIN_DARK|MAIN_LIGHT|DETAIL|DETAIL_DARK|DETAIL_LIGHT|WHITE|#[0-9a-fA-F]{3,8})$/;
+function sanitizeIcon(markup){
+  if(typeof markup!=='string'||!markup.trim()) return '';
+  const body=markup.replace(/<\?xml[^>]*>/g,'').replace(/<\/?svg[^>]*>/g,'');
+  const d=new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`,'image/svg+xml');
+  if(d.querySelector('parsererror')) return '';
+  const walk=el=>{const t=el.localName;if(!OK_TAGS.has(t))return '';let s='<'+t;
+    for(const at of el.attributes){const n=at.name,v=at.value.trim();if(!OK_ATTR.has(n)||/[<>"&]/.test(v))continue;
+      if((n==='fill'||n==='stroke')&&!COLOR_RE.test(v))continue;
+      if(n==='transform'&&!/^[a-zA-Z0-9\s(),.\-]+$/.test(v))continue;
+      if(n==='d'&&!/^[MmLlHhVvCcSsQqTtAaZz0-9\s,.\-eE]+$/.test(v))continue;
+      s+=` ${n}="${v}"`}
+    const kids=[...el.children].map(walk).join('');return s+(kids?`>${kids}</${t}>`:'/>')};
+  return [...d.documentElement.children].map(walk).join('').slice(0,80000);
+}
+const SVG_RULES=`Inner SVG markup for viewBox 0 0 100 100 (fill most of the box, ~4 px margin). Only path, circle, ellipse, rect, line, polyline, polygon and g elements. No text, gradients, defs, style or class attributes. For fill and stroke use only these words: MAIN, MAIN_DARK, MAIN_LIGHT, DETAIL, DETAIL_DARK, DETAIL_LIGHT, WHITE, none. Flat BioRender-like style: soft MAIN_LIGHT or MAIN fills, MAIN_DARK outlines with stroke-width 2-3 and round joins, DETAIL for the key internal feature, one WHITE highlight ellipse at opacity 0.5.`;
+function iconPrompt(desc){return `Draw one scientific icon: """${desc}"""
+Reply with only JSON: {"name":"Short name, max 3 words","main":"#hex","detail":"#hex","svg":"..."}
+svg: ${SVG_RULES} Make it recognizable to an expert: correct proportions and the parts they expect to see. Use 15-60 elements.`}
+
+
+let aiCtl=null;
+const setStatus=(m,err)=>{const s=$('#genstatus');s.textContent=m;s.classList.toggle('err',!!err)};
+function aiErr(e){const c=e&&e.code;return c==='cancelled'?'Stopped.':c==='not_granted'?'Claude was not allowed for this page. Reload to be asked again.':c==='rate_limited'?'Too many requests. Wait a moment and try again.':c==='invalid_json'?'That icon could not be drawn. Try again or describe it differently.':(e&&e.message)||'Generation failed. Try again.'}
+async function genIcon(){
+  if(aiCtl){aiCtl.abort();return}
+  const desc=$('#genin').value.trim(); if(!desc){setStatus('Type what the icon should show.',true);$('#genin').focus();return}
+  if(!sampleFn){setStatus('Generation is not available here.',true);return}
+  aiCtl=new AbortController(); const btn=$('#gengo'); btn.textContent='Stop'; setStatus('Drawing “'+desc+'”…');
+  try{
+    const r=await sampleFn.json(iconPrompt(desc),{signal:aiCtl.signal,modelTier:'default'});
+    const svgM=sanitizeIcon(r&&r.svg); if(!svgM) throw {code:'invalid_json'};
+    const k='c_'+uid(); doc.custom={...(doc.custom||{}),[k]:{name:String(r.name||desc).slice(0,40),svg:svgM,a:hexOr(r.main,'#e8618c'),b:hexOr(r.detail,'#4b3f8f')}};
+    $('#genin').value=''; $('#search').value=''; buildLib(); addFromLib(k); setStatus('Added to the canvas and to Generated below.');
+  }catch(e){setStatus(aiErr(e),e&&e.code!=='cancelled')}
+  finally{aiCtl=null;btn.textContent='Generate'}
+}
+$('#gengo').onclick=genIcon;
+$('#genin').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(!aiCtl)genIcon()}});
+
+let tt; function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- boot ---------- */
+try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(Array.isArray(d.items)&&d.w)doc=d}}catch(e){}
+if(!doc) doc=sample();
+buildLib(); commit(); render(); renderInspector();
+requestAnimationFrame(()=>{fit();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{render()})});
+})();
+</script>
+
+</body></html>
