@@ -73,7 +73,8 @@ button{cursor:pointer}
 /* Car */
 .car{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:14px;overflow:hidden}
 .car-head{padding:14px 16px 12px;display:flex;gap:12px;align-items:flex-start}
-.car-icon{flex:none;width:40px;height:40px;border-radius:12px;background:var(--lake);display:grid;place-items:center;color:#fff}
+.car-icon{flex:none;width:54px;height:42px;border-radius:12px;background:var(--bg);border:1px solid var(--line);display:grid;place-items:center}
+.car-head .model{font-size:13px;font-weight:600;color:var(--ink)}
 .car-head h3{margin:0;font-size:17px;line-height:1.25}
 .car-head .meta{font-size:13px;color:var(--ink-2)}
 .seats{display:flex;gap:6px;padding:0 16px 12px;flex-wrap:wrap}
@@ -146,7 +147,7 @@ form.sheet{padding:20px}
 .ro-note{font-size:13px;color:var(--ink-2);text-align:center;margin:8px 0}
 .foot{text-align:center;font-size:13px;color:var(--ink-2);margin:36px 0 0;padding-top:16px;border-top:1px solid var(--line)}
 .foot span{margin:0 6px}
-.foot a{color:var(--ink);font-weight:700;text-decoration:underline;text-decoration-color:var(--sun);text-underline-offset:3px}
+.foot a{color:var(--ink);font-weight:400;text-decoration:underline;text-decoration-color:var(--sun);text-underline-offset:3px}
 .mine{display:block;width:100%;border:2px dashed var(--line);background:none;border-radius:12px;padding:11px;font-weight:700;color:var(--ink);margin:0 0 14px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
@@ -202,6 +203,7 @@ form.sheet{padding:20px}
     </select><div class="hint">Cars are filled with people from the same side of town first.</div></div>
     <div class="field"><label for="pArea">Pickup spot</label><input id="pArea" name="area" placeholder="e.g. Grad housing, Main St &amp; 5th"></div>
     <div class="field" id="seatsField" hidden><label for="pSeats">Free seats (not counting driver)</label><input id="pSeats" name="seats" type="number" min="1" max="12" value="3"></div>
+    <div class="row" id="carFields" hidden><div class="field"><label for="pCarModel">Car</label><input id="pCarModel" name="carModel" maxlength="40" placeholder="e.g. Honda Civic" autocomplete="off"></div><div class="field"><label for="pCarColor">Color</label><select id="pCarColor" name="carColor"><option value="">Not set</option><option value="White">White</option><option value="Black">Black</option><option value="Silver">Silver</option><option value="Gray">Gray</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Orange">Orange</option><option value="Brown">Brown</option><option value="Beige">Beige</option><option value="Purple">Purple</option></select></div></div>
     <div class="field" id="pinField"><label for="pPin">Put in a specific car</label><select id="pPin" name="pin"><option value="">Automatic</option></select></div>
     <div class="field"><label for="pNote">Note (optional)</label><input id="pNote" name="note" placeholder="e.g. has a big backpack"></div>
     <div class="actions">
@@ -225,6 +227,7 @@ form.sheet{padding:20px}
       <div class="field" id="mCarField"><label for="mCar">Ride with</label><select id="mCar"></select><div class="hint">Full cars can't be picked.</div></div>
       <div class="field" id="mSeatsField"><label for="mSeats">Free seats (not counting you)</label><input id="mSeats" type="number" min="1" max="12" value="3"></div>
       <div class="field" id="mPickField"><label for="mPick">Pickups start</label><input id="mPick" type="time"><div class="hint">When you start picking up your riders.</div></div>
+      <div class="row" id="mCarInfo"><div class="field"><label for="mCarModel">Car</label><input id="mCarModel" maxlength="40" placeholder="e.g. Honda Civic" autocomplete="off"></div><div class="field"><label for="mCarColor">Color</label><select id="mCarColor"><option value="">Not set</option><option value="White">White</option><option value="Black">Black</option><option value="Silver">Silver</option><option value="Gray">Gray</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Orange">Orange</option><option value="Brown">Brown</option><option value="Beige">Beige</option><option value="Purple">Purple</option></select></div></div>
       <div class="hint" id="mMsg" style="color:var(--danger);font-weight:600"></div>
     </div>
     <div class="actions"><button type="button" class="btn plain" data-close>Cancel</button><button type="submit" class="btn primary" id="mSave" disabled>Save my change</button></div>
@@ -361,6 +364,18 @@ form.sheet{padding:20px}
   }
 
   const carSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 17h14M3 13l2-6h14l2 6v4H3z"/><circle cx="7.5" cy="17" r="1.5" fill="currentColor"/><circle cx="16.5" cy="17" r="1.5" fill="currentColor"/></svg>`;
+  const CAR_COLORS = {White:"#F4F4F2",Black:"#2A2D33",Silver:"#BCC2C9",Gray:"#7B8189",Red:"#C23B2E",Blue:"#2F6FB0",Green:"#3E7A4C",Yellow:"#E9C547",Orange:"#E07B2E",Brown:"#7A5A3C",Beige:"#D8C8A6",Purple:"#6E4B9E"};
+  function carIcon(color){
+    const c = CAR_COLORS[color] || "#4C7699";
+    return `<svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true">
+      <path d="M2.5 17.2v-3.6c0-1.2.8-2.2 1.9-2.5l5.3-1.5 4.3-5c.7-.8 1.7-1.3 2.8-1.3h8.6c1.1 0 2.1.5 2.8 1.3l4 4.8 3.9 1c1.4.4 2.4 1.6 2.4 3.1v3.7c0 .9-.7 1.6-1.6 1.6H4.1c-.9 0-1.6-.7-1.6-1.6z" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width=".9" stroke-linejoin="round"/>
+      <path d="M11.4 10.1l3.7-4.3c.4-.4.9-.7 1.5-.7h4.1v5zM22.6 5.1h3.4c.6 0 1.1.3 1.5.7l3.3 4.3h-8.2z" fill="#D7E6F2" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>
+      <rect x="34.2" y="12.6" width="2.6" height="1.6" rx=".8" fill="#F7D774"/>
+      <circle cx="10.5" cy="19" r="3.6" fill="#1E242D"/><circle cx="10.5" cy="19" r="1.5" fill="#A3ADB8"/>
+      <circle cx="30" cy="19" r="3.6" fill="#1E242D"/><circle cx="30" cy="19" r="1.5" fill="#A3ADB8"/>
+    </svg>`;
+  }
+  const carDesc = d => [d.carColor, d.carModel].filter(Boolean).join(" ");
   const phoneSvg = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17.5H4A1.5 1.5 0 0 1 2.5 16V7A1.5 1.5 0 0 1 4 5.5z"/><circle cx="8" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="11.5" r="1" fill="currentColor" stroke="none"/></svg>`;
   const waSvg = `<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.2 13.9c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.1 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.6-.1 1.2z"/></svg>`;
   function waHref(p){
@@ -391,14 +406,14 @@ form.sheet{padding:20px}
       const seats = `<span class="seat driver" title="Driver"></span>` + Array.from({length:c.cap},(_,k)=>`<span class="seat ${k<c.riders.length?"full":""}"></span>`).join("");
       const left = c.cap - c.riders.length;
       h += `<article class="car">
-        <div class="car-head"><div class="car-icon">${carSvg}</div>
+        <div class="car-head"><div class="car-icon">${carIcon(d.carColor)}</div>
           <div style="flex:1;min-width:0"><h3>${esc(d.name)}’s car</h3>
-            <div class="meta">${[d.zone,d.area].filter(Boolean).map(esc).join(", ")||"Driver"}${d.note?` — ${esc(d.note)}`:""}</div></div>
+            ${carDesc(d)?`<div class="model">${esc(carDesc(d))}</div>`:""}<div class="meta">${[d.zone,d.area].filter(Boolean).map(esc).join(", ")||"Driver"}${d.note?` — ${esc(d.note)}`:""}</div></div>
           ${callBtn(d)}</div>
         <div class="seats" aria-label="${c.riders.length} of ${c.cap} seats taken">${seats}</div>
         <div class="pickup">Pickups start <b>${fmtTime(pick)}</b>${canWrite?`<input type="time" value="${esc(pick)}" data-pick="${esc(d.id)}" aria-label="Change pickup time for ${esc(d.name)}’s car">`:""}</div>
         <ul class="riders">
-          ${c.riders.map(r=>`<li class="rider"><div class="who"><b>${esc(r.name)} ${r._pinned?'<span class="pin">placed</span>':""}</b>${r.zone?`<span>${esc(r.zone)}: </span>`:""}
+          ${c.riders.map(r=>`<li class="rider"><div class="who"><b>${esc(r.name)} </b>${r.zone?`<span>${esc(r.zone)}: </span>`:""}
             ${r.area?`<a href="${mapHref(r.area)}" target="_blank" rel="noopener">${esc(r.area)}</a>`:`<span>Pickup spot not set</span>`}${r.note?`<span> — ${esc(r.note)}</span>`:""}</div>
             ${moveSelect(r,a.cars,r._pinned?d.id:"")}${callBtn(r)}</li>`).join("")}
           ${left>0?`<li class="empty-seat">${left} open ${left===1?"seat":"seats"}</li>`:""}
@@ -464,7 +479,7 @@ form.sheet{padding:20px}
   const pf = $("#personForm");
   function syncRole(){
     const driver = pf.role.value==="driver";
-    $("#seatsField").hidden=!driver; $("#pinField").hidden=driver;
+    $("#seatsField").hidden=!driver; $("#carFields").hidden=!driver; $("#pinField").hidden=driver;
   }
   pf.querySelectorAll('input[name="role"]').forEach(r=>r.addEventListener("change",syncRole));
 
@@ -475,7 +490,7 @@ form.sheet{padding:20px}
     const drivers = people.filter(x=>x.role==="driver");
     $("#pPin").innerHTML = `<option value="">Automatic</option>`+drivers.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}’s car</option>`).join("");
     if(p){
-      pf.role.value=p.role; pf.name.value=p.name||""; pf.phone.value=p.phone||""; pf.area.value=p.area||""; pf.zone.value=p.zone||""; pf.whatsapp.value=p.whatsapp||"";
+      pf.role.value=p.role; pf.name.value=p.name||""; pf.phone.value=p.phone||""; pf.area.value=p.area||""; pf.zone.value=p.zone||""; pf.whatsapp.value=p.whatsapp||""; pf.carModel.value=p.carModel||""; pf.carColor.value=p.carColor||"";
       pf.seats.value=p.seats||3; pf.pin.value=p.pin||""; pf.note.value=p.note||"";
     }
     $("#personTitle").textContent = p? "Edit "+p.name : "Add person";
@@ -493,7 +508,7 @@ form.sheet{padding:20px}
       id: existing? existing.id : ("p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
       created: existing? existing.created : Date.now(),
       role: pf.role.value, name: pf.name.value.trim(), phone: pf.phone.value.trim(),
-      area: pf.area.value.trim(), zone: pf.zone.value, whatsapp: pf.whatsapp.value.trim(), note: pf.note.value.trim(),
+      area: pf.area.value.trim(), zone: pf.zone.value, whatsapp: pf.whatsapp.value.trim(), carModel: pf.carModel.value.trim(), carColor: pf.carColor.value, note: pf.note.value.trim(),
       seats: pf.role.value==="driver" ? Math.max(1,Math.min(12,Number(pf.seats.value)||1)) : 0,
       pin: pf.role.value==="driver" ? "" : pf.pin.value,
       pickupTime: existing? (existing.pickupTime||"") : ""
@@ -559,7 +574,7 @@ form.sheet{padding:20px}
     if(!p) return;
     const checked = mf.querySelector('input[name="mrole"]:checked');
     const role = checked ? checked.value : p.role;
-    $("#mCarField").hidden = role!=="rider"; $("#mSeatsField").hidden = role!=="driver"; $("#mPickField").hidden = role!=="driver";
+    $("#mCarField").hidden = role!=="rider"; $("#mSeatsField").hidden = role!=="driver"; $("#mPickField").hidden = role!=="driver"; $("#mCarInfo").hidden = role!=="driver";
     const a = assign();
     const mineCar = a.cars.find(c=>c.riders.some(r=>r.id===p.id));
     $("#mCar").innerHTML = `<option value="">Any car (automatic)</option>` + a.cars.filter(c=>c.driver.id!==p.id).map(c=>{
@@ -578,7 +593,7 @@ form.sheet{padding:20px}
     const p = people.find(x=>x.id===mineId);
     if(p){
       mf.querySelector(`input[name="mrole"][value="${p.role==="driver"?"driver":"rider"}"]`).checked = true;
-      $("#mSeats").value = p.seats||3; $("#mPick").value = p.pickupTime || minus(trip.meetTime, trip.lead) || ""; $("#mCheck").value = ""; $("#mCheckField").hidden = !last4(p);
+      $("#mSeats").value = p.seats||3; $("#mPick").value = p.pickupTime || minus(trip.meetTime, trip.lead) || ""; $("#mCarModel").value = p.carModel||""; $("#mCarColor").value = p.carColor||""; $("#mCheck").value = ""; $("#mCheckField").hidden = !last4(p);
     }
     $("#mMsg").textContent=""; mineSync();
   });
@@ -589,7 +604,7 @@ form.sheet{padding:20px}
     if(last4(p) && $("#mCheck").value.trim()!==last4(p)){ $("#mMsg").textContent="Those digits don't match the phone number we have for you."; return; }
     const role = mf.querySelector('input[name="mrole"]:checked').value;
     const patch = role==="driver"
-      ? {role:"driver", seats:Math.max(1,Math.min(12,Number($("#mSeats").value)||1)), pin:"",
+      ? {role:"driver", seats:Math.max(1,Math.min(12,Number($("#mSeats").value)||1)), pin:"", carModel: $("#mCarModel").value.trim().slice(0,40), carColor: $("#mCarColor").value,
          pickupTime: (()=>{ const pk=$("#mPick").value; return (!p.pickupTime && pk===minus(trip.meetTime, trip.lead)) ? "" : pk; })()}
       : {role:"rider", seats:0, pin:$("#mCar").value};
     const wasDriver = p.role==="driver" && role!=="driver";
