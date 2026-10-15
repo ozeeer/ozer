@@ -197,8 +197,8 @@ form.sheet{padding:20px}
       <div><input type="radio" name="role" id="rDriver" value="driver"><label for="rDriver">Has a car</label></div>
     </div>
     <div class="field"><label for="pName">Name</label><input id="pName" name="name" required autocomplete="off"></div>
-    <div class="field"><label for="pPhone">Phone number</label><input id="pPhone" name="phone" type="tel" inputmode="tel" autocomplete="off"><div class="hint">Only drivers can see it, after entering their PSU ID.</div></div>
-    <div class="field"><label for="pEmail">Sign-up email</label><input id="pEmail" name="email" type="email" autocomplete="off"><div class="hint">The part before the @ is their PSU ID. Drivers enter it to see phone numbers.</div></div>
+    <div class="field"><label for="pPhone">Phone number</label><input id="pPhone" name="phone" type="tel" inputmode="tel" autocomplete="off"><div class="hint">Only this person's driver can see it.</div></div>
+    <div class="field"><label for="pEmail">Sign-up email</label><input id="pEmail" name="email" type="email" autocomplete="off"><div class="hint">The part before the @ is their ID. Drivers enter it to see their riders' numbers.</div></div>
     <div class="field"><label for="pWa">WhatsApp number (if different)</label><input id="pWa" name="whatsapp" type="tel" inputmode="tel" autocomplete="off" placeholder="Include country code, e.g. +57 310 270 7461"><div class="hint">Leave empty to use the phone number above.</div></div>
     <div class="field"><label for="pZone">Side of town</label><select id="pZone" name="zone">
       <option value="">Not sure</option><option>North</option><option>South</option><option>East</option><option>West</option><option>Downtown</option><option>Campus</option>
@@ -221,7 +221,7 @@ form.sheet{padding:20px}
     <h2>Change my carpool</h2>
     <div class="field"><label for="mWho">Your name</label><select id="mWho"><option value="">Choose your name</option></select></div>
     <div id="mStep" hidden>
-      <div class="field" id="mCheckField"><label for="mCheck">Your PSU ID</label><input id="mCheck" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. abc1234"><div class="hint">The part of your sign-up email before the @. So only you can change your spot.</div></div>
+      <div class="field" id="mCheckField"><label for="mCheck">Your ID</label><input id="mCheck" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. abc1234"><div class="hint">The part of your sign-up email before the @. For abc1234@psu.edu, enter abc1234.</div></div>
       <div class="role">
         <div><input type="radio" name="mrole" id="mRider" value="rider"><label for="mRider">I need a ride</label></div>
         <div><input type="radio" name="mrole" id="mDriver" value="driver"><label for="mDriver">I'll drive</label></div>
@@ -239,8 +239,8 @@ form.sheet{padding:20px}
 <dialog id="idDlg">
   <form class="sheet" id="idForm" method="dialog">
     <h2>Drivers only</h2>
-    <p style="margin:0 0 12px">Phone numbers are only for drivers. Enter your PSU ID to message your riders.</p>
-    <div class="field"><label for="idIn">Your PSU ID</label><input id="idIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. abc1234"><div class="hint" id="idErr" style="color:var(--danger);font-weight:600"></div></div>
+    <p style="margin:0 0 12px">Phone numbers are only for drivers. Enter your ID to message your riders.</p>
+    <div class="field"><label for="idIn">Your ID</label><input id="idIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. abc1234"><div class="hint">The part of your sign-up email before the @. For abc1234@psu.edu, enter abc1234.</div><div class="hint" id="idErr" style="color:var(--danger);font-weight:600"></div></div>
     <div class="actions"><button type="button" class="btn plain" data-close>Cancel</button><button type="submit" class="btn primary">Show numbers</button></div>
   </form>
 </dialog>
@@ -284,7 +284,7 @@ form.sheet{padding:20px}
   const DEFAULT_TRIP = {name:"Next GPOC trip", destination:"", date:"", meetPlace:"", meetTime:"08:00", departTime:"08:15", lead:30, notes:""};
   let trip = {...DEFAULT_TRIP};
   let people = [];
-  let contacts = {}, contactsOn = false, contactsUnsub = null, driverId = "";
+  let contacts = {}, contactsOn = false, contactsUnsub = null, driverId = "", driverPid = "", myRiders = new Set();
   let db = null, hasAccess = false, unlocked = false, canWrite = false, tab = "cars", editingId = null, loaded = false;
 
   const $ = s => document.querySelector(s);
@@ -396,6 +396,9 @@ form.sheet{padding:20px}
     return "https://wa.me/" + d;
   }
   const callBtn = person => {
+    const isRider = person.role !== "driver";
+    if(!canWrite && contactsOn && !myRiders.has(person.id)) return "";   // drivers only see their own riders
+    if(!canWrite && !contactsOn && !isRider) return "";
     if(!contactsOn) return `<span class="contact"><button type="button" class="call" data-needid aria-label="Text ${esc(person.name)} (drivers only)" title="Drivers only">${phoneSvg}</button><button type="button" class="call wa" data-needid aria-label="WhatsApp ${esc(person.name)} (drivers only)" title="Drivers only">${waSvg}</button></span>`;
     const p = {...(contacts[person.id]||{}), name: person.name};
     if(!p.phone && !p.whatsapp) return `<span class="ro-note" style="margin:0;flex:none">No phone</span>`;
@@ -453,6 +456,8 @@ form.sheet{padding:20px}
     renderHero();
     if(!loaded){ $("#summary").innerHTML="<p>Loading carpool…</p>"; return; }
     const a = assign();
+    const myCar = a.cars.find(c=>c.driver.id===driverPid);
+    myRiders = new Set(myCar ? myCar.riders.map(r=>r.id) : []);
     renderSummary(a);
     $("#view").innerHTML = tab==="cars" ? renderCars(a) : renderPeople(a);
     $("#addBtn").hidden = !canWrite;
@@ -664,15 +669,15 @@ form.sheet{padding:20px}
   /* ---------- Phone numbers: drivers only ---------- */
   const cleanId = v => String(v||"").trim().toLowerCase();
   function idProblem(id){
-    if(id.includes("@")) return "Enter your ID only, without the @ part (like abc1234).";
-    if(!/^[a-z0-9._-]{2,40}$/.test(id)) return "Enter your PSU ID, like abc1234.";
+    if(id.includes("@")) return "Enter only the part before the @. For abc1234@psu.edu, enter abc1234.";
+    if(!/^[a-z0-9._+-]{2,64}$/.test(id)) return "Enter your ID: the part of your sign-up email before the @.";
     return "";
   }
   async function unlockContacts(id){
     try{
       const s = await db.collection("book").doc(id).get();
       if(!s.exists) return false;
-      contacts = s.data().contacts || {}; contactsOn = true; driverId = id;
+      contacts = s.data().contacts || {}; contactsOn = true; driverId = id; driverPid = s.data().pid || "";
       try{ localStorage.setItem("gpoc-driver-id", id); }catch(e){}
       render(); return true;
     }catch(e){ return false; }
