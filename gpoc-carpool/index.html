@@ -96,6 +96,7 @@ button{cursor:pointer}
 :root[data-theme="dark"] .call{color:#0D1A2B}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .call{color:#0D1A2B}}
 .contact{display:inline-flex;gap:6px;flex:none}
+button.call{cursor:pointer;opacity:.55}
 .call.wa{background:#25D366;color:#073B1E}
 .move{flex:none;max-width:96px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 4px;font-size:12px}
 .pin{font-size:11px;font-weight:700;color:var(--lake)}
@@ -196,7 +197,8 @@ form.sheet{padding:20px}
       <div><input type="radio" name="role" id="rDriver" value="driver"><label for="rDriver">Has a car</label></div>
     </div>
     <div class="field"><label for="pName">Name</label><input id="pName" name="name" required autocomplete="off"></div>
-    <div class="field"><label for="pPhone">Phone number</label><input id="pPhone" name="phone" type="tel" inputmode="tel" autocomplete="off"><div class="hint">Never shown. People tap Message or WhatsApp to reach them.</div></div>
+    <div class="field"><label for="pPhone">Phone number</label><input id="pPhone" name="phone" type="tel" inputmode="tel" autocomplete="off"><div class="hint">Only drivers can see it, after entering their PSU ID.</div></div>
+    <div class="field"><label for="pEmail">Sign-up email</label><input id="pEmail" name="email" type="email" autocomplete="off"><div class="hint">The part before the @ is their PSU ID. Drivers enter it to see phone numbers.</div></div>
     <div class="field"><label for="pWa">WhatsApp number (if different)</label><input id="pWa" name="whatsapp" type="tel" inputmode="tel" autocomplete="off" placeholder="Include country code, e.g. +57 310 270 7461"><div class="hint">Leave empty to use the phone number above.</div></div>
     <div class="field"><label for="pZone">Side of town</label><select id="pZone" name="zone">
       <option value="">Not sure</option><option>North</option><option>South</option><option>East</option><option>West</option><option>Downtown</option><option>Campus</option>
@@ -219,7 +221,7 @@ form.sheet{padding:20px}
     <h2>Change my carpool</h2>
     <div class="field"><label for="mWho">Your name</label><select id="mWho"><option value="">Choose your name</option></select></div>
     <div id="mStep" hidden>
-      <div class="field" id="mCheckField"><label for="mCheck">Last 4 digits of your phone</label><input id="mCheck" inputmode="numeric" maxlength="4" autocomplete="off"><div class="hint">So only you can change your spot.</div></div>
+      <div class="field" id="mCheckField"><label for="mCheck">Your PSU ID</label><input id="mCheck" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. abc1234"><div class="hint">The part of your sign-up email before the @. So only you can change your spot.</div></div>
       <div class="role">
         <div><input type="radio" name="mrole" id="mRider" value="rider"><label for="mRider">I need a ride</label></div>
         <div><input type="radio" name="mrole" id="mDriver" value="driver"><label for="mDriver">I'll drive</label></div>
@@ -231,6 +233,15 @@ form.sheet{padding:20px}
       <div class="hint" id="mMsg" style="color:var(--danger);font-weight:600"></div>
     </div>
     <div class="actions"><button type="button" class="btn plain" data-close>Cancel</button><button type="submit" class="btn primary" id="mSave" disabled>Save my change</button></div>
+  </form>
+</dialog>
+
+<dialog id="idDlg">
+  <form class="sheet" id="idForm" method="dialog">
+    <h2>Drivers only</h2>
+    <p style="margin:0 0 12px">Phone numbers are only for drivers. Enter your PSU ID to message your riders.</p>
+    <div class="field"><label for="idIn">Your PSU ID</label><input id="idIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. abc1234"><div class="hint" id="idErr" style="color:var(--danger);font-weight:600"></div></div>
+    <div class="actions"><button type="button" class="btn plain" data-close>Cancel</button><button type="submit" class="btn primary">Show numbers</button></div>
   </form>
 </dialog>
 
@@ -273,6 +284,7 @@ form.sheet{padding:20px}
   const DEFAULT_TRIP = {name:"Next GPOC trip", destination:"", date:"", meetPlace:"", meetTime:"08:00", departTime:"08:15", lead:30, notes:""};
   let trip = {...DEFAULT_TRIP};
   let people = [];
+  let contacts = {}, contactsOn = false, contactsUnsub = null, driverId = "";
   let db = null, hasAccess = false, unlocked = false, canWrite = false, tab = "cars", editingId = null, loaded = false;
 
   const $ = s => document.querySelector(s);
@@ -383,9 +395,12 @@ form.sheet{padding:20px}
     if(d.length===10) d = "1" + d;          // US number without country code
     return "https://wa.me/" + d;
   }
-  const callBtn = p => (p.phone || p.whatsapp)
-    ? `<span class="contact">${p.phone?`<a class="call" href="${telHref(p.phone)}" aria-label="Text ${esc(p.name)}" title="Text message">${phoneSvg}</a>`:""}<a class="call wa" href="${waHref(p)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(p.name)}" title="WhatsApp">${waSvg}</a></span>`
-    : `<span class="ro-note" style="margin:0;flex:none">No phone</span>`;
+  const callBtn = person => {
+    if(!contactsOn) return `<span class="contact"><button type="button" class="call" data-needid aria-label="Text ${esc(person.name)} (drivers only)" title="Drivers only">${phoneSvg}</button><button type="button" class="call wa" data-needid aria-label="WhatsApp ${esc(person.name)} (drivers only)" title="Drivers only">${waSvg}</button></span>`;
+    const p = {...(contacts[person.id]||{}), name: person.name};
+    if(!p.phone && !p.whatsapp) return `<span class="ro-note" style="margin:0;flex:none">No phone</span>`;
+    return `<span class="contact">${p.phone?`<a class="call" href="${telHref(p.phone)}" aria-label="Text ${esc(p.name)}" title="Text message">${phoneSvg}</a>`:""}<a class="call wa" href="${waHref(p)}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(p.name)}" title="WhatsApp">${waSvg}</a></span>`;
+  };
 
   function moveSelect(r, cars, currentId){
     if(!canWrite) return "";
@@ -451,9 +466,30 @@ form.sheet{padding:20px}
   /* ---------- Writes ---------- */
   async function savePersonDoc(p){
     if(!db){ toast("Can't save right now."); return; }
-    const clean={}; Object.keys(p).forEach(k=>{ if(k[0]!=="_" && p[k]!==undefined) clean[k]=p[k]; });
+    const clean={}; Object.keys(p).forEach(k=>{ if(k[0]!=="_" && p[k]!==undefined && !["phone","whatsapp","email"].includes(k)) clean[k]=p[k]; });
     try{ await db.collection("people").doc(p.id).set(clean); }
     catch(e){ if(e&&e.code==="permission-denied"){toast("Not allowed. Log in as organizer.");} else toast("Didn't save. Try again."); }
+  }
+  const psuId = email => String(email||"").split("@")[0].trim().toLowerCase();
+  // Each person's ID opens a copy of the phone list. Firebase only lets it open while that person is a driver.
+  async function rebuildBooks(removedIds){
+    const phones = {}; Object.entries(contacts).forEach(([id,c])=>{ if(c.phone||c.whatsapp) phones[id]={phone:c.phone||"", whatsapp:c.whatsapp||""}; });
+    const b = db.batch();
+    Object.entries(contacts).forEach(([id,c])=>{ const k=psuId(c.email); if(k) b.set(db.collection("book").doc(k), {pid:id, contacts:phones}); });
+    (removedIds||[]).forEach(k=>{ if(k){ b.delete(db.collection("book").doc(k)); b.delete(db.collection("who").doc(k)); } });
+    await b.commit();
+  }
+  async function saveContact(id, c){
+    const old = contacts[id] || {};
+    const oldKey = psuId(old.email), newKey = psuId(c.email);
+    contacts[id] = c;
+    try{
+      const b = db.batch();
+      b.set(db.collection("private").doc(id), c);
+      if(newKey) b.set(db.collection("who").doc(newKey), {pid:id});
+      await b.commit();
+      await rebuildBooks(oldKey && oldKey!==newKey ? [oldKey] : []);
+    }catch(e){ toast("Contact info didn't save. Try again."); }
   }
   async function updatePerson(id, patch){
     const p = people.find(x=>x.id===id); if(!p) return;
@@ -472,6 +508,7 @@ form.sheet{padding:20px}
     if(t.dataset.pick!==undefined && t.value){ updatePerson(t.dataset.pick,{pickupTime:t.value}); toast("Pickup time saved"); }
   });
   $("#view").addEventListener("click", e=>{
+    if(e.target.closest("[data-needid]")){ openIdDlg(); return; }
     const b=e.target.closest("[data-edit]"); if(b) openPerson(b.dataset.edit);
   });
   document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog").close()));
@@ -490,7 +527,7 @@ form.sheet{padding:20px}
     const drivers = people.filter(x=>x.role==="driver");
     $("#pPin").innerHTML = `<option value="">Automatic</option>`+drivers.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}’s car</option>`).join("");
     if(p){
-      pf.role.value=p.role; pf.name.value=p.name||""; pf.phone.value=p.phone||""; pf.area.value=p.area||""; pf.zone.value=p.zone||""; pf.whatsapp.value=p.whatsapp||""; pf.carModel.value=p.carModel||""; pf.carColor.value=p.carColor||"";
+      pf.role.value=p.role; pf.name.value=p.name||""; pf.phone.value=(contacts[p.id]||{}).phone||""; pf.email.value=(contacts[p.id]||{}).email||""; pf.area.value=p.area||""; pf.zone.value=p.zone||""; pf.whatsapp.value=(contacts[p.id]||{}).whatsapp||""; pf.carModel.value=p.carModel||""; pf.carColor.value=p.carColor||"";
       pf.seats.value=p.seats||3; pf.pin.value=p.pin||""; pf.note.value=p.note||"";
     }
     $("#personTitle").textContent = p? "Edit "+p.name : "Add person";
@@ -507,8 +544,8 @@ form.sheet{padding:20px}
     const p = {
       id: existing? existing.id : ("p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
       created: existing? existing.created : Date.now(),
-      role: pf.role.value, name: pf.name.value.trim(), phone: pf.phone.value.trim(),
-      area: pf.area.value.trim(), zone: pf.zone.value, whatsapp: pf.whatsapp.value.trim(), carModel: pf.carModel.value.trim(), carColor: pf.carColor.value, note: pf.note.value.trim(),
+      role: pf.role.value, name: pf.name.value.trim(),
+      area: pf.area.value.trim(), zone: pf.zone.value, carModel: pf.carModel.value.trim(), carColor: pf.carColor.value, note: pf.note.value.trim(),
       seats: pf.role.value==="driver" ? Math.max(1,Math.min(12,Number(pf.seats.value)||1)) : 0,
       pin: pf.role.value==="driver" ? "" : pf.pin.value,
       pickupTime: existing? (existing.pickupTime||"") : ""
@@ -519,6 +556,7 @@ form.sheet{padding:20px}
     render();
     toast(existing?"Saved":"Added "+p.name);
     await savePersonDoc(p);
+    await saveContact(p.id, {phone: pf.phone.value.trim(), whatsapp: pf.whatsapp.value.trim(), email: pf.email.value.trim().toLowerCase()});
   });
 
   $("#delPerson").addEventListener("click", async ()=>{
@@ -530,7 +568,11 @@ form.sheet{padding:20px}
     const freed = people.filter(x=>x.pin===p.id);
     render(); toast("Removed "+p.name);
     try{
+      const oldKey = psuId((contacts[p.id]||{}).email);
       await db.collection("people").doc(p.id).delete();
+      await db.collection("private").doc(p.id).delete();
+      delete contacts[p.id];
+      await rebuildBooks([oldKey]);
       for(const r of freed){ r.pin=""; await savePersonDoc(r); }
     }catch(e){ toast("Didn't save. Try again."); }
   });
@@ -567,7 +609,7 @@ form.sheet{padding:20px}
   /* ---------- Change my carpool (members) ---------- */
   const mf = $("#mineForm");
   let mineId = null;
-  const last4 = p => String(p.phone||"").replace(/\D/g,"").slice(-4);
+  
   function mineSync(){
     const p = people.find(x=>x.id===mineId);
     $("#mStep").hidden = !p; $("#mSave").disabled = !p;
@@ -593,7 +635,7 @@ form.sheet{padding:20px}
     const p = people.find(x=>x.id===mineId);
     if(p){
       mf.querySelector(`input[name="mrole"][value="${p.role==="driver"?"driver":"rider"}"]`).checked = true;
-      $("#mSeats").value = p.seats||3; $("#mPick").value = p.pickupTime || minus(trip.meetTime, trip.lead) || ""; $("#mCarModel").value = p.carModel||""; $("#mCarColor").value = p.carColor||""; $("#mCheck").value = ""; $("#mCheckField").hidden = !last4(p);
+      $("#mSeats").value = p.seats||3; $("#mPick").value = p.pickupTime || minus(trip.meetTime, trip.lead) || ""; $("#mCarModel").value = p.carModel||""; $("#mCarColor").value = p.carColor||""; $("#mCheck").value = "";
     }
     $("#mMsg").textContent=""; mineSync();
   });
@@ -601,7 +643,12 @@ form.sheet{padding:20px}
   mf.addEventListener("submit", async e=>{
     e.preventDefault();
     const p = people.find(x=>x.id===mineId); if(!p) return;
-    if(last4(p) && $("#mCheck").value.trim()!==last4(p)){ $("#mMsg").textContent="Those digits don't match the phone number we have for you."; return; }
+    if(!canWrite){
+      const id = cleanId($("#mCheck").value), bad = idProblem(id);
+      if(bad){ $("#mMsg").textContent = bad; return; }
+      let ok = false; try{ const w = await db.collection("who").doc(id).get(); ok = w.exists && w.data().pid===p.id; }catch(err){}
+      if(!ok){ $("#mMsg").textContent = "That ID doesn't match " + p.name + "."; return; }
+    }
     const role = mf.querySelector('input[name="mrole"]:checked').value;
     const patch = role==="driver"
       ? {role:"driver", seats:Math.max(1,Math.min(12,Number($("#mSeats").value)||1)), pin:"", carModel: $("#mCarModel").value.trim().slice(0,40), carColor: $("#mCarColor").value,
@@ -614,6 +661,41 @@ form.sheet{padding:20px}
     toast(wasDriver ? "You're riding now. Cars were adjusted." : "Your carpool is updated");
   });
 
+  /* ---------- Phone numbers: drivers only ---------- */
+  const cleanId = v => String(v||"").trim().toLowerCase();
+  function idProblem(id){
+    if(id.includes("@")) return "Enter your ID only, without the @ part (like abc1234).";
+    if(!/^[a-z0-9._-]{2,40}$/.test(id)) return "Enter your PSU ID, like abc1234.";
+    return "";
+  }
+  async function unlockContacts(id){
+    try{
+      const s = await db.collection("book").doc(id).get();
+      if(!s.exists) return false;
+      contacts = s.data().contacts || {}; contactsOn = true; driverId = id;
+      try{ localStorage.setItem("gpoc-driver-id", id); }catch(e){}
+      render(); return true;
+    }catch(e){ return false; }
+  }
+  function openIdDlg(){ $("#idIn").value=""; $("#idErr").textContent=""; $("#idDlg").showModal(); }
+  $("#idForm").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const id = cleanId($("#idIn").value), bad = idProblem(id);
+    if(bad){ $("#idErr").textContent = bad; return; }
+    if(await unlockContacts(id)){ $("#idDlg").close(); toast("Phone numbers unlocked"); }
+    else $("#idErr").textContent = "Only drivers can see phone numbers. Check your ID.";
+  });
+  function organizerContacts(on){
+    if(on && !contactsUnsub){
+      contactsUnsub = db.collection("private").onSnapshot(s=>{
+        contacts = {}; s.docs.forEach(d=>contacts[d.id]=d.data()); contactsOn = true; render();
+      }, ()=>{});
+    } else if(!on && contactsUnsub){
+      contactsUnsub(); contactsUnsub = null; contacts = {}; contactsOn = false;
+      if(driverId) unlockContacts(driverId);
+    }
+  }
+
   /* ---------- Data ---------- */
   render();
   (function start(){
@@ -624,7 +706,8 @@ form.sheet{padding:20px}
     firebase.initializeApp(cfg);
     db = firebase.firestore();
     hasAccess = true;
-    firebase.auth().onAuthStateChanged(u=>{ unlocked = !!u; canWrite = unlocked; render(); });
+    firebase.auth().onAuthStateChanged(u=>{ unlocked = !!u; canWrite = unlocked; organizerContacts(unlocked); render(); });
+    try{ const saved = localStorage.getItem("gpoc-driver-id"); if(saved) unlockContacts(saved); }catch(e){}
     db.doc("carpool/trip").onSnapshot(s=>{ if(s.exists) trip = {...DEFAULT_TRIP, ...s.data()}; render(); }, ()=>{});
     db.collection("people").onSnapshot(s=>{
       people = s.docs.map(d=>({...d.data(), id:d.id}));
