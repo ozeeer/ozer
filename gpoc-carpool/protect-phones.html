@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPOC Carpool: protect phone numbers</title>
+<style>
+:root{--bg:#F6F5F0;--ink:#10294A;--line:#DDE2E6;--surface:#fff;color-scheme:light}
+@media (prefers-color-scheme: dark){:root{--bg:#0D1A2B;--ink:#EEF1F4;--line:#24384F;--surface:#152639;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Montserrat,system-ui,sans-serif;padding:32px 16px}
+main{max-width:460px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px}
+h1{font-size:20px;margin:0 0 6px} p{line-height:1.5}
+input,button{font:inherit;width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);margin-top:8px;background:var(--bg);color:var(--ink);box-sizing:border-box}
+button{background:var(--ink);color:var(--bg);font-weight:700;border:0;cursor:pointer}
+#msg{font-weight:600;min-height:1.5em}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+</head><body><main>
+<h1>Protect phone numbers</h1>
+<p>This takes phone numbers out of the public list and puts them where only drivers (with their PSU ID) and the organizer can open them. Cars and changes people already made stay as they are.</p>
+<p>Keep this file on your computer. Don't upload it to GitHub.</p>
+<label for="pw">Organizer password</label>
+<input id="pw" type="password" autocomplete="current-password">
+<button id="go">Protect phone numbers</button>
+<p id="msg" role="status"></p>
+</main>
+<script>
+const CONTACTS = {"d01": {"phone": "", "whatsapp": "", "email": "jrc6940@psu.edu"}, "d02": {"phone": "", "whatsapp": "", "email": "uks5031@psu.edu"}, "d03": {"phone": "", "whatsapp": "", "email": "ayfadlaoui@gmail.com"}, "d04": {"phone": "", "whatsapp": "", "email": "zjn5073@psu.edu"}, "d05": {"phone": "", "whatsapp": "", "email": "yoy5173@psu.edu"}, "r01": {"phone": "8147690244", "whatsapp": "", "email": "dbh5557@psu.edu"}, "r02": {"phone": "8145004029", "whatsapp": "", "email": "sjw6500@psu.edu"}, "r03": {"phone": "8146992636", "whatsapp": "", "email": "sfr5846@psu.edu"}, "r04": {"phone": "8507553599", "whatsapp": "", "email": "rta5108@psu.edu"}, "r05": {"phone": "8148528436", "whatsapp": "", "email": "sbg5822@psu.edu"}, "r06": {"phone": "2156811314", "whatsapp": "", "email": "svm7171@psu.edu"}, "r07": {"phone": "5822038714", "whatsapp": "", "email": "szk6629@psu.edu"}, "r08": {"phone": "5822949572", "whatsapp": "+573102707461", "email": "lmm7882@psu.edu"}, "r09": {"phone": "8142808296", "whatsapp": "", "email": "mjh8068@psu.edu"}, "r10": {"phone": "8143251362", "whatsapp": "", "email": "rtm5613@psu.edu"}, "r11": {"phone": "18146809499", "whatsapp": "", "email": "eitan1174@gmail.com"}};
+const msg = t => document.getElementById("msg").textContent = t;
+const psuId = e => String(e||"").split("@")[0].trim().toLowerCase();
+document.getElementById("go").addEventListener("click", async ()=>{
+  const cfg = window.GPOC_FIREBASE;
+  if(!window.firebase || !cfg || String(cfg.apiKey).startsWith("PASTE")){ msg("Keep config.js in the same folder as this file."); return; }
+  if(!firebase.apps.length) firebase.initializeApp(cfg);
+  try{ await firebase.auth().signInWithEmailAndPassword(window.GPOC_ORGANIZER_EMAIL, document.getElementById("pw").value); }
+  catch(e){ msg("Couldn't log in: " + (e.code||e.message)); return; }
+  const db = firebase.firestore(), del = firebase.firestore.FieldValue.delete();
+  try{
+    const people = await db.collection("people").get();
+    const all = {};
+    people.forEach(d=>{
+      const p = d.data(), c = CONTACTS[d.id] || {};
+      all[d.id] = {phone: p.phone || c.phone || "", whatsapp: p.whatsapp || c.whatsapp || "", email: String(p.email || c.email || "").toLowerCase()};
+    });
+    const phones = {}; Object.entries(all).forEach(([id,c])=>{ if(c.phone||c.whatsapp) phones[id] = {phone:c.phone, whatsapp:c.whatsapp}; });
+    const batch = db.batch();
+    people.forEach(d=>{
+      const c = all[d.id], k = psuId(c.email);
+      batch.set(db.collection("private").doc(d.id), c);
+      if(k){ batch.set(db.collection("who").doc(k), {pid:d.id}); batch.set(db.collection("book").doc(k), {pid:d.id, contacts:phones}); }
+      batch.update(d.ref, {phone: del, whatsapp: del, email: del});
+    });
+    await batch.commit();
+    msg("Done. Protected phone numbers for " + people.size + " people. Now upload the new index.html.");
+  }catch(e){ msg("Couldn't save: " + (e.code||e.message) + ". Paste the new rules first."); }
+});
+</script></body></html>
