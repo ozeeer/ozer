@@ -224,6 +224,7 @@ form.sheet{padding:20px}
       </div>
       <div class="field" id="mCarField"><label for="mCar">Ride with</label><select id="mCar"></select><div class="hint">Full cars can't be picked.</div></div>
       <div class="field" id="mSeatsField"><label for="mSeats">Free seats (not counting you)</label><input id="mSeats" type="number" min="1" max="12" value="3"></div>
+      <div class="field" id="mPickField"><label for="mPick">Pickups start</label><input id="mPick" type="time"><div class="hint">When you start picking up your riders.</div></div>
       <div class="hint" id="mMsg" style="color:var(--danger);font-weight:600"></div>
     </div>
     <div class="actions"><button type="button" class="btn plain" data-close>Cancel</button><button type="submit" class="btn primary" id="mSave" disabled>Save my change</button></div>
@@ -558,7 +559,7 @@ form.sheet{padding:20px}
     if(!p) return;
     const checked = mf.querySelector('input[name="mrole"]:checked');
     const role = checked ? checked.value : p.role;
-    $("#mCarField").hidden = role!=="rider"; $("#mSeatsField").hidden = role!=="driver";
+    $("#mCarField").hidden = role!=="rider"; $("#mSeatsField").hidden = role!=="driver"; $("#mPickField").hidden = role!=="driver";
     const a = assign();
     const mineCar = a.cars.find(c=>c.riders.some(r=>r.id===p.id));
     $("#mCar").innerHTML = `<option value="">Any car (automatic)</option>` + a.cars.filter(c=>c.driver.id!==p.id).map(c=>{
@@ -577,7 +578,7 @@ form.sheet{padding:20px}
     const p = people.find(x=>x.id===mineId);
     if(p){
       mf.querySelector(`input[name="mrole"][value="${p.role==="driver"?"driver":"rider"}"]`).checked = true;
-      $("#mSeats").value = p.seats||3; $("#mCheck").value = ""; $("#mCheckField").hidden = !last4(p);
+      $("#mSeats").value = p.seats||3; $("#mPick").value = p.pickupTime || minus(trip.meetTime, trip.lead) || ""; $("#mCheck").value = ""; $("#mCheckField").hidden = !last4(p);
     }
     $("#mMsg").textContent=""; mineSync();
   });
@@ -588,7 +589,8 @@ form.sheet{padding:20px}
     if(last4(p) && $("#mCheck").value.trim()!==last4(p)){ $("#mMsg").textContent="Those digits don't match the phone number we have for you."; return; }
     const role = mf.querySelector('input[name="mrole"]:checked').value;
     const patch = role==="driver"
-      ? {role:"driver", seats:Math.max(1,Math.min(12,Number($("#mSeats").value)||1)), pin:""}
+      ? {role:"driver", seats:Math.max(1,Math.min(12,Number($("#mSeats").value)||1)), pin:"",
+         pickupTime: (()=>{ const pk=$("#mPick").value; return (!p.pickupTime && pk===minus(trip.meetTime, trip.lead)) ? "" : pk; })()}
       : {role:"rider", seats:0, pin:$("#mCar").value};
     const wasDriver = p.role==="driver" && role!=="driver";
     $("#mineDlg").close();
